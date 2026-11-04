@@ -1,32 +1,58 @@
-# React + TypeScript + Vite
+# 🦁 사바나원정 Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+2026 멋쟁이사자처럼 중앙대학교 14기 중앙 해커톤 프론트엔드 레포지토리
 
-Currently, two official plugins are available:
+## 🛠️ Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Category | Technology |
+|---|---|
+| UI | React |
+| Language | TypeScript |
+| Build Tool | Vite |
+| Styling | CSS |
+| Linter | Oxlint |
+| Routing | React Router |
+| HTTP Client | Axios |
+| Package Manager | npm |
 
-## React Compiler
+## 🚀 Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Repository Clone
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+git clone https://github.com/LikeLion-14th-CAUkathon/savanna-frontend.git
+cd savanna-frontend
+git switch develop
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run Development Server
+
+```bash
+npm run dev
+```
+
+기본 개발 서버 주소: http://localhost:5173/
+
+## 🌿 Branch Strategy
+
+- `main`: 안정화 및 배포 브랜치
+- `develop`: 개발 통합 브랜치
+- `feature/*`: 기능 개발 브랜치
+- `fix/*`: 버그 수정 브랜치
+- `chore/*`: 환경 설정 브랜치
+
+모든 기능 개발은 최신 `develop` 브랜치를 기준으로 진행하며, Issue 생성 후 PR을 통해 병합합니다.
+
+## 📋 Collaboration
+
+- 작업 전 Issue 생성
+- 기능별 브랜치 생성
+- 커밋 컨벤션 준수
+- PR 생성 및 코드 리뷰
+- 리뷰 후 `develop`에 Merge

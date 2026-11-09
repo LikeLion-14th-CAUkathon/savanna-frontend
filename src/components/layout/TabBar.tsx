@@ -20,22 +20,22 @@ interface Tab {
 interface TabBarProps {
   activeTab: TabId;                    // 지금 선택된 탭 (부모가 알려줌)
   onTabChange: (tab: TabId) => void;   // 탭을 눌렀을 때 부모에게 알려주는 함수
-  unreadCount?: number;                // 팀 소식 탭에 보여줄 읽지 않은 소식 개수
+  hasNew?: boolean;                    // 팀 공간 탭에 새 소식 점 표시
 }
 
 const TAB_LIST: Tab[] = [
   { id: 'oasis', label: '오아시스', icon: homeIcon, activeIcon: homeActiveIcon },
   { id: 'search', label: '공고 찾기', icon: searchIcon, activeIcon: searchActiveIcon },
-  { id: 'team', label: '팀 소식', icon: teamIcon, activeIcon: teamActiveIcon },
+  { id: 'team', label: '팀 공간', icon: teamIcon, activeIcon: teamActiveIcon },
   { id: 'mypage', label: '마이페이지', icon: profileIcon, activeIcon: profileActiveIcon },
 ];
 
-export default function TabBar({ activeTab, onTabChange, unreadCount = 0 }: TabBarProps) {
+export default function TabBar({ activeTab, onTabChange, hasNew = false }: TabBarProps) {
   return (
     <Bar>
       {TAB_LIST.map((tab) => {
         const isActive = activeTab === tab.id; // 지금 선택된 탭이냐?
-        const hasBadge = tab.id === 'team' && unreadCount > 0; // 팀 소식 탭에만, 읽지 않은 소식이 있을 때 뱃지 표시
+        const showNewDot = tab.id === 'team' && hasNew;
 
         return (
           <TabButton
@@ -43,11 +43,12 @@ export default function TabBar({ activeTab, onTabChange, unreadCount = 0 }: TabB
             type="button"
             $active={isActive}
             aria-current={isActive ? 'page' : undefined}
+            aria-label={showNewDot ? `${tab.label}, 새 소식 있음` : tab.label}
             onClick={() => onTabChange(tab.id)}
           >
             <IconWrap>
               <Icon src={isActive ? tab.activeIcon : tab.icon} alt="" />
-              {hasBadge && <Badge>{unreadCount > 99 ? '99+' : unreadCount}</Badge>}
+              {showNewDot && <NewDot aria-hidden="true" />}
             </IconWrap>
             <span>{tab.label}</span>
           </TabButton>
@@ -72,6 +73,7 @@ const Bar = styled.nav`
 const TabButton = styled.button<{ $active: boolean }>`
   display: flex;
   flex: 1;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 4px;
@@ -82,6 +84,8 @@ const TabButton = styled.button<{ $active: boolean }>`
   font-family: 'Pretendard', sans-serif;
   font-size: 12px;
   font-weight: 700;
+  line-height: normal;
+  letter-spacing: 0;
   white-space: nowrap;
   cursor: pointer;
 
@@ -102,19 +106,12 @@ const Icon = styled.img`
   display: block;
 `;
 
-const Badge = styled.span`
+const NewDot = styled.span`
   position: absolute;
-  top: -4px;
-  left: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 2px;
-  border-radius: 999px;
+  top: -1px;
+  left: 20px;
+  width: 9px;
+  height: 9px;
+  border-radius: 4.5px;
   background: #ffb72b;
-  color: #1e1e1e;
-  font-size: 11px;
 `;

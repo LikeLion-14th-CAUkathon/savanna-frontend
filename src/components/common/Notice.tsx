@@ -1,11 +1,20 @@
+import type { ReactNode } from 'react';
 import styled from 'styled-components';
-import noticeIcon from '../../assets/icons/notice-icon.svg';
+import noticeIcon from '../../assets/icons/notice/notice-icon.svg';
 
-export default function Notice() {
+interface NoticeProps {
+  icon?: string;
+  children?: ReactNode;
+}
+
+export default function Notice({
+  icon = noticeIcon,
+  children = '프로젝트 이름과 소개는 AI 공고 추천에 쓰여요.',
+}: NoticeProps) {
   return (
     <NoticeBox>
-      <NoticeIcon src={noticeIcon} alt="" />
-      <NoticeText>프로젝트 이름과 소개는 AI 공고 추천에 쓰여요.</NoticeText>
+      <NoticeIcon src={icon} alt="" />
+      <NoticeText>{children}</NoticeText>
     </NoticeBox>
   );
 }

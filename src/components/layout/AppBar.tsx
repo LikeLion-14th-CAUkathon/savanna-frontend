@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import backIcon from '../../assets/icons/appbar-back.svg';
+import backIcon from '../../assets/icons/app-bar/appbar-back.svg';
 
 interface AppBarProps {
   title: string;        // 가운데에 보여줄 화면 제목

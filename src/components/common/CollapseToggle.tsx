@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import styled from 'styled-components';
-import upIcon from '../../assets/icons/collapse-up.svg';
-import downIcon from '../../assets/icons/collapse-down.svg';
+import upIcon from '../../assets/icons/collapse-toggle/collapse-up.svg';
+import downIcon from '../../assets/icons/collapse-toggle/collapse-down.svg';
 
 interface CollapseToggleProps {
   label?: string;

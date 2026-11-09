@@ -25,6 +25,23 @@
 }
 
 :root {
+  /* 사바나 공통 색상 */
+  --color-ink: #1e1e1e;
+  --color-brown: #3b2a16;
+  --color-cream: #fff9ec;
+  --color-amber: #ffb72b;
+  --color-amber-shadow: #d9890a;
+  --color-orange: #d97700;
+  --color-text-muted: #726657;
+  --color-sand: #e2c595;
+  --color-sign-text: #5a2e14;
+  --color-sign-label: #fff1d6;
+
+  /* 지도 위에 떠 있는 카드 그림자 */
+  --shadow-float: 0 8px 20px rgba(59, 42, 22, 0.14);
+
+  --font-concept: 'CookieRun', sans-serif;
+
   font-family: 'Pretendard', sans-serif;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;

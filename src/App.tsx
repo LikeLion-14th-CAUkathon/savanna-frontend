@@ -1,8 +1,14 @@
+import { Routes, Route, Navigate } from 'react-router'
+import ContestSearchPage from './pages/contest-search/ContestSearchPage'
 import OasisPage from './pages/oasis/OasisPage'
 
-// 지금은 오아시스 화면만 확인용으로 띄워서 화면 테스트 해봄
 function App() {
-  return <OasisPage />
+  return (
+    <Routes>
+      <Route path="/contest" element={<ContestSearchPage />} />
+      <Route path="/oasis" element={<OasisPage />} />
+    </Routes>
+  )
 }
 
 export default App

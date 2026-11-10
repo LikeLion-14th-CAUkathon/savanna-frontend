@@ -4,17 +4,19 @@ import filterIcon from '../../assets/icons/contest-search/filter.svg';
 import filterActiveIcon from '../../assets/icons/contest-search/filter-active.svg';
 
 interface FilterButtonProps {
-  count?: number;        // 적용된 필터 개수. 1 이상이면 주황색으로 강조
+  count?: number;        // 적용된 필터 개수. 1 이상이면 '필터 N'으로 표시
+  open?: boolean;        // 필터 시트가 열려 있는지
   onClick?: () => void;
 }
 
-export default function FilterButton({ count = 0, onClick }: FilterButtonProps) {
-  const isActive = count > 0;
+// 필터 시트가 열려 있거나, 적용된 필터가 있으면 노란색으로 강조한다.
+export default function FilterButton({ count = 0, open = false, onClick }: FilterButtonProps) {
+  const isActive = open || count > 0;
 
   return (
-    <Button type="button" $active={isActive} onClick={onClick}>
+    <Button type="button" $active={isActive} aria-expanded={open} onClick={onClick}>
       <Icon src={isActive ? filterActiveIcon : filterIcon} size={16} />
-      {isActive ? `필터 ${count}` : '필터'}
+      {count > 0 ? `필터 ${count}` : '필터'}
     </Button>
   );
 }

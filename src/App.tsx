@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router'
+import { Routes, Route } from 'react-router'
 import ContestSearchPage from './pages/contest-search/ContestSearchPage'
 import OasisPage from './pages/oasis/OasisPage'
 

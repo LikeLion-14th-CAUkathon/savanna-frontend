@@ -8,11 +8,13 @@ import ContestCard from '../../components/contest-search/ContestCard';
 import FilterButton from '../../components/contest-search/FilterButton';
 import AppliedFilters from '../../components/contest-search/AppliedFilters';
 import StatusMessage from '../../components/contest-search/StatusMessage';
+import FilterSheet from '../../components/contest-search/FilterSheet';
 import { fetchContests, fetchRecommendedContests } from '../../mocks/contests';
 import {
   CONTEST_STATUS_LABEL,
+  EMPTY_CONTEST_FILTERS,
   type Contest,
-  type ContestStatus,
+  type ContestFilters,
   type RecommendedContest,
 } from '../../types/contest';
 import sparkIcon from '../../assets/icons/contest-search/spark.svg';
@@ -26,8 +28,8 @@ export default function ContestSearchPage() {
   const [recommended, setRecommended] = useState<RecommendedContest[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [query, setQuery] = useState('');
-  // 상태 필터. C02 공고 필터 화면이 연결되면 그 화면에서 값을 채운다.
-  const [statusFilters, setStatusFilters] = useState<ContestStatus[]>([]);
+  const [filters, setFilters] = useState<ContestFilters>(EMPTY_CONTEST_FILTERS);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // 공고 목록과 AI 추천을 함께 불러온다. (처음 로딩 상태는 useState 초기값으로 처리)
   const loadContests = useCallback(() => {
@@ -46,12 +48,22 @@ export default function ContestSearchPage() {
 
   const keyword = query.trim();
   // 검색어나 필터가 있으면 '검색 결과' 화면, 없으면 'AI 추천 + 전체 공고' 화면
-  const isSearching = keyword !== '' || statusFilters.length > 0;
+  const filterCount = filters.categories.length + filters.statuses.length;
+  const isSearching = keyword !== '' || filterCount > 0;
 
   const visibleContests = contests
     .filter((contest) => matchesKeyword(contest, keyword))
-    .filter((contest) => statusFilters.length === 0 || statusFilters.includes(contest.status))
+    .filter((contest) => matchesFilters(contest, filters))
     .sort((a, b) => a.dDay - b.dDay); // 마감 임박순
+
+  // 결과 위에 보여줄 '적용된 필터' 칩. 분야와 접수 상태를 한 줄로 합친다.
+  const appliedFilters = [
+    ...filters.categories.map((category) => ({ key: `category:${category}`, label: category })),
+    ...filters.statuses.map((status) => ({
+      key: `status:${status}`,
+      label: CONTEST_STATUS_LABEL[status],
+    })),
+  ];
 
   const retryLoad = () => {
     setLoadState('loading');
@@ -60,15 +72,22 @@ export default function ContestSearchPage() {
 
   const resetSearch = () => {
     setQuery('');
-    setStatusFilters([]);
+    setFilters(EMPTY_CONTEST_FILTERS);
   };
 
-  const removeStatusFilter = (status: string) => {
-    setStatusFilters((prev) => prev.filter((item) => item !== status));
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({
+      categories: prev.categories.filter((category) => `category:${category}` !== key),
+      statuses: prev.statuses.filter((status) => `status:${status}` !== key),
+    }));
   };
 
-  const openFilter = () => {
-    // TODO: C02 공고 필터 화면 연결
+  const openFilter = () => setIsFilterOpen(true);
+  const closeFilter = useCallback(() => setIsFilterOpen(false), []);
+
+  const applyFilters = (nextFilters: ContestFilters) => {
+    setFilters(nextFilters);
+    setIsFilterOpen(false);
   };
 
   return (
@@ -89,7 +108,7 @@ export default function ContestSearchPage() {
             <Section>
               <SectionHead>
                 <SectionTitle>검색 결과 0건</SectionTitle>
-                <FilterButton count={statusFilters.length} onClick={openFilter} />
+                <FilterButton count={filterCount} open={isFilterOpen} onClick={openFilter} />
               </SectionHead>
             </Section>
             <StatusMessage
@@ -130,7 +149,7 @@ export default function ContestSearchPage() {
                   <SectionTitle>전체 공고</SectionTitle>
                   <SortLabel />
                 </HeadTexts>
-                <FilterButton onClick={openFilter} />
+                <FilterButton count={filterCount} open={isFilterOpen} onClick={openFilter} />
               </SectionHead>
               {visibleContests.length > 0 ? (
                 <ContestList contests={visibleContests} />
@@ -156,17 +175,14 @@ export default function ContestSearchPage() {
                   </SectionTitle>
                   {visibleContests.length > 0 && <SortLabel />}
                 </HeadTexts>
-                <FilterButton count={statusFilters.length} onClick={openFilter} />
+                <FilterButton count={filterCount} open={isFilterOpen} onClick={openFilter} />
               </SectionHead>
 
-              {statusFilters.length > 0 && (
+              {appliedFilters.length > 0 && (
                 <AppliedFilters
-                  filters={statusFilters.map((status) => ({
-                    key: status,
-                    label: CONTEST_STATUS_LABEL[status],
-                  }))}
-                  onRemove={removeStatusFilter}
-                  onReset={() => setStatusFilters([])}
+                  filters={appliedFilters}
+                  onRemove={removeFilter}
+                  onReset={() => setFilters(EMPTY_CONTEST_FILTERS)}
                 />
               )}
 
@@ -191,6 +207,10 @@ export default function ContestSearchPage() {
         {/* TODO: 라우터 연결 후 탭 이동 처리 */}
         <TabBar activeTab="search" onTabChange={() => {}} />
       </BottomBar>
+
+      {isFilterOpen && (
+        <FilterSheet initialFilters={filters} onApply={applyFilters} onClose={closeFilter} />
+      )}
     </Page>
   );
 }
@@ -202,6 +222,13 @@ function matchesKeyword(contest: Contest, keyword: string) {
     contest.title.toLowerCase().includes(lowerKeyword) ||
     contest.host.toLowerCase().includes(lowerKeyword)
   );
+}
+
+// 분야 · 접수 상태 각각 고른 게 없으면 전체, 있으면 그중 하나에 해당해야 한다.
+function matchesFilters(contest: Contest, filters: ContestFilters) {
+  const categoryOk = filters.categories.length === 0 || filters.categories.includes(contest.category);
+  const statusOk = filters.statuses.length === 0 || filters.statuses.includes(contest.status);
+  return categoryOk && statusOk;
 }
 
 function SortLabel() {

@@ -21,6 +21,7 @@ interface TabBarProps {
   activeTab: TabId;                    // 지금 선택된 탭 (부모가 알려줌)
   onTabChange: (tab: TabId) => void;   // 탭을 눌렀을 때 부모에게 알려주는 함수
   hasNew?: boolean;                    // 팀 공간 탭에 새 소식 점 표시
+  rounded?: boolean;                   // 위쪽 모서리를 둥글게 (오아시스 홈 화면)
 }
 
 const TAB_LIST: Tab[] = [
@@ -30,9 +31,9 @@ const TAB_LIST: Tab[] = [
   { id: 'mypage', label: '마이페이지', icon: profileIcon, activeIcon: profileActiveIcon },
 ];
 
-export default function TabBar({ activeTab, onTabChange, hasNew = false }: TabBarProps) {
+export default function TabBar({ activeTab, onTabChange, hasNew = false, rounded = false }: TabBarProps) {
   return (
-    <Bar>
+    <Bar $rounded={rounded}>
       {TAB_LIST.map((tab) => {
         const isActive = activeTab === tab.id; // 지금 선택된 탭이냐?
         const showNewDot = tab.id === 'team' && hasNew;
@@ -58,7 +59,7 @@ export default function TabBar({ activeTab, onTabChange, hasNew = false }: TabBa
   );
 }
 
-const Bar = styled.nav`
+const Bar = styled.nav<{ $rounded: boolean }>`
   display: flex;
   align-items: flex-start;
   box-sizing: border-box;
@@ -67,6 +68,7 @@ const Bar = styled.nav`
   height: 75px;
   padding-top: 10px;
   border-top: 1px solid #e7e5e0;
+  border-radius: ${({ $rounded }) => ($rounded ? '20px 20px 0 0' : '0')};
   background: #fafaf8;
 `;
 

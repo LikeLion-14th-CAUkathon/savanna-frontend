@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
+import Button from '../../components/common/Button';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
 
 import { SAMPLE_TEAM } from '../../mocks/invite';
@@ -8,6 +10,12 @@ import { SAMPLE_TEAM } from '../../mocks/invite';
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
   const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+
+  // API 연결 후 팀 합류 요청과 성공·실패 처리
+  const handleJoin = () => {
+    setMessage('팀 합류 기능은 아직 연결되지 않았어요.');
+  };
 
   return (
     <Page>
@@ -18,7 +26,11 @@ export default function InvitePage() {
         <InviteInfoField label="프로젝트 소개" value={SAMPLE_TEAM.description} />
         <InviteInfoField label="인원"
           value={`현재 ${SAMPLE_TEAM.memberCount}명 → 합류 후 ${SAMPLE_TEAM.memberCount + 1}명`} />
+        {message && <Message role="status">{message}</Message>}
       </Content>
+      <Footer>
+        <JoinButton onClick={handleJoin}>합류하기</JoinButton>
+      </Footer>
     </Page>
   );
 }
@@ -43,4 +55,25 @@ const Content = styled.div`
   flex-direction: column;
   gap: 20px;
   padding: 8px 24px 26px;
+`;
+
+// 합류 기능 미연동 안내
+const Message = styled.p`
+  margin: 0;
+  color: #5b5b5b;
+  font-size: 13px;
+`;
+
+// 하단 합류하기 영역
+const Footer = styled.footer`
+  position: sticky;
+  bottom: 0;
+  padding: 12px 24px 34px;
+  border-top: 1px solid #e7e5e0;
+  background: #fafaf8;
+`;
+
+// 공통 버튼의 너비만 확장
+const JoinButton = styled(Button)`
+  width: 100%;
 `;

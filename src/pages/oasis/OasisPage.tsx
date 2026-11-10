@@ -34,9 +34,9 @@ const MAPS = {
   short: {
     image: shortMapImage,
     height: 848.7,
-    skyColor: '#feb056',    // 화면이 지도보다 길 때 위쪽 빈 공간
-    groundColor: '#f6cf55', // 탭바 뒤 지도 아래 공간
-    bottomSpace: 874 - 848.7, // 디자인(874px 화면)처럼 지도 아래가 탭바와 겹치는 정도를 맞춤
+    skyColor: '#feb056',    
+    groundColor: '#f6cf55',
+    bottomSpace: 874 - 848.7, 
     slots: [
       { left: 108, top: 340 },
       { left: 164, top: 180 },
@@ -55,7 +55,7 @@ const MAPS = {
     skyColor: '#fda852',
     groundColor: '#fcd358',
     bottomSpace: TAB_BAR_HEIGHT, // 탭바에 오아시스가 가리지 않게
-    // TODO: 원정이 7개 이상이면 6개까지만 보임
+  
     slots: [
       { left: 44, top: 787 },
       { left: 128, top: 655 },
@@ -234,7 +234,7 @@ export default function OasisPage() {
   );
 }
 
-// 다른 화면과 같이 폭 402px(좁으면 줄어듦), 높이는 브라우저 화면 높이에 맞춤
+
 // 지도가 화면보다 길면 지도 영역만 끌어서 봄
 const Stage = styled.main`
   position: relative;

@@ -109,7 +109,7 @@ const getPreviewState = (): ExpeditionDetailState => {
   return { status: 'success', data: SAMPLE_DETAIL };
 };
 
-// 저장 요청 흉내 (0.4초 뒤 성공, save-error면 실패)
+// 저장 요청 (0.4초 뒤 성공, save-error면 실패)
 const fakeSave = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(preview !== 'save-error'), 400));
 // ---------------------------------------------------------------------------
 

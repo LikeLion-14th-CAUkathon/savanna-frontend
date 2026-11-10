@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import membersIcon from '../../assets/icons/oasis/status-members.svg';
-import expeditionIcon from '../../assets/icons/oasis/status-expedition.svg';
-import deadlineIcon from '../../assets/icons/oasis/status-deadline.svg';
+import membersIcon from '../../assets/icons/oasis/status-members.png';
+import expeditionIcon from '../../assets/icons/oasis/status-expedition.png';
+import deadlineIcon from '../../assets/icons/oasis/status-deadline.png';
 
 // 값이 없으면(불러오는 중·실패) '-'로 표시
 interface ExpeditionStatusCardProps {
@@ -18,18 +18,18 @@ export default function ExpeditionStatusCard({
   nextDeadline,
 }: ExpeditionStatusCardProps) {
   const items = [
-    { label: '팀원', value: memberCount ?? EMPTY, icon: membersIcon, iconBg: '#fff0cc', highlight: false },
-    { label: '진행 중 원정', value: expeditionCount ?? EMPTY, icon: expeditionIcon, iconBg: '#eef5e6', highlight: false },
-    { label: '다음 접수 마감', value: nextDeadline ?? EMPTY, icon: deadlineIcon, iconBg: '#fff6dd', highlight: true },
+    { label: '팀원', value: memberCount ?? EMPTY, icon: membersIcon, highlight: false },
+    { label: '진행 중 원정', value: expeditionCount ?? EMPTY, icon: expeditionIcon, highlight: false },
+    { label: '다음 접수 마감', value: nextDeadline ?? EMPTY, icon: deadlineIcon, highlight: true },
   ];
 
   return (
     <Card aria-label="원정 현황">
       {items.map((item) => (
         <Item key={item.label}>
-          <IconCircle $bg={item.iconBg}>
-            <img src={item.icon} alt="" />
-          </IconCircle>
+          <IconBox>
+            <IconImage src={item.icon} alt="" />
+          </IconBox>
           <Texts>
             <Value $highlight={item.highlight}>{item.value}</Value>
             <Label>{item.label}</Label>
@@ -43,11 +43,12 @@ export default function ExpeditionStatusCard({
 const Card = styled.section`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   box-sizing: border-box;
   width: 354px;
   max-width: 100%;
   height: 56px;
-  padding: 10px;
+  padding: 10px 20px;
   border-radius: 26px;
   background: rgba(255, 249, 236, 0.9);
   box-shadow: var(--shadow-float), 0 2px 0 var(--color-sand);
@@ -56,28 +57,34 @@ const Card = styled.section`
 
 const Item = styled.div`
   display: flex;
-  flex: 1;
-  min-width: 0;
   align-items: center;
   justify-content: center;
   gap: 8px;
 `;
 
-const IconCircle = styled.span<{ $bg: string }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// 일러스트 여백이 넓어서 145%로 키운 뒤 34px 상자에 맞춰 자름 (Figma 기준)
+const IconBox = styled.span`
+  position: relative;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  background: ${({ $bg }) => $bg};
+  width: 34px;
+  height: 34px;
+  overflow: hidden;
+`;
+
+const IconImage = styled.img`
+  position: absolute;
+  top: -22.73%;
+  left: -22.73%;
+  width: 145.45%;
+  height: 145.45%;
+  max-width: none;
 `;
 
 const Texts = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 2px;
   line-height: normal;
   white-space: nowrap;
 `;

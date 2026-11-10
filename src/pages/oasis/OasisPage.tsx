@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import type { TabId } from '../../components/layout/TabBar';
@@ -54,24 +54,44 @@ const sortByDeadline = (expeditions: OasisExpedition[]) =>
 const formatProgress = (expedition: OasisExpedition) =>
   `${EXPEDITION_STAGE_LABEL[expedition.stage]} · 참여 ${expedition.participantCount}명`;
 
-// TODO: API 연결 시 실제 요청 결과로 교체. 지금은 화면 확인용으로 status를 바꿔가며 볼 수 있음
-//  - { status: 'loading' } / { status: 'error' } / { status: 'success', data: { ..., expeditions: [] } }
+// ---------------------------------------------------------------------------
+// 테스트용 임시 데이터 (TODO: API 연결 시 이 부분을 지우고 실제 요청 결과로 교체)
+// 기본은 데이터가 없는 상태(원정 없음). 주소 뒤에 붙여서 다른 상태 확인:
+//   ?preview=sample  원정 3개   ?preview=many  원정 6개
+//   ?preview=loading 불러오는 중   ?preview=error  조회 실패
+// ---------------------------------------------------------------------------
 const daysFromNow = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-const PREVIEW_STATE: OasisState = {
-  status: 'success',
-  data: {
-    teamId: 1,
-    teamName: '사바나 탐험대',
-    memberCount: 3,
-    ideaCount: 4,
-    hasNewTeamNews: true,
-    expeditions: [
-      { id: 1, contestTitle: '헬스케어 AI 아이디어 공모전', deadline: daysFromNow(14), stage: 'DRAFT', participantCount: 2 },
-      { id: 2, contestTitle: '청년 사회문제 해결 해커톤', deadline: daysFromNow(5), stage: 'KICKOFF', participantCount: 1 },
-      { id: 3, contestTitle: '서울 청년 현장 아이디어톤', deadline: daysFromNow(10), stage: 'KICKOFF', participantCount: 1 },
-    ],
-  },
+
+const SAMPLE_TEAM = {
+  teamId: 1,
+  teamName: '사바나 탐험대',
+  memberCount: 3,
+  ideaCount: 0,
+  hasNewTeamNews: false,
 };
+
+const SAMPLE_EXPEDITIONS: OasisExpedition[] = [
+  { id: 1, contestTitle: '헬스케어 AI 아이디어 공모전', deadline: daysFromNow(14), stage: 'DRAFT', participantCount: 2 },
+  { id: 2, contestTitle: '청년 사회문제 해결 해커톤', deadline: daysFromNow(5), stage: 'KICKOFF', participantCount: 1 },
+  { id: 3, contestTitle: '서울 청년 현장 아이디어톤', deadline: daysFromNow(10), stage: 'KICKOFF', participantCount: 1 },
+  { id: 4, contestTitle: '대학생 서비스 기획 경진대회', deadline: daysFromNow(21), stage: 'FINAL_REVIEW', participantCount: 3 },
+  { id: 5, contestTitle: '오픈데이터 앱 디자인 챌린지', deadline: daysFromNow(30), stage: 'KICKOFF', participantCount: 2 },
+  { id: 6, contestTitle: '환경 아이디어 공모전', deadline: daysFromNow(2), stage: 'SUBMIT', participantCount: 3 },
+];
+
+const getPreviewState = (): OasisState => {
+  const preview = new URLSearchParams(window.location.search).get('preview');
+  if (preview === 'loading') return { status: 'loading' };
+  if (preview === 'error') return { status: 'error' };
+  if (preview === 'sample') {
+    return { status: 'success', data: { ...SAMPLE_TEAM, ideaCount: 4, hasNewTeamNews: true, expeditions: SAMPLE_EXPEDITIONS.slice(0, 3) } };
+  }
+  if (preview === 'many') {
+    return { status: 'success', data: { ...SAMPLE_TEAM, ideaCount: 4, hasNewTeamNews: true, expeditions: SAMPLE_EXPEDITIONS } };
+  }
+  return { status: 'success', data: { ...SAMPLE_TEAM, expeditions: [] } };
+};
+// ---------------------------------------------------------------------------
 
 // TODO: 라우터 구성 후 각 화면으로 이동 연결
 //  - 원정 표지판 → D02 원정 상세 / 우리 팀 프로젝트 → B02 팀 공간 / 공고 찾기 → C01 공고 찾기 / 하단 탭 → 각 탭 화면
@@ -81,7 +101,7 @@ const goToContestSearch = () => {};
 const handleTabChange = (_tab: TabId) => {};
 
 export default function OasisPage() {
-  const state = PREVIEW_STATE;
+  const [state] = useState(getPreviewState);
   const retry = () => {}; // TODO: API 연결 시 다시 요청
 
   const mapRef = useRef<HTMLDivElement>(null);
@@ -176,7 +196,7 @@ export default function OasisPage() {
       )}
 
       <TabBarArea>
-        <TabBar activeTab="oasis" onTabChange={handleTabChange} hasNew={data?.hasNewTeamNews ?? false} />
+        <TabBar activeTab="oasis" onTabChange={handleTabChange} hasNew={data?.hasNewTeamNews ?? false} rounded />
       </TabBarArea>
     </Stage>
   );
@@ -233,15 +253,15 @@ const CharacterImage = styled.img`
 
 const StatusArea = styled.div`
   position: absolute;
-  top: 38px;
+  top: 58px;
   left: 24px;
 `;
 
 const TeamSwitchArea = styled.div`
   position: absolute;
-  top: 124px;
-  left: 230px;
-  max-width: 156px;
+  top: 133px;
+  left: 246px;
+  max-width: 140px;
 `;
 
 const PopupArea = styled.div`

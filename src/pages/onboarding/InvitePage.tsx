@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
+import InviteInfoField from '../../components/onboarding/InviteInfoField';
+
+import { SAMPLE_TEAM } from '../../mocks/invite';
 
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
@@ -9,8 +12,13 @@ export default function InvitePage() {
   return (
     <Page>
       <AppBar title="초대 확인 & 팀 합류" onBack={() => navigate(-1)} />
-      {/* 다음 단계에서 초대 팀 정보 표시 */}
-      <Content />
+      <Content>
+        <InviteInfoField label="팀명" value={SAMPLE_TEAM.name} />
+        <InviteInfoField label="프로젝트 이름" value={SAMPLE_TEAM.projectName} />
+        <InviteInfoField label="프로젝트 소개" value={SAMPLE_TEAM.description} />
+        <InviteInfoField label="인원"
+          value={`현재 ${SAMPLE_TEAM.memberCount}명 → 합류 후 ${SAMPLE_TEAM.memberCount + 1}명`} />
+      </Content>
     </Page>
   );
 }

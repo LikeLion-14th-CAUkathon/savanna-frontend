@@ -5,9 +5,9 @@ import { diffCalendarDays, formatMonthDay, formatMonthDayWeekday, formatTime } f
 
 interface ScheduleCardProps {
   phase: ContestPhase;
-  startAt: Date;
-  deadlineAt: Date;
-  today: Date;
+  startAt: string;     // ISO
+  deadlineAt: string;  // ISO
+  today: string;       // ISO
 }
 
 // 접수 일정 카드: 남은 일수 + 진행 막대(오늘 위치에 사자) + 시작/오늘/마감 날짜

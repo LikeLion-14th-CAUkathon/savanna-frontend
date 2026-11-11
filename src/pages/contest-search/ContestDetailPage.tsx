@@ -102,7 +102,12 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
           공고 원문 보기 ↗
         </Button>
 
-        <ScheduleCard phase={phase} startAt={startAt} deadlineAt={deadlineAt} today={today} />
+        <ScheduleCard
+          phase={phase}
+          startAt={detail.startAt}
+          deadlineAt={detail.deadlineAt}
+          today={today.toISOString()}
+        />
 
         <InfoCard
           title="참가 조건"

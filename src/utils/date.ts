@@ -43,3 +43,25 @@ export function toDateInputValue(iso: string) {
 export function fromDateInputValue(value: string) {
   return `${value}T00:00:00+09:00`;
 }
+
+const KST_WEEKDAY = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', weekday: 'short' });
+
+// '11.10(화)'
+export function formatMonthDayWeekday(iso: string) {
+  return `${formatMonthDay(iso)}(${KST_WEEKDAY.format(new Date(iso))})`;
+}
+
+// '18:00'
+export function formatTime(iso: string) {
+  const { hour, minute } = getKstParts(iso);
+  return `${hour}:${minute}`;
+}
+
+// 시각은 무시하고 한국 날짜만으로 며칠 차이인지 (to - from)
+export function diffCalendarDays(fromIso: string, toIso: string) {
+  const toDayIndex = (iso: string) => {
+    const { year, month, day } = getKstParts(iso);
+    return Date.UTC(Number(year), Number(month) - 1, Number(day)) / (24 * 60 * 60 * 1000);
+  };
+  return toDayIndex(toIso) - toDayIndex(fromIso);
+}

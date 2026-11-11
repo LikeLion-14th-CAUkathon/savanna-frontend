@@ -93,7 +93,7 @@ export default function ProfilePage() {
   );
 }
 
-// 상태바 공간을 포함한 모바일 화면
+// 모바일 화면 너비와 배경
 const Page = styled.main`
   display: flex;
   flex-direction: column;
@@ -101,7 +101,6 @@ const Page = styled.main`
   max-width: 100%;
   min-height: 100svh;
   margin: 0 auto;
-  padding-top: 58px;
   background: #fafaf8;
   color: #1e1e1e;
   line-height: normal;

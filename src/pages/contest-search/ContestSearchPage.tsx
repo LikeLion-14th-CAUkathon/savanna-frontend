@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import Icon from '../../components/contest-search/Icon';
@@ -137,7 +138,9 @@ export default function ContestSearchPage() {
                 </Section>
                 <RecommendList>
                   {recommended.map((contest) => (
-                    <RecommendCard key={contest.id} contest={contest} />
+                    <CardLink key={contest.id} to={`/contest/${contest.id}`}>
+                      <RecommendCard contest={contest} />
+                    </CardLink>
                   ))}
                 </RecommendList>
               </>
@@ -245,7 +248,9 @@ function ContestList({ contests, highlight }: { contests: Contest[]; highlight?:
     <List>
       {contests.map((contest) => (
         <li key={contest.id}>
-          <ContestCard contest={contest} highlight={highlight} />
+          <CardLink to={`/contest/${contest.id}`}>
+            <ContestCard contest={contest} highlight={highlight} />
+          </CardLink>
         </li>
       ))}
     </List>
@@ -354,6 +359,20 @@ const RecommendList = styled.div`
   & > * {
     scroll-snap-align: start;
     scroll-margin-left: 24px;
+  }
+`;
+
+// 카드 전체를 눌러 C03 공고 상세로 이동
+const CardLink = styled(Link)`
+  display: flex;
+  flex-shrink: 0;
+  border-radius: 16px;
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid #d97700;
+    outline-offset: 2px;
   }
 `;
 

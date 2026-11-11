@@ -1,4 +1,4 @@
-import type { Contest, RecommendedContest } from '../types/contest';
+import type { Contest, ContestDetail, RecommendedContest } from '../types/contest';
 
 // API 명세가 나오기 전까지 쓰는 목업 데이터 (피그마 C01 시안 기준)
 
@@ -68,4 +68,57 @@ export function fetchContests(): Promise<Contest[]> {
 
 export function fetchRecommendedContests(): Promise<RecommendedContest[]> {
   return delay(RECOMMENDED_CONTESTS);
+}
+
+// ---- C03 공고 상세 ----
+
+// 목업 날짜가 시안(오늘 10.31) 기준이라 '오늘'도 고정한다. API 연결 시 new Date()로 교체.
+export const MOCK_TODAY = new Date('2026-10-31T12:00:00+09:00');
+
+// 시안의 상세 내용을 공통으로 쓰고, 공고마다 다른 값만 덮어쓴다.
+const SAMPLE_DETAIL: Omit<ContestDetail, 'id' | 'title' | 'host' | 'startAt' | 'deadlineAt'> = {
+  sourceUrl: 'https://example.com',
+  eligibility: {
+    target: '대학생·청년 팀',
+    teamSize: '팀 2~5명',
+    region: '온라인 · 서울 현장 발표',
+  },
+  overview: {
+    topic: '생활 속 문제를 해결하는 아이디어',
+    criteria: '문제 정의·실현 가능성·완성도',
+  },
+  application: {
+    method: '주최 측 접수 페이지에서 온라인 제출',
+    submissions: ['아이디어 기획서 PDF(10쪽 이내)', '참가 신청서'],
+    form: '주최 측 지정 양식 사용',
+    consent: '개인정보 수집·이용 동의서 · 팀원 전원 서명',
+  },
+};
+
+const DEADLINE_TIME = 'T18:00:00+09:00';
+
+const CONTEST_DETAILS: ContestDetail[] = [
+  ...CONTESTS.map((contest) => ({
+    ...SAMPLE_DETAIL,
+    id: contest.id,
+    title: contest.title,
+    host: contest.host,
+    // 접수 예정 공고는 시작일이 오늘 이후
+    startAt: contest.status === 'upcoming' ? '2026-11-03T00:00:00+09:00' : '2026-10-15T00:00:00+09:00',
+    deadlineAt: contest.deadline.replaceAll('.', '-') + DEADLINE_TIME,
+  })),
+  // 마감된 공고 (시안 'C03 · 마감')
+  {
+    ...SAMPLE_DETAIL,
+    id: 6,
+    title: '2026 대학생 아이디어 공모전',
+    host: '한국청년재단',
+    startAt: '2026-10-01T00:00:00+09:00',
+    deadlineAt: '2026-10-30' + DEADLINE_TIME,
+  },
+];
+
+// 없는 id면 null
+export function fetchContestDetail(id: number): Promise<ContestDetail | null> {
+  return delay(CONTEST_DETAILS.find((detail) => detail.id === id) ?? null);
 }

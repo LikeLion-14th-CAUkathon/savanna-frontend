@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
-import FilterChip from '../../components/common/FilterChip';
+import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import Notice from '../../components/common/Notice';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
@@ -12,10 +11,6 @@ import { characters } from '../../components/onboarding/profileOptions';
 import infoIcon from '../../assets/icons/notice/info.svg';
 import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import plusIcon from '../../assets/icons/onboarding/plus.svg';
-import removeIcon from '../../assets/icons/onboarding/region-remove.svg';
-import downIcon from '../../assets/icons/onboarding/region-down.svg';
-
-const SCHOOL_LIST = ['재학', '휴학', '졸업'];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -70,43 +65,16 @@ export default function ProfilePage() {
           </CharacterCaption>
         </CharacterSection>
 
-        <SectionTitle>내 정보</SectionTitle>
-
-        <Field>
-          <Input label="이름" mark="required" value={name} onChange={setName}
-            placeholder="이름을 입력해 주세요" error={nameError} />
-          <HelpText>서비스에서 사용할 이름을 입력해 주세요. 예) [PM] 김지연</HelpText>
-        </Field>
-
-        <Field>
-          <FieldTitle>학적 상태</FieldTitle>
-          <SchoolOptions>
-            {SCHOOL_LIST.map((status) => (
-              <SchoolChip key={status} selected={schoolStatus === status} $active={schoolStatus === status}
-                onClick={() => setSchoolStatus(status)}>{status}</SchoolChip>
-            ))}
-          </SchoolOptions>
-        </Field>
-
-        <Field>
-          <RegionCaption>
-            <FieldTitle>현장 참석 가능 지역</FieldTitle>
-            <HelpText>현장 행사에 참석할 수 있는 지역을 추가해 주세요. 거주지를 묻는 항목은 아니에요.</HelpText>
-          </RegionCaption>
-          {selectedRegions.length > 0 && (
-            <SelectedRegions>
-              {selectedRegions.map((region) => (
-                <RegionTag key={region} aria-label={`${region} 삭제`}
-                  onClick={() => setSelectedRegions(selectedRegions.filter((item) => item !== region))}>
-                  {region}<img src={removeIcon} alt="" />
-                </RegionTag>
-              ))}
-            </SelectedRegions>
-          )}
-          <RegionButton onClick={() => setOpenSheet('region')}>
-            지역 추가<img src={downIcon} alt="" />
-          </RegionButton>
-        </Field>
+        <ProfileInfoForm
+          name={name}
+          nameError={nameError}
+          schoolStatus={schoolStatus}
+          selectedRegions={selectedRegions}
+          onNameChange={setName}
+          onSchoolStatusChange={setSchoolStatus}
+          onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
+          onOpenRegionSelect={() => setOpenSheet('region')}
+        />
 
         <Notice icon={infoIcon}>입력하지 않은 자격 정보는 공고 조건 확인 시 ‘확인 필요’로 표시돼요.</Notice>
       </Content>
@@ -226,101 +194,6 @@ const CharacterHelp = styled.p`
   font-size: 12px;
   font-weight: 300;
   text-align: center;
-`;
-
-// 내 정보 구역 제목
-const SectionTitle = styled.h2`
-  margin: 0;
-  letter-spacing: 0;
-  font-size: 17px;
-  font-weight: 700;
-`;
-
-// 제목 + 입력칸을 세로로 묶는 한 항목
-const Field = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-// 항목 제목
-const FieldTitle = styled.h3`
-  margin: 0;
-  letter-spacing: 0;
-  font-size: 14px;
-  font-weight: 700;
-`;
-
-// 입력 항목 도움말
-const HelpText = styled.p`
-  color: #999896;
-  font-size: 12px;
-  font-weight: 300;
-`;
-
-// 학적 상태 버튼 배치
-const SchoolOptions = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-// 공통 칩에 학적 상태용 크기와 색 적용
-const SchoolChip = styled(FilterChip)<{ $active: boolean }>`
-  flex: 1;
-  height: 44px;
-  border: 2px solid ${({ $active }) => ($active ? '#ffb72b' : '#e7e5e0')};
-  background: ${({ $active }) => ($active ? '#fff6dd' : '#ffffff')};
-  color: ${({ $active }) => ($active ? '#d97700' : '#5b5b5b')};
-  box-shadow: 0 3px 0 #d7d4cd;
-  font-size: 14px;
-`;
-
-// 지역 제목과 도움말
-const RegionCaption = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-// 선택 지역 태그 배치
-const SelectedRegions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-// 누르면 삭제되는 지역 태그
-const RegionTag = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: #fff6dd;
-  color: #d97700;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-`;
-
-// 지역 선택 창 열기
-const RegionButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 48px;
-  padding: 0 16px;
-  border: 1.5px solid #e7e5e0;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #999896;
-  font-family: inherit;
-  font-size: 15px;
-  cursor: pointer;
 `;
 
 // 하단 시작하기 영역

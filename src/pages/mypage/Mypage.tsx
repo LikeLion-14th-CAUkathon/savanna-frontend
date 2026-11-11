@@ -139,10 +139,15 @@ const Page = styled.main`
 `;
 
 const Header = styled.header`
+  position: sticky; /* header 고정 */
+  top: 0;
+  z-index: 5;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   min-height: 56px;
   padding: 0 24px;
+  background: var(--color-bg);
 
   h1 {
     font-size: 22px;

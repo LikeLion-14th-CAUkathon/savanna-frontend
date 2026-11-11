@@ -1,5 +1,5 @@
 // API 공통 타입
-// 출처: Swagger (http://52.78.153.97:8080/swagger-ui/index.html)
+// 출처: Swagger (https://savannaexpedition.duckdns.org/swagger-ui/index.html)
 // - date      → 'YYYY-MM-DD' 문자열
 // - time      → 'HH:mm:ss' 문자열
 // - date-time → ISO 8601 문자열

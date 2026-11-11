@@ -2,7 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorResponse, ApiResponse, TokenData } from './common';
 
 // 서버 주소는 .env.local 의 VITE_API_BASE_URL 로 덮어쓸 수 있다.
-export const BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? 'http://52.78.153.97:8080';
+export const BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? 'https://savannaexpedition.duckdns.org';
 
 // ===== Access Token 관리 =====
 // Access Token은 메모리에만 보관한다.

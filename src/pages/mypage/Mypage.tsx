@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import styled from 'styled-components';
 import Button from '../../components/common/Button';
 import TabBar from '../../components/layout/TabBar';
+import Toast from '../../components/toast/Toast';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
@@ -9,12 +10,31 @@ import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_PROFILE } from '../../mocks/mypage';
 import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
+const TOAST_MESSAGES = {
+  'save-success': { variant: 'success', message: '내 정보를 저장했어요.' },
+  'save-error': { variant: 'error', message: '내 정보를 저장하지 못했어요. 다시 시도해 주세요.' },
+  'logout-error': { variant: 'error', message: '로그아웃하지 못했어요. 다시 시도해 주세요.' },
+} as const;
+
+type ToastType = keyof typeof TOAST_MESSAGES;
+
+// 개발 서버에서 /mypage?toast=save-success (save-error, logout-error)로 배치 확인
+function getPreviewToast(): ToastType | null {
+  if (!import.meta.env.DEV) return null;
+  const preview = new URLSearchParams(window.location.search).get('toast');
+  if (preview === 'save-success' || preview === 'save-error' || preview === 'logout-error') return preview;
+  return null;
+}
+
 export default function Mypage() {
   const [name, setName] = useState(MOCK_PROFILE.name);
   const [schoolStatus, setSchoolStatus] = useState(MOCK_PROFILE.schoolStatus);
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
   const [selectedRegions, setSelectedRegions] = useState<string[]>(MOCK_PROFILE.regions);
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
+  const [toastType, setToastType] = useState<ToastType | null>(getPreviewToast);
+  const handleCloseToast = useCallback(() => setToastType(null), []);
+  const toast = toastType ? TOAST_MESSAGES[toastType] : null;
 
   const character = characters.find((item) => item.id === characterId);
 
@@ -73,6 +93,14 @@ export default function Mypage() {
         <TabBar activeTab="mypage" onTabChange={() => {}} />
       </BottomBar>
 
+      {toast && (
+        <ToastArea>
+          <Toast variant={toast.variant} onClose={handleCloseToast}>
+            {toast.message}
+          </Toast>
+        </ToastArea>
+      )}
+
       {openSheet === 'character' && (
         <CharacterSelectSheet selectedId={characterId} onClose={() => setOpenSheet(null)}
           onSelect={handleSelectCharacter} />
@@ -84,6 +112,17 @@ export default function Mypage() {
     </Page>
   );
 }
+
+// 탭바 75px 위에 16px 간격으로 고정. 선택 창(z-index: 100)보다 아래에 배치
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(75px + 16px);
+  left: 50%;
+  z-index: 20;
+  width: 354px;
+  max-width: calc(100% - 48px);
+  transform: translateX(-50%);
+`;
 
 // 모바일 화면 너비와 배경
 const Page = styled.main`

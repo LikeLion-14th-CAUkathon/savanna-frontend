@@ -26,3 +26,20 @@ export function formatMonthDay(iso: string) {
   const { month, day } = getKstParts(iso);
   return `${month}.${day}`;
 }
+
+// '11.14 18:00'
+export function formatMonthDayTime(iso: string) {
+  const { month, day, hour, minute } = getKstParts(iso);
+  return `${month}.${day} ${hour}:${minute}`;
+}
+
+// 날짜 입력칸(<input type="date">) 값 'YYYY-MM-DD'로 바꾸기
+export function toDateInputValue(iso: string) {
+  const { year, month, day } = getKstParts(iso);
+  return `${year}-${month}-${day}`;
+}
+
+// 날짜 입력칸 값 'YYYY-MM-DD' → 한국 시간 자정 기준 ISO 문자열
+export function fromDateInputValue(value: string) {
+  return `${value}T00:00:00+09:00`;
+}

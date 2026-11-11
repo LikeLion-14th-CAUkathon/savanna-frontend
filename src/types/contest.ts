@@ -46,3 +46,28 @@ export const EMPTY_CONTEST_FILTERS: ContestFilters = { categories: [], statuses:
 
 // 마감이 이 일수 이하로 남으면 '임박'으로 강조한다.
 export const URGENT_DDAY = 7;
+
+// C03 공고 상세에서 쓰는 정보
+export interface ContestDetail {
+  id: number;
+  title: string;
+  host: string;
+  startAt: string;     // 접수 시작 (ISO, 예: 2026-10-15T00:00:00+09:00)
+  deadlineAt: string;  // 접수 마감 (ISO)
+  sourceUrl: string;   // 공고 원문 링크
+  eligibility: {
+    target: string;    // 참가 대상
+    teamSize: string;  // 인원
+    region: string;    // 지역
+  };
+  overview: {
+    topic: string;     // 공모 주제
+    criteria: string;  // 심사기준
+  };
+  application: {
+    method: string;          // 지원 방법
+    submissions: string[];   // 제출물
+    form: string;            // 양식
+    consent: string;         // 동의서
+  };
+}

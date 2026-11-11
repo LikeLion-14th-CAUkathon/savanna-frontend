@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router'
 import ContestSearchPage from './pages/contest-search/ContestSearchPage'
+import ContestDetailPage from './pages/contest-search/ContestDetailPage'
 import OasisPage from './pages/oasis/OasisPage'
 import ExpeditionDetailPage from './pages/oasis/ExpeditionDetailPage'
 import ScheduleEditPage from './pages/oasis/ScheduleEditPage'
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/contest" element={<ContestSearchPage />} />
+      <Route path="/contest/:contestId" element={<ContestDetailPage />} />
       <Route path="/oasis" element={<OasisPage />} />
       <Route path="/oasis/expeditions/:expeditionId" element={<ExpeditionDetailPage />} />
       <Route path="/oasis/expeditions/:expeditionId/schedule" element={<ScheduleEditPage />} />

@@ -102,7 +102,6 @@ const Page = styled.main`
   max-width: 100%;
   min-height: 100svh;
   margin: 0 auto;
-  padding-top: 58px;
   padding-bottom: 75px;
   background: #fafaf8;
   color: var(--color-ink);

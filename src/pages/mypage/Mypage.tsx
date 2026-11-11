@@ -103,7 +103,7 @@ const Page = styled.main`
   min-height: 100svh;
   margin: 0 auto;
   padding-bottom: 75px;
-  background: #fafaf8;
+  background: var(--color-bg);
   color: var(--color-ink);
   line-height: normal;
 `;
@@ -136,7 +136,7 @@ const LogoutArea = styled.div`
   display: flex;
   justify-content: center;
   padding-top: 4px;
-  border-top: 1px solid #e7e5e0;
+  border-top: 1px solid var(--color-border);
 `;
 
 const LogoutButton = styled.button`
@@ -145,7 +145,7 @@ const LogoutButton = styled.button`
   border: 0;
   border-radius: 16px;
   background: transparent;
-  color: #5b5b5b;
+  color: var(--color-text-secondary);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -234,14 +234,14 @@ const CharacterLabel = styled.p`
 const OptionalBadge = styled.span`
   padding: 1px 6px;
   border-radius: 999px;
-  background: #f1f0ec;
-  color: #5b5b5b;
+  background: var(--color-gray-bg);
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 500;
 `;
 
 const CharacterHelp = styled.p`
-  color: #999896;
+  color: var(--color-text-tertiary);
   font-size: 12px;
   font-weight: 400;
   text-align: center;

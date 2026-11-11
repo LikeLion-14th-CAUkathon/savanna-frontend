@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
@@ -21,6 +22,7 @@ import type { ExpeditionStage } from '../../types/oasis';
 import type { ChecklistItem, ExpeditionDetail, ExpeditionDetailState } from '../../types/expedition';
 import { formatDDay } from '../../utils/dday';
 import { formatDateTimeKST } from '../../utils/date';
+import { OASIS_PATHS } from '../../routes/oasisPaths';
 
 const MESSAGES = {
   loading: '원정 정보를 불러오는 중이에요.',
@@ -120,21 +122,36 @@ const saveChecklistDelete = (_id: number) => fakeSave();
 const saveChecklistAdd = (_content: string) => fakeSave();
 const saveChecklistUpdate = (_id: number, _content: string) => fakeSave();
 
-// TODO: 라우터 구성 후 이동 연결
-//  - 뒤로가기: B03에서 들어왔으면 B03 팀 소식, D01에서 들어왔으면 D01 오아시스
-//  - 일정 & 준비사항 편집 / 새 공지: D03 일정·공지 수정
-const goBack = () => {};
-const goToScheduleEdit = () => {};
-
 type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | null;
 type ToastState = { variant: 'success' | 'error'; message: string } | null;
 
 export default function ExpeditionDetailPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { expeditionId = '' } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [state] = useState(getPreviewState);
   const retry = () => {}; // TODO: API 연결 시 다시 요청
 
   const [detail, setDetail] = useState<ExpeditionDetail | null>(state.status === 'success' ? state.data : null);
-  const [activeTab, setActiveTab] = useState<DetailTabId>('conditions');
+
+  // 탭은 주소(?tab=schedule)에 담아서, D03에 갔다 돌아와도 보던 탭 유지
+  const activeTab: DetailTabId = searchParams.get('tab') === 'schedule' ? 'schedule' : 'conditions';
+  const changeTab = (tab: DetailTabId) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (tab === 'schedule') next.set('tab', 'schedule');
+        else next.delete('tab');
+        return next;
+      },
+      { replace: true },
+    );
+
+  // 뒤로가기: 들어온 화면(D01 오아시스 또는 B03 팀 소식)으로. 주소로 바로 들어왔으면 D01로
+  const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate(OASIS_PATHS.home));
+  const goToScheduleEdit = () => navigate(OASIS_PATHS.scheduleEdit(expeditionId));
   const [sheet, setSheet] = useState<SheetState>(null);
   const [isSavingStage, setIsSavingStage] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -244,7 +261,7 @@ export default function ExpeditionDetailPage() {
           공고 원문 보기 ↗
         </FullWidthButton>
 
-        <DetailTabs activeTab={activeTab} onChange={setActiveTab} />
+        <DetailTabs activeTab={activeTab} onChange={changeTab} />
 
         {activeTab === 'conditions' ? (
           <>

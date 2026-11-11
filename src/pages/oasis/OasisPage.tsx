@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import type { TabId } from '../../components/layout/TabBar';
@@ -9,6 +10,7 @@ import HomeSign from '../../components/oasis/HomeSign';
 import MapNoticePopup from '../../components/oasis/MapNoticePopup';
 import { formatDDay, isPastDeadline } from '../../utils/dday';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
+import { OASIS_PATHS } from '../../routes/oasisPaths';
 import type { OasisExpedition, OasisState } from '../../types/oasis';
 import shortMapImage from '../../assets/images/oasis/oasis-short-map.png';
 import longMapImage from '../../assets/images/oasis/oasis-long-map.png';
@@ -126,12 +128,19 @@ const getPreviewState = (): OasisState => {
 // ---------------------------------------------------------------------------
 
 
-const goToExpeditionDetail = (_expeditionId: number) => {};
+// 아직 주소가 없는 화면 (TODO: 해당 화면 주소가 생기면 연결)
+//  - 우리 팀 프로젝트 → B02 팀 공간 / 하단 탭: 팀 공간, 마이페이지
+const CONTEST_SEARCH_PATH = '/contest'; // C01 공고 찾기 (App.tsx 기준)
 const goToTeamSpace = () => {};
-const goToContestSearch = () => {};
-const handleTabChange = (_tab: TabId) => {};
 
 export default function OasisPage() {
+  const navigate = useNavigate();
+  const goToExpeditionDetail = (expeditionId: number) => navigate(OASIS_PATHS.expeditionDetail(expeditionId));
+  const goToContestSearch = () => navigate(CONTEST_SEARCH_PATH);
+  const handleTabChange = (tab: TabId) => {
+    if (tab === 'search') navigate(CONTEST_SEARCH_PATH);
+  };
+
   const [state] = useState(getPreviewState);
   const retry = () => {}; // TODO: API 연결 시 다시 요청
 

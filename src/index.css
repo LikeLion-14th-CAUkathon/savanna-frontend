@@ -36,6 +36,16 @@
   --color-sand: #e2c595;
   --color-sign-text: #5a2e14;
   --color-sign-label: #fff1d6;
+  --color-amber-bg: #fff6dd;
+  --color-bg: #fafaf8;
+  --color-border: #e7e5e0;
+  --color-gray-bg: #f1f0ec;
+  --color-text-secondary: #5b5b5b;
+  --color-text-tertiary: #999896;
+  --color-green-bg: #eef3de;
+  --color-green-text: #4c7a1e;
+  --color-error: #b3261e;
+  --color-error-bg: #fce9e6;
 
   /* 지도 위에 떠 있는 카드 그림자 */
   --shadow-float: 0 8px 20px rgba(59, 42, 22, 0.14);

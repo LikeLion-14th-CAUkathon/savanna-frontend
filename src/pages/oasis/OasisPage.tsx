@@ -34,8 +34,9 @@ const MAPS = {
   short: {
     image: shortMapImage,
     height: 848.7,
-    background: '#f6cf55',
-    bottomSpace: 0,
+    skyColor: '#feb056',    
+    groundColor: '#f6cf55',
+    bottomSpace: 874 - 848.7, 
     slots: [
       { left: 108, top: 340 },
       { left: 164, top: 180 },
@@ -51,9 +52,10 @@ const MAPS = {
   long: {
     image: longMapImage,
     height: 1206,
-    background: '#fcd358',
+    skyColor: '#fda852',
+    groundColor: '#fcd358',
     bottomSpace: TAB_BAR_HEIGHT, // 탭바에 오아시스가 가리지 않게
-    // TODO: 원정이 7개 이상이면 6개까지만 보임
+  
     slots: [
       { left: 44, top: 787 },
       { left: 128, top: 655 },
@@ -151,9 +153,9 @@ export default function OasisPage() {
   }, [state.status, map]);
 
   return (
-    <Stage aria-busy={state.status === 'loading'} style={{ background: map.background }}>
+    <Stage aria-busy={state.status === 'loading'} style={{ background: map.skyColor }}>
       <MapScroller ref={mapRef}>
-        <MapContent style={{ height: map.height, marginBottom: map.bottomSpace }}>
+        <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor }}>
           <MapImage src={map.image} alt="" style={{ height: map.height }} />
 
           <Character style={{ ...map.home.elephant, transform: 'scaleX(-1)' }} aria-hidden="true">
@@ -232,10 +234,13 @@ export default function OasisPage() {
   );
 }
 
+
+// 지도가 화면보다 길면 지도 영역만 끌어서 봄
 const Stage = styled.main`
   position: relative;
   width: ${MAP_WIDTH}px;
-  height: 874px;
+  max-width: 100%;
+  height: 100svh;
   margin: 0 auto;
   overflow: hidden;
 `;
@@ -244,6 +249,8 @@ const Stage = styled.main`
 const MapScroller = styled.div`
   position: absolute;
   inset: 0;
+  display: flex;
+  flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -254,9 +261,12 @@ const MapScroller = styled.div`
   }
 `;
 
+// 화면이 지도보다 길면 지도를 아래에 붙이고 남는 공간은 위(하늘)로
 const MapContent = styled.div`
   position: relative;
+  flex-shrink: 0;
   width: ${MAP_WIDTH}px;
+  margin-top: auto;
 `;
 
 const MapImage = styled.img`

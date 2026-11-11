@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import Icon from './Icon';
-import chipRemoveIcon from '../../assets/icons/contest-search/chip-remove.svg';
-import refreshIcon from '../../assets/icons/contest-search/refresh.svg';
+import Icon from '../Icon';
+import chipRemoveIcon from '../../../assets/icons/contest-search/chip-remove.svg';
+import refreshIcon from '../../../assets/icons/contest-search/refresh.svg';
 
 interface AppliedFilter {
   key: string;

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import styled from 'styled-components';
-import Icon from './Icon';
-import { CONTEST_STATUS_LABEL, URGENT_DDAY, type Contest, type ContestStatus } from '../../types/contest';
-import calendarIcon from '../../assets/icons/contest-search/calendar.svg';
+import Icon from '../Icon';
+import { CONTEST_STATUS_LABEL, URGENT_DDAY, type Contest, type ContestStatus } from '../../../types/contest';
+import calendarIcon from '../../../assets/icons/contest-search/calendar.svg';
 
 interface ContestCardProps {
   contest: Contest;

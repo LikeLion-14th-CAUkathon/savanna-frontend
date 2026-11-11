@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { URGENT_DDAY } from '../../types/contest';
+import { URGENT_DDAY } from '../../../types/contest';
 
 interface DdaySignProps {
   dDay: number;

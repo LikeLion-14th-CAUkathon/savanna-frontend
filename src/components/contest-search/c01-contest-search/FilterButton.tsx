@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import Icon from './Icon';
-import filterIcon from '../../assets/icons/contest-search/filter.svg';
-import filterActiveIcon from '../../assets/icons/contest-search/filter-active.svg';
+import Icon from '../Icon';
+import filterIcon from '../../../assets/icons/contest-search/filter.svg';
+import filterActiveIcon from '../../../assets/icons/contest-search/filter-active.svg';
 
 interface FilterButtonProps {
   count?: number;        // 적용된 필터 개수. 1 이상이면 '필터 N'으로 표시

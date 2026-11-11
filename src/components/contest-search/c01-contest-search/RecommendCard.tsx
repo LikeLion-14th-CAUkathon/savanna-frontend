@@ -1,8 +1,8 @@
 import styled from 'styled-components';
-import Icon from './Icon';
+import Icon from '../Icon';
 import DdaySign from './DdaySign';
-import { CONTEST_STATUS_LABEL, type ContestStatus, type RecommendedContest } from '../../types/contest';
-import sparkSmallIcon from '../../assets/icons/contest-search/spark-small.svg';
+import { CONTEST_STATUS_LABEL, type ContestStatus, type RecommendedContest } from '../../../types/contest';
+import sparkSmallIcon from '../../../assets/icons/contest-search/spark-small.svg';
 
 interface RecommendCardProps {
   contest: RecommendedContest;

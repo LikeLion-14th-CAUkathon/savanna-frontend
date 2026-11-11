@@ -1,8 +1,8 @@
 import styled from 'styled-components';
-import Icon from './Icon';
-import searchIcon from '../../assets/icons/contest-search/search.svg';
-import searchFilledIcon from '../../assets/icons/contest-search/search-filled.svg';
-import clearIcon from '../../assets/icons/contest-search/clear.svg';
+import Icon from '../Icon';
+import searchIcon from '../../../assets/icons/contest-search/search.svg';
+import searchFilledIcon from '../../../assets/icons/contest-search/search-filled.svg';
+import clearIcon from '../../../assets/icons/contest-search/clear.svg';
 
 interface SearchBarProps {
   value: string;

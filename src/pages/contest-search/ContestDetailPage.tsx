@@ -3,19 +3,28 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import styled from 'styled-components';
 import Button from '../../components/common/Button';
 import StatusMessage from '../../components/contest-search/StatusMessage';
-import DetailAppBar from '../../components/contest-search/contest-detail/DetailAppBar';
-import ScheduleCard from '../../components/contest-search/contest-detail/ScheduleCard';
-import InfoCard from '../../components/contest-search/contest-detail/InfoCard';
-import ApplicationCard from '../../components/contest-search/contest-detail/ApplicationCard';
+import DetailAppBar from '../../components/contest-search/c03-contest-detail/DetailAppBar';
+import ScheduleCard from '../../components/contest-search/c03-contest-detail/ScheduleCard';
+import InfoCard from '../../components/contest-search/c03-contest-detail/InfoCard';
+import ApplicationCard from '../../components/contest-search/c03-contest-detail/ApplicationCard';
+import ProposalSheet from '../../components/contest-search/c04-participation-proposal/ProposalSheet';
+import Toast from '../../components/toast/Toast';
 import {
   CONTEST_PHASE_LABEL,
   getContestPhase,
   type ContestPhase,
-} from '../../components/contest-search/contest-detail/contestPhase';
+} from '../../components/contest-search/c03-contest-detail/contestPhase';
 import { MOCK_TODAY, fetchContestDetail } from '../../mocks/contests';
 import type { ContestDetail } from '../../types/contest';
 
 type LoadState = 'loading' | 'success' | 'not-found' | 'error';
+
+const PROPOSAL_TOAST = {
+  sent: { variant: 'success', message: '팀원에게 참여 제안을 보냈어요.' },
+  'send-error': { variant: 'error', message: '제안을 보내지 못했어요. 다시 시도해 주세요.' },
+} as const;
+
+type ProposalToast = keyof typeof PROPOSAL_TOAST;
 
 // C03 공고 상세
 export default function ContestDetailPage() {
@@ -83,11 +92,24 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
   const phase = getContestPhase(startAt, deadlineAt, today);
   const isClosed = phase === 'closed';
 
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
+  // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
+  const [toastState, setToastState] = useState<{ type: ProposalToast; id: number } | null>(null);
+  const toast = toastState ? PROPOSAL_TOAST[toastState.type] : null;
+  const showToast = (type: ProposalToast) => setToastState((prev) => ({ type, id: (prev?.id ?? 0) + 1 }));
+
   const openSource = () => window.open(detail.sourceUrl, '_blank', 'noopener,noreferrer');
 
-  const proposeToTeam = () => {
-    // TODO: C04 공고 참여 제안 바텀시트 연결
+  const closeProposal = useCallback(() => setIsProposalOpen(false), []);
+  const closeToast = useCallback(() => setToastState(null), []);
+
+  const handleProposalSent = () => {
+    setIsProposalOpen(false);
+    showToast('sent');
   };
+
+  // 실패하면 시트는 열어 둔 채로 버튼 위에 알린다.
+  const handleProposalError = () => showToast('send-error');
 
   return (
     <>
@@ -136,10 +158,28 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
       </Content>
 
       <BottomBar>
-        <ProposeButton disabled={isClosed} onClick={proposeToTeam}>
+        <ProposeButton disabled={isClosed} onClick={() => setIsProposalOpen(true)}>
           참여 제안하기
         </ProposeButton>
       </BottomBar>
+
+      {isProposalOpen && (
+        <ProposalSheet
+          contest={detail}
+          today={today}
+          onClose={closeProposal}
+          onSent={handleProposalSent}
+          onSendError={handleProposalError}
+        />
+      )}
+
+      {toastState && toast && (
+        <ToastArea>
+          <Toast key={toastState.id} variant={toast.variant} onClose={closeToast}>
+            {toast.message}
+          </Toast>
+        </ToastArea>
+      )}
     </>
   );
 }
@@ -214,6 +254,17 @@ const BottomBar = styled.div`
   padding: 12px 24px 34px;
   border-top: 1px solid #e7e5e0;
   background: #fafaf8;
+`;
+
+// 하단 버튼(시트의 '제안 보내기' 52px + 그림자 4px, 아래 여백 34px) 위 16px. 시트(z-index 101)보다 위
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(34px + 52px + 4px + 16px);
+  left: 50%;
+  z-index: 102;
+  width: 354px;
+  max-width: calc(100% - 48px);
+  transform: translateX(-50%);
 `;
 
 // 공통 Button에는 비활성 모양이 없어서 여기서만 덧입힌다.

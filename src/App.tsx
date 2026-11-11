@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router'
+import { Routes, Route, Navigate } from 'react-router'
 import ContestSearchPage from './pages/contest-search/ContestSearchPage'
 import OasisPage from './pages/oasis/OasisPage'
 import ExpeditionDetailPage from './pages/oasis/ExpeditionDetailPage'
@@ -10,6 +10,7 @@ import Mypage from './pages/mypage/Mypage'
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/contest" element={<ContestSearchPage />} />
       <Route path="/oasis" element={<OasisPage />} />
       <Route path="/oasis/expeditions/:expeditionId" element={<ExpeditionDetailPage />} />

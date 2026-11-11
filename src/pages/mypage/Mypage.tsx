@@ -1,5 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import Button from '../../components/common/Button';
+import TabBar from '../../components/layout/TabBar';
+import type { TabId } from '../../components/layout/TabBar';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
@@ -8,6 +12,7 @@ import { MOCK_PROFILE } from '../../mocks/mypage';
 import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
 export default function Mypage() {
+  const navigate = useNavigate();
   const [name, setName] = useState(MOCK_PROFILE.name);
   const [schoolStatus, setSchoolStatus] = useState(MOCK_PROFILE.schoolStatus);
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
@@ -26,8 +31,23 @@ export default function Mypage() {
     setOpenSheet(null);
   };
 
+  const handleSave = () => {
+    // 이름 검사와 저장 결과 토스트 연결
+  };
+
+  const handleLogout = () => {
+    // 로그아웃 API 연동 전에는 테스트 상태에서만 토스트 확인
+  };
+
+  const handleTabChange = (tab: TabId) => {
+    if (tab === 'oasis') navigate('/oasis');
+    if (tab === 'search') navigate('/contest');
+    // 팀 공간은 해당 페이지의 라우트가 추가되면 연결
+  };
+
   return (
     <Page>
+      <Header><h1>마이페이지</h1></Header>
       <Content>
         {character && (
           <CharacterSection aria-label="나의 캐릭터">
@@ -52,7 +72,15 @@ export default function Mypage() {
           onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
           onOpenRegionSelect={() => setOpenSheet('region')}
         />
+        <SaveButton onClick={handleSave}>저장</SaveButton>
+        <LogoutArea>
+          <LogoutButton type="button" onClick={handleLogout}>로그아웃</LogoutButton>
+        </LogoutArea>
       </Content>
+
+      <BottomBar>
+        <TabBar activeTab="mypage" onTabChange={handleTabChange} />
+      </BottomBar>
 
       {openSheet === 'character' && (
         <CharacterSelectSheet selectedId={characterId} onClose={() => setOpenSheet(null)}
@@ -68,13 +96,29 @@ export default function Mypage() {
 
 // 모바일 화면 너비와 배경
 const Page = styled.main`
+  display: flex;
+  flex-direction: column;
   width: 402px;
   max-width: 100%;
   min-height: 100svh;
   margin: 0 auto;
+  padding-top: 58px;
+  padding-bottom: 75px;
   background: #fafaf8;
   color: var(--color-ink);
   line-height: normal;
+`;
+
+const Header = styled.header`
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 24px;
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+  }
 `;
 
 // 캐릭터와 공통 입력 폼 배치
@@ -83,6 +127,45 @@ const Content = styled.div`
   flex-direction: column;
   gap: 20px;
   padding: 8px 24px 26px;
+`;
+
+const SaveButton = styled(Button)`
+  width: 100%;
+`;
+
+const LogoutArea = styled.div`
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+  border-top: 1px solid #e7e5e0;
+`;
+
+const LogoutButton = styled.button`
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #5b5b5b;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-orange);
+    outline-offset: 2px;
+  }
+`;
+
+// 스크롤해도 화면 하단에 유지하고 선택 창보다 아래에 배치
+const BottomBar = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  z-index: 10;
+  width: 402px;
+  max-width: 100%;
+  transform: translateX(-50%);
 `;
 
 const CharacterSection = styled.section`

@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import Button from '../../components/common/Button';
 import TabBar from '../../components/layout/TabBar';
-import type { TabId } from '../../components/layout/TabBar';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
@@ -12,7 +10,6 @@ import { MOCK_PROFILE } from '../../mocks/mypage';
 import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
 export default function Mypage() {
-  const navigate = useNavigate();
   const [name, setName] = useState(MOCK_PROFILE.name);
   const [schoolStatus, setSchoolStatus] = useState(MOCK_PROFILE.schoolStatus);
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
@@ -37,12 +34,6 @@ export default function Mypage() {
 
   const handleLogout = () => {
     // 로그아웃 API 연동 전에는 테스트 상태에서만 토스트 확인
-  };
-
-  const handleTabChange = (tab: TabId) => {
-    if (tab === 'oasis') navigate('/oasis');
-    if (tab === 'search') navigate('/contest');
-    // 팀 공간은 해당 페이지의 라우트가 추가되면 연결
   };
 
   return (
@@ -79,7 +70,7 @@ export default function Mypage() {
       </Content>
 
       <BottomBar>
-        <TabBar activeTab="mypage" onTabChange={handleTabChange} />
+        <TabBar activeTab="mypage" onTabChange={() => {}} />
       </BottomBar>
 
       {openSheet === 'character' && (

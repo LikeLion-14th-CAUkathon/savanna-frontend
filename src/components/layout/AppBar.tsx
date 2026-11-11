@@ -18,7 +18,11 @@ export default function AppBar({ title, onBack }: AppBarProps) {
 }
 
 const Bar = styled.header`
+  position: sticky; /* 고정함 */
+  top: 0;
+  z-index: 5;
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
   box-sizing: border-box;
@@ -26,6 +30,7 @@ const Bar = styled.header`
   max-width: 100%;
   height: 56px;
   padding: 0 14px;
+  background: var(--color-bg);
 `;
 
 const IconButton = styled.button`

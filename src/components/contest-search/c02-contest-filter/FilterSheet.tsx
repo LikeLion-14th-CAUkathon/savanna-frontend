@@ -1,16 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Button from '../common/Button';
-import FilterChip from '../common/FilterChip';
-import Icon from './Icon';
+import Button from '../../common/Button';
+import FilterChip from '../../common/FilterChip';
+import Icon from '../Icon';
 import {
   CONTEST_CATEGORIES,
   CONTEST_STATUSES,
   CONTEST_STATUS_LABEL,
   EMPTY_CONTEST_FILTERS,
   type ContestFilters,
-} from '../../types/contest';
-import closeIcon from '../../assets/icons/contest-search/close.svg';
+} from '../../../types/contest';
+import closeIcon from '../../../assets/icons/contest-search/close.svg';
 
 interface FilterSheetProps {
   initialFilters: ContestFilters;              // 시트를 열 때 이미 적용돼 있던 조건

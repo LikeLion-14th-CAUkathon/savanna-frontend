@@ -31,7 +31,6 @@ export interface OasisHome {
   teamId: number;
   teamName: string;
   memberCount: number;
-  ideaCount: number;              // '우리 팀 프로젝트' 아이디어 개수
   hasNewTeamNews: boolean;        // 하단 '팀 공간' 탭 새 소식 표시. TODO: 별도 API인지 백엔드 확인
   expeditions: OasisExpedition[]; // 진행 중 원정
 }

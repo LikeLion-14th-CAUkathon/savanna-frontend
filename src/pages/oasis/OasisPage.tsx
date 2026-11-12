@@ -45,7 +45,6 @@ const MAPS = {
     ],
     home: {
       board: { left: 27.75, top: 567.65, width: 204.5, height: 71.7 },
-      ideaBadge: { left: 12, top: 556 },
       lion: { left: 223.41, top: 662.91, width: 72.952, height: 73.185 },
       elephant: { left: 17.22, top: 701.08, width: 73.307, height: 61.846 },
       meerkat: { left: 183.88, top: 713.23, width: 40.826, height: 51.538 },
@@ -68,7 +67,6 @@ const MAPS = {
     ],
     home: {
       board: { left: 25, top: 998, width: 193, height: 64 },
-      ideaBadge: { left: 12, top: 986 },
       lion: { left: 210, top: 1087, width: 73.185, height: 73.185 },
       elephant: { left: 21, top: 1120, width: 73.185, height: 61.846 },
       meerkat: { left: 173, top: 1130, width: 41.231, height: 51.538 },
@@ -99,7 +97,6 @@ const SAMPLE_TEAM = {
   teamId: 1,
   teamName: '사바나 탐험대',
   memberCount: 3,
-  ideaCount: 0,
   hasNewTeamNews: false,
 };
 
@@ -120,7 +117,7 @@ const getPreviewState = (): OasisState => {
   if (count > 0) {
     return {
       status: 'success',
-      data: { ...SAMPLE_TEAM, ideaCount: 4, hasNewTeamNews: true, expeditions: SAMPLE_EXPEDITIONS.slice(0, count) },
+      data: { ...SAMPLE_TEAM, hasNewTeamNews: true, expeditions: SAMPLE_EXPEDITIONS.slice(0, count) },
     };
   }
   return { status: 'success', data: { ...SAMPLE_TEAM, expeditions: [] } };
@@ -204,7 +201,7 @@ export default function OasisPage() {
             ))
             .reverse()}
 
-          <HomeSign ideaCount={data?.ideaCount} board={map.home.board} badge={map.home.ideaBadge} onClick={goToTeamSpace} />
+          <HomeSign board={map.home.board} onClick={goToTeamSpace} />
         </MapContent>
       </MapScroller>
 

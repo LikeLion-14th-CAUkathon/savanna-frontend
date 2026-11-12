@@ -279,7 +279,7 @@ export default function ExpeditionDetailPage() {
             <Section title="팀 준비 일정 · 목표일" actionLabel="변경" onAction={() => setSheet({ type: 'stage' })}>
               <StageProgress currentStage={detail.stage} targets={detail.stageTargets} />
             </Section>
-            <Section title="공지" actionLabel="새 공지" onAction={goToScheduleEdit}>
+            <Section title="공지">
               <NoticeList notices={detail.notices} />
             </Section>
             <Section title="제출 체크리스트" actionLabel="+ 추가" onAction={() => setIsAddingItem(true)}>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import styled from 'styled-components';
 import closeIcon from '../../assets/icons/onboarding/close.svg';
@@ -13,6 +13,21 @@ interface ProfileSheetProps {
 export default function ProfileSheet({ title, onClose, children }: ProfileSheetProps) {
   const [startY, setStartY] = useState<number | null>(null); // 손가락을 처음 댄 높이 (null이면 드래그 중 아님)
   const [offsetY, setOffsetY] = useState(0);                 // 아래로 내려간 거리
+
+  // 바텀시트가 열리면 배경 스크롤을 막고, 닫히면 원래 스크롤 위치로 복원한다.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const originalStyle = document.body.style.cssText;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.cssText = originalStyle;
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
+    };
+  }, []);
 
   // 손잡이를 누르기 시작
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {

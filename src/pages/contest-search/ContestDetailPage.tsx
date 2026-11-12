@@ -3,17 +3,17 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import styled from 'styled-components';
 import Button from '../../components/common/Button';
 import StatusMessage from '../../components/contest-search/StatusMessage';
-import DetailAppBar from '../../components/contest-search/c03-contest-detail/DetailAppBar';
-import ScheduleCard from '../../components/contest-search/c03-contest-detail/ScheduleCard';
-import InfoCard from '../../components/contest-search/c03-contest-detail/InfoCard';
-import ApplicationCard from '../../components/contest-search/c03-contest-detail/ApplicationCard';
-import ProposalSheet from '../../components/contest-search/c04-participation-proposal/ProposalSheet';
+import DetailAppBar from '../../components/contest-search/contest-detail/DetailAppBar';
+import ScheduleCard from '../../components/contest-search/contest-detail/ScheduleCard';
+import InfoCard from '../../components/contest-search/contest-detail/InfoCard';
+import ApplicationCard from '../../components/contest-search/contest-detail/ApplicationCard';
+import ProposalSheet from '../../components/contest-search/participation-proposal/ProposalSheet';
 import Toast from '../../components/toast/Toast';
 import {
   CONTEST_PHASE_LABEL,
   getContestPhase,
   type ContestPhase,
-} from '../../components/contest-search/c03-contest-detail/contestPhase';
+} from '../../components/contest-search/contest-detail/contestPhase';
 import { MOCK_TODAY, fetchContestDetail } from '../../mocks/contests';
 import type { ContestDetail } from '../../types/contest';
 

@@ -14,6 +14,7 @@ interface InputProps {
   mark?: FieldMark;                    // 'required': 별표 / 'optional': 선택 스티커 / 'none': 아무것도 없음
   multiline?: boolean;                 // true면 여러 줄 입력창
   readOnly?: boolean;                  // true면 보기만 하고 수정은 못 함
+  maxLength?: number;                  // 입력할 수 있는 최대 글자 수 (없으면 제한 없음)
 }
 
 export default function Input({
@@ -26,6 +27,7 @@ export default function Input({
   mark = 'none',
   multiline = false,
   readOnly = false,
+  maxLength,
 }: InputProps) {
   const id = useId(); // 라벨과 입력창을 연결할 고유 id를 자동으로 만들어줌
 
@@ -49,6 +51,7 @@ export default function Input({
           onChange={handleChange}
           placeholder={placeholder}
           readOnly={readOnly}
+          maxLength={maxLength}
           aria-invalid={!!error}
           $hasError={!!error}
         />
@@ -60,6 +63,7 @@ export default function Input({
           onChange={handleChange}
           placeholder={placeholder}
           readOnly={readOnly}
+          maxLength={maxLength}
           aria-invalid={!!error}
           $hasError={!!error}
         />

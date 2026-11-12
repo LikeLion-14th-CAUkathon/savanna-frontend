@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import styled from 'styled-components';
 import Button from '../../components/common/Button';
 import StatusMessage from '../../components/contest-search/StatusMessage';
-import DetailAppBar from '../../components/contest-search/contest-detail/DetailAppBar';
+import AppBar from '../../components/layout/AppBar';
 import ScheduleCard from '../../components/contest-search/contest-detail/ScheduleCard';
 import InfoCard from '../../components/contest-search/contest-detail/InfoCard';
 import ApplicationCard from '../../components/contest-search/contest-detail/ApplicationCard';
@@ -61,7 +61,7 @@ export default function ContestDetailPage() {
 
   return (
     <Page>
-      <DetailAppBar title="공고 상세" onBack={goBack} />
+      <AppBar title="공고 상세" onBack={goBack} />
 
       {loadState === 'loading' && <StatusMessage title="공고를 불러오는 중이에요." />}
       {loadState === 'not-found' && (
@@ -261,14 +261,6 @@ const ToastArea = styled.div`
   transform: translateX(-50%);
 `;
 
-// 공통 Button에는 비활성 모양이 없어서 여기서만 덧입힌다.
 const ProposeButton = styled(Button)`
   width: 100%;
-
-  &:disabled {
-    background: #efeeea;
-    box-shadow: none;
-    color: #c4c3c0;
-    cursor: not-allowed;
-  }
 `;

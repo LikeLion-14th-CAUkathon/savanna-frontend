@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import cameraIcon from '../../../assets/icons/team-create/camera.svg';
+import cameraIcon from '../../../assets/icons/team/team-create/camera.svg';
 import plusIcon from '../../../assets/icons/onboarding/plus.svg';
 
 interface TeamPhotoPickerProps {

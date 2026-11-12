@@ -9,11 +9,8 @@ import ProfilePage from './pages/onboarding/ProfilePage'
 import InvitePage from './pages/onboarding/InvitePage'
 import Mypage from './pages/mypage/Mypage'
 import TeamCreatePage from './pages/team/TeamCreatePage'
-<<<<<<< Updated upstream
-=======
 import TeamSpacePage from './pages/team/TeamSpacePage'
 import TeamNews from './pages/team/TeamNews'
->>>>>>> Stashed changes
 
 function App() {
   return (
@@ -28,6 +25,7 @@ function App() {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="/mypage" element={<Mypage />} />
+      <Route path="/team" element={<TeamSpacePage />} />
       <Route path="/team/create" element={<TeamCreatePage />} />
       <Route path="/team/news" element={<TeamNews />} />
     </Routes>

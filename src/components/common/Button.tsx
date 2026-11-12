@@ -49,4 +49,13 @@ const StyledButton = styled.button<{ $variant: ButtonVariant }>`
   cursor: pointer;
 
   ${({ $variant }) => variantStyles[$variant]}
+
+  /* 비활성: 종류와 상관없이 회색 배경 + 연한 글자, 그림자 없음 */
+  &:disabled {
+    background: #efeeea;
+    border-color: transparent;
+    box-shadow: none;
+    color: #c4c3c0;
+    cursor: not-allowed;
+  }
 `;

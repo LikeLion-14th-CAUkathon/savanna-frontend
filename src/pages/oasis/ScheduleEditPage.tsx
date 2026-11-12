@@ -277,11 +277,6 @@ const BottomBar = styled.div`
 
 const SaveButton = styled(Button)`
   width: 100%;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
 `;
 
 const StateBox = styled.div`

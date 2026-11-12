@@ -81,9 +81,4 @@ const CloseButton = styled(Button)`
 // 남은 너비를 채우는 선택 버튼
 const SelectButton = styled(Button)`
   flex: 1;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
 `;

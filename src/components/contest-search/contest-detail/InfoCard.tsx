@@ -20,16 +20,22 @@ export default function InfoCard({ title, items }: InfoCardProps) {
   );
 }
 
+const EMPTY_VALUE_TEXT = '원문에서 확인해 주세요';
+
 // 라벨 · 값 줄 목록. 펼침 카드(ApplicationCard)에서도 쓴다.
+// 값이 비어 있으면 '원문에서 확인해 주세요'를 흐리게 보여준다.
 export function InfoRows({ items }: { items: InfoItem[] }) {
   return (
     <Rows>
-      {items.map((item) => (
-        <Row key={item.label}>
-          <dt>{item.label}</dt>
-          <dd>{item.value}</dd>
-        </Row>
-      ))}
+      {items.map((item) => {
+        const isEmpty = !item.value || item.value.trim() === '';
+        return (
+          <Row key={item.label}>
+            <dt>{item.label}</dt>
+            <Value $empty={isEmpty}>{isEmpty ? EMPTY_VALUE_TEXT : item.value}</Value>
+          </Row>
+        );
+      })}
     </Rows>
   );
 }
@@ -72,12 +78,12 @@ const Row = styled.div`
     color: #999896;
     font-size: 13px;
   }
+`;
 
-  dd {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    color: #1e1e1e;
-    font-size: 15px;
-  }
+const Value = styled.dd<{ $empty: boolean }>`
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: ${({ $empty }) => ($empty ? '#999896' : '#1e1e1e')};
+  font-size: 15px;
 `;

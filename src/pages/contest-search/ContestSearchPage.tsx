@@ -3,13 +3,13 @@ import { Link } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import Icon from '../../components/contest-search/Icon';
-import SearchBar from '../../components/contest-search/c01-contest-search/SearchBar';
-import RecommendCard from '../../components/contest-search/c01-contest-search/RecommendCard';
-import ContestCard from '../../components/contest-search/c01-contest-search/ContestCard';
-import FilterButton from '../../components/contest-search/c01-contest-search/FilterButton';
-import AppliedFilters from '../../components/contest-search/c01-contest-search/AppliedFilters';
+import SearchBar from '../../components/contest-search/contest-search/SearchBar';
+import RecommendCard from '../../components/contest-search/contest-search/RecommendCard';
+import ContestCard from '../../components/contest-search/contest-search/ContestCard';
+import FilterButton from '../../components/contest-search/contest-search/FilterButton';
+import AppliedFilters from '../../components/contest-search/contest-search/AppliedFilters';
 import StatusMessage from '../../components/contest-search/StatusMessage';
-import FilterSheet from '../../components/contest-search/c02-contest-filter/FilterSheet';
+import FilterSheet from '../../components/contest-search/contest-filter/FilterSheet';
 import { fetchContests, fetchRecommendedContests } from '../../mocks/contests';
 import {
   CONTEST_STATUS_LABEL,

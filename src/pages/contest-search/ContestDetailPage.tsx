@@ -132,17 +132,11 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
         />
 
         <InfoCard
-          title="참가 조건"
+          title="공고 정보"
           items={[
             { label: '참가 대상', value: detail.eligibility.target },
             { label: '인원', value: detail.eligibility.teamSize },
             { label: '지역', value: detail.eligibility.region },
-          ]}
-        />
-
-        <InfoCard
-          title="공모 내용"
-          items={[
             { label: '공모 주제', value: detail.overview.topic },
             { label: '심사기준', value: detail.overview.criteria },
           ]}

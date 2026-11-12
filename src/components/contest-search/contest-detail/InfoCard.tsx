@@ -10,7 +10,7 @@ interface InfoCardProps {
   items: InfoItem[];
 }
 
-// '참가 조건', '공모 내용'처럼 제목 + (라벨 · 값) 줄로 된 카드
+// '공고 정보'처럼 제목 + (라벨 · 값) 줄로 된 카드
 export default function InfoCard({ title, items }: InfoCardProps) {
   return (
     <Card>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { refreshToken } from '../../api/auth';
+import { getMyInfo } from '../../api/user';
 import styled from 'styled-components';
 import LoginCard from '../../components/onboarding/LoginCard';
 import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.png';
@@ -17,17 +18,19 @@ export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
   const [loginStatus, setLoginStatus] = useState<'idle' | 'loading' | 'error'>(
     isGoogleSuccess ? 'loading' : 'idle',
   );
-  const loginRequest = useRef<ReturnType<typeof refreshToken> | null>(null);
+  const loginRequest = useRef<ReturnType<typeof getMyInfo> | null>(null);
 
   // 구글 인증 후 돌아왔을 때만 CSRF 확인과 Access Token 발급을 진행한다.
   useEffect(() => {
     if (!isGoogleSuccess) return;
     const controller = new AbortController();
-    // 개발 모드에서도 토큰 발급 요청이 중복되지 않도록 재사용한다.
-    loginRequest.current ??= refreshToken();
+    // 개발 모드에서도 토큰 발급과 내 정보 조회가 중복되지 않도록 재사용한다.
+    loginRequest.current ??= refreshToken().then(() => getMyInfo());
     loginRequest.current
-      .then(() => {
-        if (!controller.signal.aborted) navigate('/profile', { replace: true });
+      .then((user) => {
+        if (controller.signal.aborted) return;
+        // 내 정보 입력을 마친 사용자는 메인 화면으로 이동한다.
+        navigate(user.onboardingCompleted ? '/oasis' : '/profile', { replace: true });
       })
       .catch(() => {
         if (!controller.signal.aborted) setLoginStatus('error');

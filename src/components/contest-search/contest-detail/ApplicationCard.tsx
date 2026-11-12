@@ -13,9 +13,12 @@ export default function ApplicationCard({ application }: ApplicationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const contentId = useId();
 
+  const submissions = (application.submissions ?? []).filter((item) => item.trim() !== '');
+  const submissionCount = submissions.length;
+
   const items = [
     { label: '지원 방법', value: application.method },
-    { label: '제출물', value: application.submissions.join(', ') },
+    { label: '제출물', value: submissions.join(', ') },
     { label: '양식', value: application.form },
     { label: '동의서', value: application.consent },
   ];
@@ -29,7 +32,10 @@ export default function ApplicationCard({ application }: ApplicationCardProps) {
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <Title>지원 방법·제출물</Title>
-        <Hint>{isOpen ? '접기' : `제출물 ${application.submissions.length}개`}</Hint>
+        {/* 제출물 정보가 없으면 '0개' 대신 힌트를 숨긴다 */}
+        {(isOpen || submissionCount > 0) && (
+          <Hint>{isOpen ? '접기' : `제출물 ${submissionCount}개`}</Hint>
+        )}
         <Chevron src={chevronIcon} alt="" $open={isOpen} />
       </Header>
 

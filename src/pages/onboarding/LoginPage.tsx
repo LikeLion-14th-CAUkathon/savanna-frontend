@@ -42,22 +42,26 @@ const Screen = styled.div`
   margin: 0 auto;
   padding: 62px 14px 87px;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   overflow: hidden;
   background-color: #feb055;
+
+  /* 모바일에서는 화면 너비에 맞춰 양옆 여백을 없앤다. */
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 `;
 
-// 하단 풍경 배경
+// 풍경 위쪽을 하늘색과 겹쳐 이미지 시작 경계를 부드럽게 연결한다.
 const MapBackground = styled.div`
   position: absolute;
-  top: 160px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 160px 0 0;
   background-image: url('${backgroundImage}');
   background-repeat: no-repeat;
-  background-position: center bottom;
+  background-position: center top;
   background-size: cover;
+  mask-image: linear-gradient(to bottom, transparent, #000 100px);
+  pointer-events: none;
 `;
 
 // 상단 그라데이션

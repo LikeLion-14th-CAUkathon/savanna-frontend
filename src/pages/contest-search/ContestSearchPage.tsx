@@ -93,15 +93,17 @@ export default function ContestSearchPage() {
 
   return (
     <Page>
-      <Header>
-        <h1>공고 찾기</h1>
-      </Header>
+      {/* 헤더와 검색창은 스크롤해도 상단에 고정 */}
+      <TopBar>
+        <Header>
+          <h1>공고 찾기</h1>
+        </Header>
+        <SearchArea>
+          <SearchBar value={query} onChange={setQuery} />
+        </SearchArea>
+      </TopBar>
 
       <Body>
-        <Section>
-          <SearchBar value={query} onChange={setQuery} />
-        </Section>
-
         {loadState === 'loading' && <StatusMessage title="공고를 불러오는 중이에요." />}
 
         {loadState === 'error' && (
@@ -271,6 +273,17 @@ const Page = styled.div`
   text-align: left;
 `;
 
+const TopBar = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fafaf8;
+`;
+
+const SearchArea = styled.div`
+  padding: 8px 24px 12px;
+`;
+
 const Header = styled.header`
   display: flex;
   align-items: center;
@@ -289,7 +302,7 @@ const Body = styled.main`
   flex: 1;
   flex-direction: column;
   gap: 24px;
-  padding: 8px 0 32px;
+  padding: 12px 0 32px;
 `;
 
 const Section = styled.section`

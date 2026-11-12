@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import BottomSheet from './BottomSheet';
+import BottomSheet from '../../common/BottomSheet';
 import Button from '../../common/Button';
 import radioCheckedIcon from '../../../assets/icons/expedition-detail/radio-checked.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../../types/oasis';
@@ -121,9 +121,4 @@ const CloseButton = styled(Button)`
 
 const ConfirmButton = styled(Button)`
   flex: 1;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
 `;

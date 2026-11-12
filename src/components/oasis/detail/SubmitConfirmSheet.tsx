@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import BottomSheet from './BottomSheet';
+import BottomSheet from '../../common/BottomSheet';
 import Button from '../../common/Button';
 
 interface SubmitConfirmSheetProps {
@@ -38,9 +38,4 @@ const CancelButton = styled(Button)`
 
 const ConfirmButton = styled(Button)`
   flex: 1;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
 `;

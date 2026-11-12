@@ -8,6 +8,7 @@ import LoginPage from './pages/onboarding/LoginPage'
 import ProfilePage from './pages/onboarding/ProfilePage'
 import InvitePage from './pages/onboarding/InvitePage'
 import Mypage from './pages/mypage/Mypage'
+import TeamCreatePage from './pages/team/TeamCreatePage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="/mypage" element={<Mypage />} />
+      <Route path="/team/create" element={<TeamCreatePage />} />
     </Routes>
   )
 }

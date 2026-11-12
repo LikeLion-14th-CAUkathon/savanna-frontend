@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router'
+import { startGoogleLogin } from './api/auth'
 import ContestSearchPage from './pages/contest-search/ContestSearchPage'
 import ContestDetailPage from './pages/contest-search/ContestDetailPage'
 import OasisPage from './pages/oasis/OasisPage'
@@ -19,7 +20,7 @@ function App() {
       <Route path="/oasis" element={<OasisPage />} />
       <Route path="/oasis/expeditions/:expeditionId" element={<ExpeditionDetailPage />} />
       <Route path="/oasis/expeditions/:expeditionId/schedule" element={<ScheduleEditPage />} />
-      <Route path="/login" element={<LoginPage onGoogleLogin={() => console.log('구글 로그인 미연동')}/>} />
+      <Route path="/login" element={<LoginPage onGoogleLogin={startGoogleLogin} />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="/mypage" element={<Mypage />} />

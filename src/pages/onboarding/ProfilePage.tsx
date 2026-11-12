@@ -14,7 +14,6 @@ import plusIcon from '../../assets/icons/onboarding/plus.svg';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-
   const [name, setName] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false); // 시작하기를 눌렀는지
   const [schoolStatus, setSchoolStatus] = useState('재학');
@@ -49,6 +48,7 @@ export default function ProfilePage() {
     }
     // API 연결 후 정보 저장하고 다음 화면으로 이동
   };
+
 
   return (
     <Page>

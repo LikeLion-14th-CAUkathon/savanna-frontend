@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { refreshToken } from '../../api/auth';
 import styled from 'styled-components';
 import LoginCard from '../../components/onboarding/LoginCard';
 import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.png';
@@ -8,6 +11,30 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isGoogleSuccess = searchParams.get('google') === 'success';
+  const [loginStatus, setLoginStatus] = useState<'idle' | 'loading' | 'error'>(
+    isGoogleSuccess ? 'loading' : 'idle',
+  );
+  const loginRequest = useRef<ReturnType<typeof refreshToken> | null>(null);
+
+  // 구글 인증 후 돌아왔을 때만 CSRF 확인과 Access Token 발급을 진행한다.
+  useEffect(() => {
+    if (!isGoogleSuccess) return;
+    const controller = new AbortController();
+    // 개발 모드에서도 토큰 발급 요청이 중복되지 않도록 재사용한다.
+    loginRequest.current ??= refreshToken();
+    loginRequest.current
+      .then(() => {
+        if (!controller.signal.aborted) navigate('/profile', { replace: true });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoginStatus('error');
+      });
+    return () => controller.abort();
+  }, [isGoogleSuccess, navigate]);
+
   return (
     <Page>
       <Screen>
@@ -17,7 +44,12 @@ export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
           <LogoImage src={logo} alt="사바나 원정" />
         </LogoFrame>
 
-        <LoginCard onGoogleLogin={onGoogleLogin} />
+        <LoginCard onGoogleLogin={onGoogleLogin} isLoading={loginStatus === 'loading'}>
+          {loginStatus === 'loading' && <p role="status">로그인을 확인하고 있어요.</p>}
+          {loginStatus === 'error' && (
+            <p role="alert">로그인을 완료하지 못했어요. 다시 시도해 주세요.</p>
+          )}
+        </LoginCard>
       </Screen>
     </Page>
   );

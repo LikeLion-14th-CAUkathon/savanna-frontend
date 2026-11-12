@@ -1,12 +1,15 @@
+import type { ReactNode } from 'react';
 import styled from 'styled-components';
 import Button from '../common/Button';
 import googleLogo from '../../assets/icons/login/google-logo.png';
 
 interface LoginCardProps {
   onGoogleLogin: () => void;
+  isLoading?: boolean;
+  children?: ReactNode;
 }
 
-export default function LoginCard({ onGoogleLogin }: LoginCardProps) {
+export default function LoginCard({ onGoogleLogin, isLoading = false, children }: LoginCardProps) {
   return (
     <Card>
       <Copy>
@@ -23,7 +26,8 @@ export default function LoginCard({ onGoogleLogin }: LoginCardProps) {
         </Description>
       </Copy>
 
-      <GoogleButton onClick={onGoogleLogin}>
+      {children}
+      <GoogleButton onClick={onGoogleLogin} disabled={isLoading}>
         <GoogleLogo>
           <img src={googleLogo} alt="" />
         </GoogleLogo>

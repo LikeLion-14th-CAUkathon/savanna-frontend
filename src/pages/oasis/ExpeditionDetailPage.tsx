@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
@@ -16,12 +16,20 @@ import NoticeList from '../../components/oasis/detail/NoticeList';
 import SubmitChecklist from '../../components/oasis/detail/SubmitChecklist';
 import StageSelectSheet from '../../components/oasis/detail/StageSelectSheet';
 import SubmitConfirmSheet from '../../components/oasis/detail/SubmitConfirmSheet';
+import {
+  addChecklistItem,
+  fetchExpeditionDetail,
+  removeChecklistItem,
+  renameChecklistItem,
+  saveStage,
+  toggleChecklistItem,
+} from '../../components/oasis/oasisData';
 import infoIcon from '../../assets/icons/notice/info.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import type { ExpeditionStage } from '../../types/oasis';
 import type { ChecklistItem, ExpeditionDetail, ExpeditionDetailState } from '../../types/expedition';
 import { formatDDay } from '../../utils/dday';
-import { formatDateTimeKST } from '../../utils/date';
+import { formatDate } from '../../utils/date';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
 
 const MESSAGES = {
@@ -34,93 +42,12 @@ const MESSAGES = {
   saveFailed: '저장하지 못했어요. 다시 시도해 주세요.',
 };
 
-// ---------------------------------------------------------------------------
-// 테스트용 임시 데이터 (TODO: API 연결 시 이 부분을 지우고 실제 요청·저장으로 교체)
-// 기본은 모든 조건 충족 상태. 주소 뒤에 붙여서 다른 상태 확인 (예: /oasis/expeditions/1?preview=issues):
-//   ?preview=issues   조건 불일치·확인 필요 + 최신 정보 확인 실패 안내
-//   ?preview=empty    공지·체크리스트 없음
-//   ?preview=save-error  단계 변경·체크리스트 저장이 모두 실패
-//   ?preview=loading  불러오는 중   ?preview=error  조회 실패
-// ---------------------------------------------------------------------------
-const preview = new URLSearchParams(window.location.search).get('preview');
-
-const SAMPLE_DETAIL: ExpeditionDetail = {
-  id: 1,
-  contestTitle: '헬스케어 AI 아이디어 공모전',
-  organizer: '디지털헬스협회',
-  deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  contestUrl: 'https://example.com',
-  stage: 'DRAFT',
-  isContestInfoOutdated: false,
-  conditionIssues: [],
-  responses: [
-    { memberId: 1, name: '김사바나', isMe: true, status: 'JOINED' },
-    { memberId: 2, name: '이초원', isMe: false, status: 'JOINED' },
-    { memberId: 3, name: '박공모', isMe: false, status: 'RESTING' },
-  ],
-  stageTargets: [
-    { stage: 'KICKOFF', targetDate: '2026-10-27T00:00:00+09:00' },
-    { stage: 'DRAFT', targetDate: '2026-11-01T00:00:00+09:00' },
-    { stage: 'FINAL_REVIEW', targetDate: '2026-11-05T00:00:00+09:00' },
-    { stage: 'SUBMIT', targetDate: '2026-11-11T00:00:00+09:00' },
-  ],
-  notices: [
-    { id: 1, content: '11.04 21:00 제출 양식 같이 채우기' },
-    { id: 2, content: '11.06까지 개인정보 수집·이용 동의서 받기' },
-  ],
-  checklist: [
-    { id: 1, content: '제출 작품 · 기획서 PDF 10쪽 이내', done: true },
-    { id: 2, content: '참가 신청서', done: true },
-    { id: 3, content: '개인정보 수집·이용 동의서 (팀원 전원)', done: false },
-  ],
-};
-
-const getPreviewState = (): ExpeditionDetailState => {
-  if (preview === 'loading') return { status: 'loading' };
-  if (preview === 'error') return { status: 'error' };
-  if (preview === 'empty') return { status: 'success', data: { ...SAMPLE_DETAIL, notices: [], checklist: [] } };
-  if (preview === 'issues') {
-    return {
-      status: 'success',
-      data: {
-        ...SAMPLE_DETAIL,
-        isContestInfoOutdated: true,
-        conditionIssues: [
-          {
-            id: 1,
-            type: 'MISMATCH',
-            message: '재학생만 참여할 수 있지만, 합류한 팀원 중 졸업생이 있어요.',
-            members: [{ name: '이초원', savedInfo: '졸업', verdict: '재학생 조건 불일치' }],
-          },
-          { id: 2, type: 'MISMATCH', message: '현재 합류 2명 · 최소 3명 필요', members: [] },
-          {
-            id: 3,
-            type: 'NEEDS_CHECK',
-            message: '서울 현장 참석이 필요해요. 합류한 팀원 중 참석 가능 여부를 확인해야 하는 사람이 있어요.',
-            members: [{ name: '김사바나', savedInfo: '참석 가능 지역 미입력', verdict: '확인 필요' }],
-          },
-        ],
-        responses: [
-          { memberId: 1, name: '김사바나', isMe: true, status: 'JOINED' },
-          { memberId: 2, name: '이초원', isMe: false, status: 'JOINED' },
-          { memberId: 3, name: '박공모', isMe: false, status: 'PENDING' },
-        ],
-      },
-    };
-  }
-  return { status: 'success', data: SAMPLE_DETAIL };
-};
-
-// 저장 요청 (0.4초 뒤 성공, save-error면 실패)
-const fakeSave = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(preview !== 'save-error'), 400));
-// ---------------------------------------------------------------------------
-
-// TODO: API 연결 시 실제 요청으로 교체
-const saveStage = (_stage: ExpeditionStage) => fakeSave();
-const saveChecklistToggle = (_id: number, _done: boolean) => fakeSave();
-const saveChecklistDelete = (_id: number) => fakeSave();
-const saveChecklistAdd = (_content: string) => fakeSave();
-const saveChecklistUpdate = (_id: number, _content: string) => fakeSave();
+// 저장 요청이 성공하면 true, 실패하면 false
+const succeeded = (request: Promise<unknown>) =>
+  request.then(
+    () => true,
+    () => false,
+  );
 
 type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | null;
 type ToastState = { variant: 'success' | 'error'; message: string } | null;
@@ -129,12 +56,34 @@ export default function ExpeditionDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { expeditionId = '' } = useParams();
+  const id = Number(expeditionId);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [state] = useState(getPreviewState);
-  const retry = () => {}; // TODO: API 연결 시 다시 요청
+  const [state, setState] = useState<ExpeditionDetailState>({ status: 'loading' });
+  const [reloadKey, setReloadKey] = useState(0);
+  const retry = () => {
+    setState({ status: 'loading' });
+    setReloadKey((key) => key + 1);
+  };
 
-  const [detail, setDetail] = useState<ExpeditionDetail | null>(state.status === 'success' ? state.data : null);
+  // 화면에서 바로 고치는 값(단계·체크리스트)은 detail에 따로 들고 있음
+  const [detail, setDetail] = useState<ExpeditionDetail | null>(null);
+
+  useEffect(() => {
+    let ignore = false; // 화면을 떠난 뒤 도착한 응답은 무시
+    fetchExpeditionDetail(id)
+      .then((data) => {
+        if (ignore) return;
+        setState({ status: 'success', data });
+        setDetail(data);
+      })
+      .catch(() => {
+        if (!ignore) setState({ status: 'error' });
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [id, reloadKey]);
 
   // 탭은 주소(?tab=schedule)에 담아서, D03에 갔다 돌아와도 보던 탭 유지
   const activeTab: DetailTabId = searchParams.get('tab') === 'schedule' ? 'schedule' : 'conditions';
@@ -154,7 +103,6 @@ export default function ExpeditionDetailPage() {
   const goToScheduleEdit = () => navigate(OASIS_PATHS.scheduleEdit(expeditionId));
   const [sheet, setSheet] = useState<SheetState>(null);
   const [isSavingStage, setIsSavingStage] = useState(false);
-  const [isAddingItem, setIsAddingItem] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
 
   const closeToast = useCallback(() => setToast(null), []);
@@ -167,7 +115,7 @@ export default function ExpeditionDetailPage() {
   // 진행 단계 변경 (제출은 확인창을 한 번 더 거침)
   const changeStage = async (stage: ExpeditionStage) => {
     setIsSavingStage(true);
-    const ok = await saveStage(stage);
+    const ok = await succeeded(saveStage(id, stage));
     setIsSavingStage(false);
 
     if (!ok) {
@@ -185,22 +133,22 @@ export default function ExpeditionDetailPage() {
   };
 
   // 체크·해제·삭제는 화면에 먼저 반영하고, 저장 실패하면 되돌림
-  const toggleItem = async (id: number) => {
-    const item = detail?.checklist.find((target) => target.id === id);
+  const toggleItem = async (itemId: number) => {
+    const item = detail?.checklist.find((target) => target.id === itemId);
     if (!item) return;
-    updateChecklist((items) => items.map((target) => (target.id === id ? { ...target, done: !item.done } : target)));
-    if (!(await saveChecklistToggle(id, !item.done))) {
-      updateChecklist((items) => items.map((target) => (target.id === id ? { ...target, done: item.done } : target)));
+    updateChecklist((items) => items.map((target) => (target.id === itemId ? { ...target, done: !item.done } : target)));
+    if (!(await succeeded(toggleChecklistItem(itemId, !item.done)))) {
+      updateChecklist((items) => items.map((target) => (target.id === itemId ? { ...target, done: item.done } : target)));
       showSaveFailed();
     }
   };
 
-  const deleteItem = async (id: number) => {
-    const index = detail?.checklist.findIndex((target) => target.id === id) ?? -1;
+  const deleteItem = async (itemId: number) => {
+    const index = detail?.checklist.findIndex((target) => target.id === itemId) ?? -1;
     const item = detail?.checklist[index];
     if (!item) return;
-    updateChecklist((items) => items.filter((target) => target.id !== id));
-    if (!(await saveChecklistDelete(id))) {
+    updateChecklist((items) => items.filter((target) => target.id !== itemId));
+    if (!(await succeeded(removeChecklistItem(itemId)))) {
       updateChecklist((items) => [...items.slice(0, index), item, ...items.slice(index)]);
       showSaveFailed();
     }
@@ -208,14 +156,18 @@ export default function ExpeditionDetailPage() {
 
   // 추가·수정은 저장에 성공했을 때만 반영 (실패하면 입력 내용 유지)
   const addItem = async (content: string) => {
-    const ok = await saveChecklistAdd(content);
-    if (ok) updateChecklist((items) => [...items, { id: Date.now(), content, done: false }]); // TODO: 서버가 준 id 사용
-    return ok;
+    try {
+      const created = await addChecklistItem(id, content);
+      updateChecklist((items) => [...items, created]);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const updateItem = async (id: number, content: string) => {
-    const ok = await saveChecklistUpdate(id, content);
-    if (ok) updateChecklist((items) => items.map((target) => (target.id === id ? { ...target, content } : target)));
+  const updateItem = async (itemId: number, content: string) => {
+    const ok = await succeeded(renameChecklistItem(itemId, content));
+    if (ok) updateChecklist((items) => items.map((target) => (target.id === itemId ? { ...target, content } : target)));
     return ok;
   };
 
@@ -248,18 +200,20 @@ export default function ExpeditionDetailPage() {
           <StatusPill tone="amber">{EXPEDITION_STAGE_LABEL[detail.stage]}</StatusPill>
           <ContestTitle>{detail.contestTitle}</ContestTitle>
           <Meta>
-            {detail.organizer} · 접수 마감 {formatDateTimeKST(detail.deadline)} · {formatDDay(detail.deadline)}
+            {detail.organizer} · 접수 마감 {formatDate(detail.deadline)} · {formatDDay(detail.deadline)}
           </Meta>
         </Header>
 
         {detail.isContestInfoOutdated && <Notice icon={infoIcon}>{MESSAGES.outdated}</Notice>}
 
-        <FullWidthButton
-          variant="secondary"
-          onClick={() => window.open(detail.contestUrl, '_blank', 'noopener,noreferrer')}
-        >
-          공고 원문 보기 ↗
-        </FullWidthButton>
+        {detail.contestUrl && (
+          <FullWidthButton
+            variant="secondary"
+            onClick={() => window.open(detail.contestUrl, '_blank', 'noopener,noreferrer')}
+          >
+            공고 원문 보기 ↗
+          </FullWidthButton>
+        )}
 
         <DetailTabs activeTab={activeTab} onChange={changeTab} />
 
@@ -282,11 +236,9 @@ export default function ExpeditionDetailPage() {
             <Section title="공지">
               <NoticeList notices={detail.notices} />
             </Section>
-            <Section title="제출 체크리스트" actionLabel="+ 추가" onAction={() => setIsAddingItem(true)}>
+            <Section title="제출 체크리스트">
               <SubmitChecklist
                 items={detail.checklist}
-                isAdding={isAddingItem}
-                onCancelAdd={() => setIsAddingItem(false)}
                 onAdd={addItem}
                 onUpdate={updateItem}
                 onToggle={toggleItem}

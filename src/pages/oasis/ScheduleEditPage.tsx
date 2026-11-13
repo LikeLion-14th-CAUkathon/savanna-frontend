@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import styled from 'styled-components';
+import { getApiErrorMessage } from '../../api/client';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import Toast from '../../components/toast/Toast';
@@ -8,9 +9,16 @@ import Section from '../../components/oasis/detail/Section';
 import TargetDateList from '../../components/oasis/schedule-edit/TargetDateList';
 import NoticeEditor from '../../components/oasis/schedule-edit/NoticeEditor';
 import type { EditableNotice } from '../../components/oasis/schedule-edit/NoticeEditor';
+import {
+  addNotice as addNoticeRequest,
+  fetchScheduleEdit,
+  removeNotice,
+  saveStageTargets,
+  updateNotice,
+} from '../../components/oasis/oasisData';
 import type { ExpeditionStage } from '../../types/oasis';
-import type { ExpeditionNotice, ScheduleEditData, ScheduleEditState, StageTarget } from '../../types/expedition';
-import { formatMonthDay, formatMonthDayTime } from '../../utils/date';
+import type { ExpeditionNotice, ScheduleEditState, StageTarget } from '../../types/expedition';
+import { formatMonthDay } from '../../utils/date';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
 
 const MESSAGES = {
@@ -22,46 +30,6 @@ const MESSAGES = {
   saveFailed: '저장하지 못했어요. 다시 시도해 주세요.',
 };
 
-// ---------------------------------------------------------------------------
-// 테스트용 임시 데이터 (TODO: API 연결 시 이 부분을 지우고 실제 요청·저장으로 교체)
-// 주소 뒤에 붙여서 다른 상태 확인 (예: /oasis/expeditions/1/schedule?preview=empty):
-//   ?preview=empty  공지 없음   ?preview=save-error  저장 실패
-//   ?preview=loading  불러오는 중   ?preview=error  조회 실패
-// ---------------------------------------------------------------------------
-const preview = new URLSearchParams(window.location.search).get('preview');
-
-const SAMPLE_SCHEDULE: ScheduleEditData = {
-  expeditionId: 1,
-  contestTitle: '헬스케어 AI 아이디어 공모전',
-  applyStartAt: '2026-10-20T00:00:00+09:00',
-  deadline: '2026-11-14T18:00:00+09:00',
-  stage: 'DRAFT',
-  stageTargets: [
-    { stage: 'KICKOFF', targetDate: '2026-10-27T00:00:00+09:00' },
-    { stage: 'DRAFT', targetDate: '2026-11-01T00:00:00+09:00' },
-    { stage: 'FINAL_REVIEW', targetDate: '2026-11-05T00:00:00+09:00' },
-    { stage: 'SUBMIT', targetDate: '2026-11-11T00:00:00+09:00' },
-  ],
-  notices: [
-    { id: 1, content: '11.04 21:00 제출 양식 같이 채우기' },
-    { id: 2, content: '11.06까지 개인정보 수집 & 이용 동의서 받기' },
-  ],
-};
-
-const getPreviewState = (): ScheduleEditState => {
-  if (preview === 'loading') return { status: 'loading' };
-  if (preview === 'error') return { status: 'error' };
-  if (preview === 'empty') return { status: 'success', data: { ...SAMPLE_SCHEDULE, notices: [] } };
-  return { status: 'success', data: SAMPLE_SCHEDULE };
-};
-
-// 저장 요청(0.5초 뒤 성공, save-error면 실패)
-const fakeSave = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(preview !== 'save-error'), 500));
-// ---------------------------------------------------------------------------
-
-// TODO: API 연결 시 실제 요청으로 교체
-const saveSchedule = (_expeditionId: number, _targets: StageTarget[], _notices: ExpeditionNotice[]) => fakeSave();
-
 const toEditable = (notices: ExpeditionNotice[]): EditableNotice[] =>
   notices.map((notice) => ({ key: `saved-${notice.id}`, id: notice.id, content: notice.content, error: '' }));
 
@@ -69,13 +37,38 @@ export default function ScheduleEditPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { expeditionId = '' } = useParams();
+  const id = Number(expeditionId);
 
-  const [state] = useState(getPreviewState);
-  const retry = () => {}; // TODO: API 연결 시 다시 요청
+  const [state, setState] = useState<ScheduleEditState>({ status: 'loading' });
+  const [reloadKey, setReloadKey] = useState(0);
+  const retry = () => {
+    setState({ status: 'loading' });
+    setReloadKey((key) => key + 1);
+  };
   const initial = state.status === 'success' ? state.data : null;
 
-  const [targets, setTargets] = useState<StageTarget[]>(initial?.stageTargets ?? []);
-  const [notices, setNotices] = useState<EditableNotice[]>(toEditable(initial?.notices ?? []));
+  const [targets, setTargets] = useState<StageTarget[]>([]);
+  const [notices, setNotices] = useState<EditableNotice[]>([]);
+  // 서버에 저장된 공지. 저장할 때 이것과 비교해서 추가·수정·삭제할 것을 고른다
+  const [savedNotices, setSavedNotices] = useState<ExpeditionNotice[]>([]);
+
+  useEffect(() => {
+    let ignore = false; // 화면을 떠난 뒤 도착한 응답은 무시
+    fetchScheduleEdit(id)
+      .then((data) => {
+        if (ignore) return;
+        setState({ status: 'success', data });
+        setTargets(data.stageTargets);
+        setNotices(toEditable(data.notices));
+        setSavedNotices(data.notices);
+      })
+      .catch(() => {
+        if (!ignore) setState({ status: 'error' });
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [id, reloadKey]);
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -119,18 +112,39 @@ export default function ScheduleEditPage() {
     if (checked.some((notice) => notice.error)) return;
 
     setIsSaving(true);
-    const ok = await saveSchedule(
-      initial.expeditionId,
-      targets,
-      checked.map((notice) => ({ id: notice.id ?? 0, content: notice.content.trim() })), 
-    );
-    setIsSaving(false);
 
-    if (ok) {
+    // 하나씩 저장하면서 성공한 것은 바로 반영 → 중간에 실패해도 다시 저장할 때 중복 생성되지 않음
+    let saved = savedNotices;
+    const current = checked.map((notice) => ({ ...notice, content: notice.content.trim() }));
+    try {
+      await saveStageTargets(id, targets);
+
+      const keptIds = new Set(current.map((notice) => notice.id));
+      for (const notice of saved.filter((target) => !keptIds.has(target.id))) {
+        await removeNotice(notice.id);
+        saved = saved.filter((target) => target.id !== notice.id);
+      }
+
+      for (const notice of current) {
+        if (notice.id === null) {
+          const created = await addNoticeRequest(id, notice.content);
+          notice.id = created.id;
+          saved = [...saved, created];
+        } else if (saved.find((target) => target.id === notice.id)?.content !== notice.content) {
+          await updateNotice(notice.id, notice.content);
+          saved = saved.map((target) => (target.id === notice.id ? { ...target, content: notice.content } : target));
+        }
+      }
+
       setIsSaved(true);
       setToast({ variant: 'success', message: MESSAGES.saved });
-    } else {
-      setToast({ variant: 'error', message: MESSAGES.saveFailed }); // 입력 내용은 그대로 유지
+    } catch (error) {
+      // 입력 내용은 그대로 유지. 목표일 순서가 맞지 않는 경우 등은 서버 안내 문구를 보여줌
+      setToast({ variant: 'error', message: getApiErrorMessage(error, MESSAGES.saveFailed) });
+    } finally {
+      setSavedNotices(saved);
+      setNotices(current);
+      setIsSaving(false);
     }
   };
 
@@ -165,11 +179,11 @@ export default function ScheduleEditPage() {
           <OfficialCard>
             <OfficialRow>
               <OfficialLabel>접수 시작</OfficialLabel>
-              <OfficialValue>{formatMonthDay(initial.applyStartAt)}</OfficialValue>
+              <OfficialValue>{initial.applyStartAt ? formatMonthDay(initial.applyStartAt) : '-'}</OfficialValue>
             </OfficialRow>
             <OfficialRow>
               <OfficialLabel>접수 마감</OfficialLabel>
-              <OfficialValue>{formatMonthDayTime(initial.deadline)}</OfficialValue>
+              <OfficialValue>{formatMonthDay(initial.deadline)}</OfficialValue>
             </OfficialRow>
           </OfficialCard>
         </Section>

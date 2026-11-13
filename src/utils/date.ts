@@ -15,6 +15,12 @@ const getKstParts = (iso: string) => {
   return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour'), minute: get('minute') };
 };
 
+// '2026.11.14'
+export function formatDate(iso: string) {
+  const { year, month, day } = getKstParts(iso);
+  return `${year}.${month}.${day}`;
+}
+
 // '2026.11.14 18:00'
 export function formatDateTime(iso: string) {
   const { year, month, day, hour, minute } = getKstParts(iso);

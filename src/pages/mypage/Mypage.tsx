@@ -37,7 +37,7 @@ function getPreviewToast(): ToastType | null {
   return null;
 }
 
-export default function Mypage() {
+export default function Mypage({ onLogoutSuccess }: { onLogoutSuccess: () => void }) {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus | ''>('');
@@ -115,6 +115,7 @@ export default function Mypage() {
     setToastType(null);
     try {
       await logout();
+      onLogoutSuccess();
       navigate('/login', { replace: true });
     } catch {
       setToastType('logout-error');

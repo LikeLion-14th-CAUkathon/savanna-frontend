@@ -19,7 +19,7 @@ import TeamNews from './pages/team/TeamNews'
 
 function App() {
   // 로그인 화면을 떠난 뒤에도 성공 토스트가 보이도록 App에서 관리한다.
-  const [loginResult, setLoginResult] = useState<'success' | 'error' | null>(null)
+  const [loginResult, setLoginResult] = useState<'success' | 'error' | 'logout' | null>(null)
   const closeLoginToast = useCallback(() => setLoginResult(null), [])
 
   return (
@@ -34,7 +34,7 @@ function App() {
       <Route path="/login" element={<LoginPage onGoogleLogin={startGoogleLogin} onLoginResult={setLoginResult} />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/invite" element={<InvitePage />} />
-      <Route path="/mypage" element={<Mypage />} />
+      <Route path="/mypage" element={<Mypage onLogoutSuccess={() => setLoginResult('logout')} />} />
       <Route path="/team" element={<TeamSpacePage />} />
       <Route path="/team/create" element={<TeamCreatePage />} />
       <Route path="/team/edit" element={<TeamEditPage />} />
@@ -42,8 +42,10 @@ function App() {
     </Routes>
     {loginResult && (
       <LoginToastArea>
-        <Toast key={loginResult} variant={loginResult} onClose={closeLoginToast}>
-          {loginResult === 'success'
+        <Toast key={loginResult} variant={loginResult === 'error' ? 'error' : 'success'} onClose={closeLoginToast}>
+          {loginResult === 'logout'
+            ? '로그아웃되었어요'
+            : loginResult === 'success'
             ? '로그인에 성공했어요.'
             : '로그인을 완료하지 못했어요. 다시 시도해 주세요.'}
         </Toast>

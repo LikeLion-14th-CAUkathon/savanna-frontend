@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { getMyInfo } from '../../api/user';
+import { getMyInfo, updateMyInfo } from '../../api/user';
 import type { EnrollmentStatus } from '../../api/common';
-import { toRegionNames } from '../../utils/region';
+import { toRegionCodes, toRegionNames } from '../../utils/region';
 import Button from '../../components/common/Button';
 import TabBar from '../../components/layout/TabBar';
 import Toast from '../../components/toast/Toast';
@@ -21,11 +21,11 @@ const TOAST_MESSAGES = {
 
 type ToastType = keyof typeof TOAST_MESSAGES;
 
-const schoolStatusLabels: Record<EnrollmentStatus, string> = {
-  ENROLLED: '재학',
-  ON_LEAVE: '휴학',
-  GRADUATED: '졸업',
-};
+const schoolOptions = [
+  { value: 'ENROLLED', label: '재학' },
+  { value: 'ON_LEAVE', label: '휴학' },
+  { value: 'GRADUATED', label: '졸업' },
+] as const;
 
 // 개발 서버에서 /mypage?toast=save-success (save-error, logout-error)로 배치 확인
 function getPreviewToast(): ToastType | null {
@@ -37,7 +37,9 @@ function getPreviewToast(): ToastType | null {
 
 export default function Mypage() {
   const [name, setName] = useState('');
-  const [schoolStatus, setSchoolStatus] = useState('');
+  const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus | ''>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -54,7 +56,7 @@ export default function Mypage() {
       .then((user) => {
         if (controller.signal.aborted) return;
         setName(user.name ?? '');
-        setSchoolStatus(user.enrollmentStatus ? schoolStatusLabels[user.enrollmentStatus] : '');
+        setSchoolStatus(user.enrollmentStatus ?? '');
         setSelectedRegions(toRegionNames(user.regions));
         setLoadStatus('ready');
       })
@@ -76,8 +78,28 @@ export default function Mypage() {
     setOpenSheet(null);
   };
 
-  const handleSave = () => {
-    // 이름 검사와 저장 결과 토스트 연결
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSubmitted(true);
+    if (!name.trim()) return;
+
+    setIsSaving(true);
+    setToastType(null);
+    try {
+      const user = await updateMyInfo({
+        name: name.trim(),
+        ...(schoolStatus && { enrollmentStatus: schoolStatus }),
+        regions: toRegionCodes(selectedRegions),
+      });
+      setName(user.name);
+      setSchoolStatus(user.enrollmentStatus ?? '');
+      setSelectedRegions(toRegionNames(user.regions));
+      setToastType('save-success');
+    } catch {
+      setToastType('save-error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -99,7 +121,7 @@ export default function Mypage() {
           </>
         )}
         {loadStatus === 'ready' && (
-          <>
+          <FormFields disabled={isSaving}>
         {character && (
           <CharacterSection aria-label="나의 캐릭터">
             <AvatarButton type="button" aria-label={`현재 캐릭터 ${character.name}, 캐릭터 변경`}
@@ -116,18 +138,20 @@ export default function Mypage() {
 
         <ProfileInfoForm
           name={name}
+          nameError={isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined}
           schoolStatus={schoolStatus}
+          schoolOptions={schoolOptions}
           selectedRegions={selectedRegions}
           onNameChange={setName}
-          onSchoolStatusChange={setSchoolStatus}
+          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
           onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
           onOpenRegionSelect={() => setOpenSheet('region')}
         />
-        <SaveButton onClick={handleSave}>저장</SaveButton>
+        <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
         <LogoutArea>
           <LogoutButton type="button" onClick={handleLogout}>로그아웃</LogoutButton>
         </LogoutArea>
-          </>
+          </FormFields>
         )}
       </Content>
 
@@ -207,6 +231,17 @@ const Content = styled.div`
 
 const SaveButton = styled(Button)`
   width: 100%;
+`;
+
+// 저장 중에는 입력을 잠가 요청한 값과 화면의 값이 달라지지 않게 한다.
+const FormFields = styled.fieldset`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 `;
 
 const LogoutArea = styled.div`

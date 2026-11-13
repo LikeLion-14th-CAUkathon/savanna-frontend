@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import Button from '../common/Button';
 import googleLogo from '../../assets/icons/login/google-logo.webp';
 
@@ -37,6 +37,16 @@ export default function LoginCard({ onGoogleLogin, isLoading = false, children }
   );
 }
 
+// 화면 진입 시 카드가 서서히 나타난다.
+const appear = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
 // 로그인 카드
 const Card = styled.section`
   position: relative;
@@ -54,6 +64,11 @@ const Card = styled.section`
   box-shadow:
     0 8px 20px rgba(59, 42, 22, 0.18),
     0 3px 0 #d7d4cd;
+  animation: ${appear} 2s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 // 문구 가운데 정렬

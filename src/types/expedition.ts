@@ -60,7 +60,7 @@ export interface ExpeditionDetail {
 export interface ScheduleEditData {
   expeditionId: number;
   contestTitle: string;
-  applyStartAt: string;  // 공식 접수 시작 (ISO 8601) — 확인용
+  applyStartAt: string | null; // 공식 접수 시작 (ISO 8601) — 확인용. 없으면 null
   deadline: string;      // 공식 접수 마감 (ISO 8601) — 확인용
   stage: ExpeditionStage;
   stageTargets: StageTarget[];

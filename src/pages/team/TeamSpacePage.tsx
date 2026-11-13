@@ -10,6 +10,8 @@ import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
 import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_TEAM_SPACE } from '../../mocks/team';
+import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
+import { getTeamNewsNotification } from '../../utils/teamNews';
 import headerImage from '../../assets/images/team/team-space-header.png';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
@@ -27,7 +29,9 @@ type CopyToast = keyof typeof COPY_TOAST;
 export default function TeamSpacePage() {
   const navigate = useNavigate();
   // TODO: API 연결 시 getTeamDetail(teamId) · 초대 링크 응답으로 교체
-  const { team, myUserId, inviteUrl, hasNewTeamNews, memberCharacterIds } = MOCK_TEAM_SPACE;
+  const { team, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
+  // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 알림 점을 띄운다.
+  const hasNewTeamNews = getTeamNewsNotification(MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS).hasUnread;
 
   // 팀원은 항상 동물 캐릭터를 가진다(고르지 않으면 가입 시 자동 배정).
   // 혹시 값이 없거나 모르는 id면 깨진 이미지 대신 첫 번째 캐릭터를 보여준다.

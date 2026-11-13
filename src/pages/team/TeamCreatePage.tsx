@@ -62,8 +62,11 @@ export default function TeamCreatePage() {
       presentationUrl: form.presentationUrl.trim(),
       stack: form.stack.trim(),
     };
-    // TODO: createTeam(body) 연결 후 B02 팀 공간으로 이동. 프로필 사진(photo)은 API 필드가 없어 아직 보내지 않음
+    // TODO: createTeam(body) 연결 후 성공 시에만 이동하도록 변경. 프로필 사진(photo)은 API 필드가 없어 아직 보내지 않음
     console.log('팀 생성 요청', body, photo);
+
+    // B02 팀 공간으로 이동. 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
+    navigate('/team', { replace: true });
   };
 
   return (

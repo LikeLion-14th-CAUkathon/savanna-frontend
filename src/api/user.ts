@@ -11,9 +11,9 @@ import type { ApiResponse, EnrollmentStatus } from './common';
 export interface MyInfoResponse {
   userId: number;
   email: string;
-  name: string;
-  universityName: string;
-  enrollmentStatus: EnrollmentStatus;
+  name: string | null;
+  universityName: string | null;
+  enrollmentStatus: EnrollmentStatus | null;
   regions: RegionCode[];
   onboardingCompleted: boolean;
 }

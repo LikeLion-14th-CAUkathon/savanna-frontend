@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { getMyInfo } from '../../api/user';
+import type { EnrollmentStatus } from '../../api/common';
+import { toRegionNames } from '../../utils/region';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
@@ -12,6 +15,12 @@ import infoIcon from '../../assets/icons/notice/info.svg';
 import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import plusIcon from '../../assets/icons/onboarding/plus.svg';
 
+const schoolStatusLabels: Record<EnrollmentStatus, string> = {
+  ENROLLED: '재학',
+  ON_LEAVE: '휴학',
+  GRADUATED: '졸업',
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -20,6 +29,25 @@ export default function ProfilePage() {
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+
+  // 기존 정보를 불러온 뒤 입력을 시작해 조회 결과가 작성 중인 값을 덮어쓰지 않게 한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    getMyInfo()
+      .then((user) => {
+        if (controller.signal.aborted) return;
+        setName(user.name ?? '');
+        setSchoolStatus(user.enrollmentStatus ? schoolStatusLabels[user.enrollmentStatus] : '재학');
+        setSelectedRegions(toRegionNames(user.regions));
+        setLoadStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadStatus('error');
+      });
+    return () => controller.abort();
+  }, [loadAttempt]);
 
   // 선택한 캐릭터와 이름 에러 문구
   const character = characters.find((item) => item.id === characterId);
@@ -48,7 +76,26 @@ export default function ProfilePage() {
     }
     // API 연결 후 정보 저장하고 다음 화면으로 이동
   };
-
+  if (loadStatus !== 'ready') {
+    return (
+      <Page>
+        <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
+        <Content>
+          {loadStatus === 'loading' ? (
+            <p role="status">내 정보를 불러오고 있어요.</p>
+          ) : (
+            <>
+              <p role="alert">내 정보를 불러오지 못했어요. 다시 시도해 주세요.</p>
+              <Button onClick={() => {
+                setLoadStatus('loading');
+                setLoadAttempt((attempt) => attempt + 1);
+              }}>다시 시도</Button>
+            </>
+          )}
+        </Content>
+      </Page>
+    );
+  }
 
   return (
     <Page>

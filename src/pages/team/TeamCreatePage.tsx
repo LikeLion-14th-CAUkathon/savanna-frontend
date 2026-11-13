@@ -8,6 +8,7 @@ import CollapseToggle from '../../components/common/CollapseToggle';
 import Button from '../../components/common/Button';
 import TeamPhotoPicker from '../../components/team/team-create/TeamPhotoPicker';
 import type { TeamCreateRequest } from '../../api/team';
+import type { TeamSpaceLocationState } from '../../types/team';
 
 type TeamForm = Required<TeamCreateRequest>;
 
@@ -65,8 +66,9 @@ export default function TeamCreatePage() {
     // TODO: createTeam(body) 연결 후 성공 시에만 이동하도록 변경. 프로필 사진(photo)은 API 필드가 없어 아직 보내지 않음
     console.log('팀 생성 요청', body, photo);
 
-    // B02 팀 공간으로 이동. 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
-    navigate('/team', { replace: true });
+    // B02 팀 공간으로 이동하며 입력한 정보를 넘긴다. 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
+    const state: TeamSpaceLocationState = { createdTeam: body, photo };
+    navigate('/team', { replace: true, state });
   };
 
   return (

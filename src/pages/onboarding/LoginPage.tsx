@@ -72,7 +72,7 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
 // 전체 배경
 const Page = styled.main`
   min-height: 100svh;
-  background-color: var(--color-cream);
+  background-color: #ffffff;
 `;
 
 // 모바일 화면 배치

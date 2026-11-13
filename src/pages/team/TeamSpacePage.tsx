@@ -76,12 +76,6 @@ export default function TeamSpacePage() {
     navigate('/team/edit', { state });
   };
 
-  const handleTabChange = (tab: TabId) => {
-    if (tab === 'oasis') navigate('/oasis');
-    if (tab === 'search') navigate('/contest');
-    if (tab === 'mypage') navigate('/mypage');
-  };
-
   // 나를 맨 앞에 둔다.
   const members = [...team.members].sort(
     (a, b) => Number(b.userId === myUserId) - Number(a.userId === myUserId),

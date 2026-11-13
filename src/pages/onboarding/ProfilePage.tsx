@@ -34,7 +34,14 @@ export default function ProfilePage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
-  const closeSaveToast = useCallback(() => setSaveResult(null), []);
+  const closeSaveToast = useCallback(() => {
+    // 온보딩 완료 후 성공 안내가 끝나면 오아시스로 이동한다.
+    if (saveResult === 'success') {
+      navigate('/oasis', { replace: true });
+      return;
+    }
+    setSaveResult(null);
+  }, [saveResult, navigate]);
 
   // 기존 정보를 불러온 뒤 입력을 시작해 조회 결과가 작성 중인 값을 덮어쓰지 않게 한다.
   useEffect(() => {
@@ -71,7 +78,7 @@ export default function ProfilePage() {
 
   // 시작하기: 이름 확인 후, 캐릭터를 안 골랐으면 자동으로 선택
   const handleStart = async () => {
-    if (isSaving) return;
+    if (isSaving || saveResult === 'success') return;
     setIsSubmitted(true);
     if (!name.trim()) return; // 이름이 비어 있으면 여기서 멈춤
 
@@ -119,7 +126,7 @@ export default function ProfilePage() {
   return (
     <Page>
       <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
-      <Content as="fieldset" disabled={isSaving} style={{ border: 0, margin: 0, minWidth: 0 }}>
+      <Content as="fieldset" disabled={isSaving || saveResult === 'success'} style={{ border: 0, margin: 0, minWidth: 0 }}>
         <CharacterSection>
           <AvatarButton aria-label="나의 캐릭터 선택" onClick={() => setOpenSheet('character')}>
             {character ? <AvatarImage src={character.image} alt={character.name} /> : <img src={pawIcon} alt="" />}
@@ -147,7 +154,7 @@ export default function ProfilePage() {
       </Content>
 
       <Footer>
-        <StartButton onClick={handleStart} disabled={isSaving}>
+        <StartButton onClick={handleStart} disabled={isSaving || saveResult === 'success'}>
           {isSaving ? '저장하고 있어요.' : '시작하기'}
         </StartButton>
       </Footer>

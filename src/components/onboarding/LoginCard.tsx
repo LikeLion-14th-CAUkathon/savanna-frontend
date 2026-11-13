@@ -64,7 +64,7 @@ const Card = styled.section`
   box-shadow:
     0 8px 20px rgba(59, 42, 22, 0.18),
     0 3px 0 #d7d4cd;
-  animation: ${appear} 2s ease;
+  animation: ${appear} 2s ease 0.3s backwards;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;

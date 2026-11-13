@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { refreshToken } from '../../api/auth';
 import { getMyInfo } from '../../api/user';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import LoginCard from '../../components/onboarding/LoginCard';
 import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.webp';
 import logo from '../../assets/images/login/logo.webp';
@@ -126,6 +126,17 @@ const TopFade = styled.div`
   pointer-events: none;
 `;
 
+const logoAppear = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
 // 로고 영역
 const LogoFrame = styled.div`
   position: relative;
@@ -133,6 +144,11 @@ const LogoFrame = styled.div`
   aspect-ratio: 319 / 180;
   flex-shrink: 0;
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
+  animation: ${logoAppear} 1s ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 // 로고 크기와 위치

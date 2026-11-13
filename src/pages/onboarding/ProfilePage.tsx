@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
-import { getMyInfo } from '../../api/user';
+import { getMyInfo, updateMyInfo } from '../../api/user';
 import type { EnrollmentStatus } from '../../api/common';
-import { toRegionNames } from '../../utils/region';
+import { toRegionCodes, toRegionNames } from '../../utils/region';
+import Toast from '../../components/toast/Toast';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
@@ -21,6 +22,12 @@ const schoolStatusLabels: Record<EnrollmentStatus, string> = {
   GRADUATED: '졸업',
 };
 
+const schoolStatusCodes: Record<string, EnrollmentStatus> = {
+  재학: 'ENROLLED',
+  휴학: 'ON_LEAVE',
+  졸업: 'GRADUATED',
+};
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -31,6 +38,9 @@ export default function ProfilePage() {
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
+  const closeSaveToast = useCallback(() => setSaveResult(null), []);
 
   // 기존 정보를 불러온 뒤 입력을 시작해 조회 결과가 작성 중인 값을 덮어쓰지 않게 한다.
   useEffect(() => {
@@ -66,7 +76,8 @@ export default function ProfilePage() {
   };
 
   // 시작하기: 이름 확인 후, 캐릭터를 안 골랐으면 자동으로 선택
-  const handleStart = () => {
+  const handleStart = async () => {
+    if (isSaving) return;
     setIsSubmitted(true);
     if (!name.trim()) return; // 이름이 비어 있으면 여기서 멈춤
 
@@ -74,7 +85,21 @@ export default function ProfilePage() {
       const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
       setCharacterId(randomCharacter.id);
     }
-    // API 연결 후 정보 저장하고 다음 화면으로 이동
+    setIsSaving(true);
+    setSaveResult(null);
+    try {
+      // 화면의 학적 상태와 지역명을 API 코드로 변환해 저장한다.
+      const user = await updateMyInfo({
+        name: name.trim(),
+        enrollmentStatus: schoolStatusCodes[schoolStatus],
+        regions: toRegionCodes(selectedRegions),
+      });
+      setSaveResult(user.onboardingCompleted ? 'success' : 'error');
+    } catch {
+      setSaveResult('error');
+    } finally {
+      setIsSaving(false);
+    }
   };
   if (loadStatus !== 'ready') {
     return (
@@ -100,7 +125,7 @@ export default function ProfilePage() {
   return (
     <Page>
       <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
-      <Content>
+      <Content as="fieldset" disabled={isSaving} style={{ border: 0, margin: 0, minWidth: 0 }}>
         <CharacterSection>
           <AvatarButton aria-label="나의 캐릭터 선택" onClick={() => setOpenSheet('character')}>
             {character ? <AvatarImage src={character.image} alt={character.name} /> : <img src={pawIcon} alt="" />}
@@ -126,7 +151,21 @@ export default function ProfilePage() {
         <Notice icon={infoIcon}>입력하지 않은 자격 정보는 공고 조건 확인 시 ‘확인 필요’로 표시돼요.</Notice>
       </Content>
 
-      <Footer><StartButton onClick={handleStart}>시작하기</StartButton></Footer>
+      <Footer>
+        <StartButton onClick={handleStart} disabled={isSaving}>
+          {isSaving ? '저장하고 있어요.' : '시작하기'}
+        </StartButton>
+      </Footer>
+
+      {saveResult && (
+        <ToastArea>
+          <Toast variant={saveResult} onClose={closeSaveToast}>
+            {saveResult === 'success'
+              ? '내 정보를 저장했어요.'
+              : '내 정보를 저장하지 못했어요. 다시 시도해 주세요.'}
+          </Toast>
+        </ToastArea>
+      )}
 
       {openSheet === 'character' && (
         <CharacterSelectSheet selectedId={characterId} onClose={() => setOpenSheet(null)}
@@ -141,6 +180,16 @@ export default function ProfilePage() {
 }
 
 // 모바일 화면 너비와 배경
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(91px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 200;
+  width: 354px;
+  max-width: calc(100% - 48px);
+  transform: translateX(-50%);
+`;
+
 const Page = styled.main`
   display: flex;
   flex-direction: column;

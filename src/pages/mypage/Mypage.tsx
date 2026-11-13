@@ -1,5 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { getMyInfo } from '../../api/user';
+import type { EnrollmentStatus } from '../../api/common';
+import { toRegionNames } from '../../utils/region';
 import Button from '../../components/common/Button';
 import TabBar from '../../components/layout/TabBar';
 import Toast from '../../components/toast/Toast';
@@ -18,6 +21,12 @@ const TOAST_MESSAGES = {
 
 type ToastType = keyof typeof TOAST_MESSAGES;
 
+const schoolStatusLabels: Record<EnrollmentStatus, string> = {
+  ENROLLED: '재학',
+  ON_LEAVE: '휴학',
+  GRADUATED: '졸업',
+};
+
 // 개발 서버에서 /mypage?toast=save-success (save-error, logout-error)로 배치 확인
 function getPreviewToast(): ToastType | null {
   if (!import.meta.env.DEV) return null;
@@ -27,14 +36,33 @@ function getPreviewToast(): ToastType | null {
 }
 
 export default function Mypage() {
-  const [name, setName] = useState(MOCK_PROFILE.name);
-  const [schoolStatus, setSchoolStatus] = useState(MOCK_PROFILE.schoolStatus);
+  const [name, setName] = useState('');
+  const [schoolStatus, setSchoolStatus] = useState('');
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(MOCK_PROFILE.regions);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
   const [toastType, setToastType] = useState<ToastType | null>(getPreviewToast);
   const handleCloseToast = useCallback(() => setToastType(null), []);
   const toast = toastType ? TOAST_MESSAGES[toastType] : null;
+
+  // 조회가 끝난 뒤 폼을 보여줘 입력 중인 내용이 조회 결과로 바뀌지 않게 한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    getMyInfo()
+      .then((user) => {
+        if (controller.signal.aborted) return;
+        setName(user.name ?? '');
+        setSchoolStatus(user.enrollmentStatus ? schoolStatusLabels[user.enrollmentStatus] : '');
+        setSelectedRegions(toRegionNames(user.regions));
+        setLoadStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadStatus('error');
+      });
+    return () => controller.abort();
+  }, [loadAttempt]);
 
   const character = characters.find((item) => item.id === characterId);
 
@@ -60,6 +88,18 @@ export default function Mypage() {
     <Page>
       <Header><h1>마이페이지</h1></Header>
       <Content>
+        {loadStatus === 'loading' && <p role="status">내 정보를 불러오고 있어요.</p>}
+        {loadStatus === 'error' && (
+          <>
+            <p role="alert">내 정보를 불러오지 못했어요. 다시 시도해 주세요.</p>
+            <Button onClick={() => {
+              setLoadStatus('loading');
+              setLoadAttempt((prev) => prev + 1);
+            }}>다시 시도</Button>
+          </>
+        )}
+        {loadStatus === 'ready' && (
+          <>
         {character && (
           <CharacterSection aria-label="나의 캐릭터">
             <AvatarButton type="button" aria-label={`현재 캐릭터 ${character.name}, 캐릭터 변경`}
@@ -87,6 +127,8 @@ export default function Mypage() {
         <LogoutArea>
           <LogoutButton type="button" onClick={handleLogout}>로그아웃</LogoutButton>
         </LogoutArea>
+          </>
+        )}
       </Content>
 
       <BottomBar>

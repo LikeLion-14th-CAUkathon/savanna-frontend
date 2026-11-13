@@ -41,7 +41,7 @@ export default function ProfilePage() {
       if (invitationUrl?.startsWith('/invite?')) {
         navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
       } else {
-        navigate('/oasis', { replace: true });
+        navigate('/team/create', { replace: true });
       }
       return;
     }

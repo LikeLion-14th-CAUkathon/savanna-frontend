@@ -209,8 +209,7 @@ export default function ContestSearchPage() {
       </Body>
 
       <BottomBar>
-        {/* TODO: 라우터 연결 후 탭 이동 처리 */}
-        <TabBar activeTab="search" onTabChange={() => {}} />
+        <TabBar activeTab="search" />
       </BottomBar>
 
       {isFilterOpen && (

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
-import TabBar, { type TabId } from '../../components/layout/TabBar';
+import TabBar from '../../components/layout/TabBar';
 import TeamAvatar from '../../components/common/TeamAvatar';
 import Button from '../../components/common/Button';
 import MemberTile from '../../components/common/MemberTile';
@@ -76,12 +76,6 @@ export default function TeamSpacePage() {
     navigate('/team/edit', { state });
   };
 
-  const handleTabChange = (tab: TabId) => {
-    if (tab === 'oasis') navigate('/oasis');
-    if (tab === 'search') navigate('/contest');
-    if (tab === 'mypage') navigate('/mypage');
-  };
-
   // 나를 맨 앞에 둔다.
   const members = [...team.members].sort(
     (a, b) => Number(b.userId === myUserId) - Number(a.userId === myUserId),
@@ -148,7 +142,7 @@ export default function TeamSpacePage() {
       </Sheet>
 
       <BottomBar>
-        <TabBar activeTab="team" onTabChange={handleTabChange} hasNew={hasNewTeamNews} />
+        <TabBar activeTab="team" hasNew={hasNewTeamNews} />
       </BottomBar>
 
       {toastState && toast && (

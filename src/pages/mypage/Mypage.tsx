@@ -90,7 +90,7 @@ export default function Mypage() {
       </Content>
 
       <BottomBar>
-        <TabBar activeTab="mypage" onTabChange={() => {}} />
+        <TabBar activeTab="mypage" />
       </BottomBar>
 
       {toast && (

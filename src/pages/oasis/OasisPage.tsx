@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
-import type { TabId } from '../../components/layout/TabBar';
 import ExpeditionStatusCard from '../../components/oasis/ExpeditionStatusCard';
 import TeamSwitchButton from '../../components/oasis/TeamSwitchButton';
 import ExpeditionSign from '../../components/oasis/ExpeditionSign';
@@ -98,9 +97,6 @@ export default function OasisPage() {
   const goToExpeditionDetail = (expeditionId: number) => navigate(OASIS_PATHS.expeditionDetail(expeditionId));
   const goToContestSearch = () => navigate(CONTEST_SEARCH_PATH);
   const goToTeamCreate = () => navigate(TEAM_CREATE_PATH);
-  const handleTabChange = (tab: TabId) => {
-    if (tab === 'search') navigate(CONTEST_SEARCH_PATH);
-  };
 
   const [state, setState] = useState<OasisState>({ status: 'loading' });
   const [reloadKey, setReloadKey] = useState(0);
@@ -222,7 +218,7 @@ export default function OasisPage() {
       )}
 
       <TabBarArea>
-        <TabBar activeTab="oasis" onTabChange={handleTabChange} hasNew={data?.hasNewTeamNews ?? false} rounded />
+        <TabBar activeTab="oasis" hasNew={data?.hasNewTeamNews ?? false} rounded />
       </TabBarArea>
     </Stage>
   );

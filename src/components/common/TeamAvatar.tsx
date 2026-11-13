@@ -3,6 +3,7 @@ import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
 interface TeamAvatarProps {
   teamName: string;     // 사용자가 입력한 팀 이름
+  photoUrl?: string | null; // 팀 프로필 사진 주소. 없으면 팀 이름 첫 글자를 보여줌
   editable?: boolean;   // true면 오른쪽 아래에 수정(연필) 버튼을 보여줌
   onEdit?: () => void;  // 수정 버튼을 눌렀을 때 실행할 함수
 }
@@ -16,13 +17,14 @@ const getInitial = (name: string) => {
 
 export default function TeamAvatar({
   teamName,
+  photoUrl,
   editable = false,
   onEdit,
 }: TeamAvatarProps) {
   return (
     <Container>
       <Circle role="img" aria-label={`${teamName} 팀`}>
-        {getInitial(teamName)}
+        {photoUrl ? <Photo src={photoUrl} alt="" /> : getInitial(teamName)}
       </Circle>
 
       {/* editable이 true일 때만 수정 버튼을 그림 */}
@@ -59,6 +61,14 @@ const Circle = styled.div`
   font-weight: 400;
   line-height: 1.25;
   letter-spacing: -0.28px;
+  overflow: hidden; /* 사진을 원 모양으로 자른다 */
+`;
+
+// 테두리(4px) 안쪽을 사진으로 꽉 채운다.
+const Photo = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 `;
 
 const EditButton = styled.button`

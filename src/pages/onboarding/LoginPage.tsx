@@ -37,8 +37,12 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
       .then((user) => {
         if (controller.signal.aborted) return;
         onLoginResult('success');
-        // 내 정보 입력을 마친 사용자는 메인 화면으로 이동한다.
-        navigate(user.onboardingCompleted ? '/oasis' : '/profile', { replace: true });
+        const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
+        if (user.onboardingCompleted && invitationUrl?.startsWith('/invite?')) {
+          navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
+        } else {
+          navigate(user.onboardingCompleted ? '/oasis' : '/profile', { replace: true });
+        }
       })
       .catch(() => {
         if (controller.signal.aborted) return;

@@ -35,9 +35,14 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
   const closeSaveToast = useCallback(() => {
-    // 온보딩 완료 후 성공 안내가 끝나면 오아시스로 이동한다.
+    // 초대에서 시작했다면 정보 저장 후 합류를 이어간다.
     if (saveResult === 'success') {
-      navigate('/oasis', { replace: true });
+      const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
+      if (invitationUrl?.startsWith('/invite?')) {
+        navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
+      } else {
+        navigate('/oasis', { replace: true });
+      }
       return;
     }
     setSaveResult(null);

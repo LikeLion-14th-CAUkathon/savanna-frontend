@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import styled from 'styled-components';
 import { InfoRows } from './InfoCard';
+import { filledItems } from './infoItems';
 import type { ContestDetail } from '../../../types/contest';
 import chevronIcon from '../../../assets/icons/contest-search/contest-detail/chevron-down.svg';
 
@@ -8,7 +9,7 @@ interface ApplicationCardProps {
   application: ContestDetail['application'];
 }
 
-// '지원 방법·제출물' 펼침 카드. 처음엔 접혀 있다.
+// '지원 방법·제출물' 펼침 카드. 처음엔 접혀 있다. 비어 있는 항목은 줄을 숨긴다.
 export default function ApplicationCard({ application }: ApplicationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const contentId = useId();
@@ -22,6 +23,9 @@ export default function ApplicationCard({ application }: ApplicationCardProps) {
     { label: '양식', value: application.form },
     { label: '동의서', value: application.consent },
   ];
+
+  // 지원 방법·제출물 정보가 하나도 없으면 카드째 숨긴다.
+  if (filledItems(items).length === 0) return null;
 
   return (
     <Card $open={isOpen}>

@@ -80,7 +80,7 @@ const SAMPLE_DETAIL: Omit<ContestDetail, 'id' | 'title' | 'host' | 'startAt' | '
   sourceUrl: 'https://example.com',
   eligibility: {
     target: '대학생·청년 팀',
-    teamSize: '팀 2~5명',
+    teamSize: '2-5명',
     region: '온라인 · 서울 현장 발표',
   },
   overview: {

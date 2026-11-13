@@ -1,17 +1,15 @@
 import styled from 'styled-components';
-
-export interface InfoItem {
-  label: string;
-  value: string;
-}
+import { filledItems, type InfoItem } from './infoItems';
 
 interface InfoCardProps {
   title: string;
   items: InfoItem[];
 }
 
-// '공고 정보'처럼 제목 + (라벨 · 값) 줄로 된 카드
+// '공고 정보'처럼 제목 + (라벨 · 값) 줄로 된 카드. 보여줄 값이 하나도 없으면 카드째 숨긴다.
 export default function InfoCard({ title, items }: InfoCardProps) {
+  if (filledItems(items).length === 0) return null;
+
   return (
     <Card>
       <Title>{title}</Title>
@@ -20,22 +18,16 @@ export default function InfoCard({ title, items }: InfoCardProps) {
   );
 }
 
-const EMPTY_VALUE_TEXT = '원문에서 확인해 주세요';
-
-// 라벨 · 값 줄 목록. 펼침 카드(ApplicationCard)에서도 쓴다.
-// 값이 비어 있으면 '원문에서 확인해 주세요'를 흐리게 보여준다.
+// 라벨 · 값 줄 목록. 펼침 카드(ApplicationCard)에서도 쓴다. 값이 비어 있는 줄은 그리지 않는다.
 export function InfoRows({ items }: { items: InfoItem[] }) {
   return (
     <Rows>
-      {items.map((item) => {
-        const isEmpty = !item.value || item.value.trim() === '';
-        return (
-          <Row key={item.label}>
-            <dt>{item.label}</dt>
-            <Value $empty={isEmpty}>{isEmpty ? EMPTY_VALUE_TEXT : item.value}</Value>
-          </Row>
-        );
-      })}
+      {filledItems(items).map((item) => (
+        <Row key={item.label}>
+          <dt>{item.label}</dt>
+          <Value>{item.value}</Value>
+        </Row>
+      ))}
     </Rows>
   );
 }
@@ -80,10 +72,10 @@ const Row = styled.div`
   }
 `;
 
-const Value = styled.dd<{ $empty: boolean }>`
+const Value = styled.dd`
   flex: 1;
   min-width: 0;
   margin: 0;
-  color: ${({ $empty }) => ($empty ? '#999896' : '#1e1e1e')};
+  color: #1e1e1e;
   font-size: 15px;
 `;

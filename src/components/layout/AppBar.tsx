@@ -3,16 +3,21 @@ import backIcon from '../../assets/icons/app-bar/appbar-back.svg';
 
 interface AppBarProps {
   title: string;        // 가운데에 보여줄 화면 제목
-  onBack: () => void;   // 뒤로 가기 버튼을 눌렀을 때 실행할 함수
+  onBack?: () => void;  // 뒤로 가기 버튼을 눌렀을 때 실행할 함수. 없으면 버튼을 숨긴다
   icon?: string;        // 제목 앞에 붙일 아이콘 (선택). 20px 영역 가운데에 그린다
 }
 
 export default function AppBar({ title, onBack, icon }: AppBarProps) {
   return (
     <Bar>
-      <IconButton type="button" aria-label="뒤로 가기" onClick={onBack}>
-        <img src={backIcon} alt="" />
-      </IconButton>
+      {onBack ? (
+        <IconButton type="button" aria-label="뒤로 가기" onClick={onBack}>
+          <img src={backIcon} alt="" />
+        </IconButton>
+      ) : (
+        // 버튼이 없어도 제목이 가운데에 오도록 자리만 둔다
+        <span aria-hidden="true" />
+      )}
       <Title>
         {icon && (
           <TitleIcon>

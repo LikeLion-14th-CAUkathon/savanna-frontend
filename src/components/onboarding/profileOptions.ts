@@ -8,17 +8,17 @@ import cheetah from '../../assets/images/avatar/cheetah.png';
 import hippo from '../../assets/images/avatar/hippo.png';
 import ostrich from '../../assets/images/avatar/ostrich.png';
 
-// 캐릭터 선택 순서와 이미지
+// 서버에 저장하는 apiId는 기존 사용자 캐릭터가 바뀌지 않도록 고정한다.
 export const characters = [
-  { id: 'baby-lion', name: '아기사자', image: babyLion },
-  { id: 'adult-lion', name: '어른사자', image: adultLion },
-  { id: 'elephant', name: '코끼리', image: elephant },
-  { id: 'giraffe', name: '기린', image: giraffe },
-  { id: 'zebra', name: '얼룩말', image: zebra },
-  { id: 'meerkat', name: '미어캣', image: meerkat },
-  { id: 'cheetah', name: '치타', image: cheetah },
-  { id: 'hippo', name: '하마', image: hippo },
-  { id: 'ostrich', name: '타조', image: ostrich },
+  { id: 'baby-lion', apiId: 1, name: '아기사자', image: babyLion },
+  { id: 'adult-lion', apiId: 2, name: '어른사자', image: adultLion },
+  { id: 'elephant', apiId: 3, name: '코끼리', image: elephant },
+  { id: 'giraffe', apiId: 4, name: '기린', image: giraffe },
+  { id: 'zebra', apiId: 5, name: '얼룩말', image: zebra },
+  { id: 'meerkat', apiId: 6, name: '미어캣', image: meerkat },
+  { id: 'cheetah', apiId: 7, name: '치타', image: cheetah },
+  { id: 'hippo', apiId: 8, name: '하마', image: hippo },
+  { id: 'ostrich', apiId: 9, name: '타조', image: ostrich },
 ];
 
 // 지역 선택 창의 시·도 목록

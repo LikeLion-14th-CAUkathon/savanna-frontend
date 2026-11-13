@@ -56,6 +56,7 @@ export default function ProfilePage() {
         if (controller.signal.aborted) return;
         setName(user.name ?? '');
         setSchoolStatus(user.enrollmentStatus ?? 'ENROLLED');
+        setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
         setSelectedRegions(toRegionNames(user.regions));
         setLoadStatus('ready');
       })
@@ -87,10 +88,9 @@ export default function ProfilePage() {
     setIsSubmitted(true);
     if (!name.trim()) return; // 이름이 비어 있으면 여기서 멈춤
 
-    if (!characterId) {
-      const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
-      setCharacterId(randomCharacter.id);
-    }
+    // 자동 선택한 캐릭터도 화면과 요청에 같은 값을 사용한다.
+    const selectedCharacter = character ?? characters[Math.floor(Math.random() * characters.length)];
+    setCharacterId(selectedCharacter.id);
     setIsSaving(true);
     setSaveResult(null);
     try {
@@ -99,6 +99,7 @@ export default function ProfilePage() {
         name: name.trim(),
         enrollmentStatus: schoolStatus,
         regions: toRegionCodes(selectedRegions),
+        characterId: selectedCharacter.apiId,
       });
       setSaveResult(user.onboardingCompleted ? 'success' : 'error');
     } catch {

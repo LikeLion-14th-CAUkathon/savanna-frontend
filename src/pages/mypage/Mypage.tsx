@@ -12,7 +12,7 @@ import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
 import { characters } from '../../components/onboarding/profileOptions';
-import { MOCK_PROFILE } from '../../mocks/mypage';
+import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
 const TOAST_MESSAGES = {
@@ -37,14 +37,14 @@ function getPreviewToast(): ToastType | null {
   return null;
 }
 
-export default function Mypage() {
+export default function Mypage({ onLogoutSuccess }: { onLogoutSuccess: () => void }) {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus | ''>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
+  const [characterId, setCharacterId] = useState<string | null>(null);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -62,6 +62,7 @@ export default function Mypage() {
         setName(user.name ?? '');
         setSchoolStatus(user.enrollmentStatus ?? '');
         setSelectedRegions(toRegionNames(user.regions));
+        setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
         setLoadStatus('ready');
       })
       .catch(() => {
@@ -94,10 +95,12 @@ export default function Mypage() {
         name: name.trim(),
         ...(schoolStatus && { enrollmentStatus: schoolStatus }),
         regions: toRegionCodes(selectedRegions),
+        characterId: character?.apiId,
       });
       setName(user.name);
       setSchoolStatus(user.enrollmentStatus ?? '');
       setSelectedRegions(toRegionNames(user.regions));
+      setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
       setToastType('save-success');
     } catch {
       setToastType('save-error');
@@ -112,6 +115,7 @@ export default function Mypage() {
     setToastType(null);
     try {
       await logout();
+      onLogoutSuccess();
       navigate('/login', { replace: true });
     } catch {
       setToastType('logout-error');
@@ -136,37 +140,36 @@ export default function Mypage() {
         )}
         {loadStatus === 'ready' && (
           <FormFields disabled={isSaving || isLoggingOut}>
-        {character && (
-          <CharacterSection aria-label="나의 캐릭터">
-            <AvatarButton type="button" aria-label={`현재 캐릭터 ${character.name}, 캐릭터 변경`}
-              onClick={() => setOpenSheet('character')}>
-              <AvatarImage src={character.image} alt="" />
-              <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
-            </AvatarButton>
-            <CharacterCaption>
-              <CharacterLabel>나의 캐릭터 <OptionalBadge>선택</OptionalBadge></CharacterLabel>
-              <CharacterHelp>캐릭터를 눌러 바꿀 수 있어요.</CharacterHelp>
-            </CharacterCaption>
-          </CharacterSection>
-        )}
+            <CharacterSection aria-label="나의 캐릭터">
+              <AvatarButton $empty={!character} type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
+                onClick={() => setOpenSheet('character')}>
+                {/* 기존에 캐릭터 처리하기전에 회원가입한 계정을 위해 혹시 몰라 넣어논 코드입니다..! */}
+                {character ? <AvatarImage src={character.image} alt="" /> : <img src={pawIcon} alt="" />}
+                <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
+              </AvatarButton>
+              <CharacterCaption>
+                <CharacterLabel>나의 캐릭터 <OptionalBadge>선택</OptionalBadge></CharacterLabel>
+                <CharacterHelp>캐릭터를 눌러 바꿀 수 있어요.</CharacterHelp>
+              </CharacterCaption>
+            </CharacterSection>
 
-        <ProfileInfoForm
-          name={name}
-          nameError={isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined}
-          schoolStatus={schoolStatus}
-          schoolOptions={schoolOptions}
-          selectedRegions={selectedRegions}
-          onNameChange={setName}
-          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
-          onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
-          onOpenRegionSelect={() => setOpenSheet('region')}
-        />
-        <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
-        <LogoutArea>
-          <LogoutButton type="button" onClick={handleLogout}>
-            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-          </LogoutButton>
-        </LogoutArea>
+            <ProfileInfoForm
+              name={name}
+              nameError={isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined}
+              schoolStatus={schoolStatus}
+              schoolOptions={schoolOptions}
+              selectedRegions={selectedRegions}
+              onNameChange={setName}
+              onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
+              onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
+              onOpenRegionSelect={() => setOpenSheet('region')}
+            />
+            <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
+            <LogoutArea>
+              <LogoutButton type="button" onClick={handleLogout}>
+                {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+              </LogoutButton>
+            </LogoutArea>
           </FormFields>
         )}
       </Content>
@@ -303,15 +306,18 @@ const CharacterSection = styled.section`
   width: 100%;
 `;
 
-const AvatarButton = styled.button`
+const AvatarButton = styled.button<{ $empty: boolean }>`
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   width: 78px;
   height: 78px;
   padding: 0;
-  border: 0;
-  border-radius: 36px;
-  background: transparent;
+  border: ${({ $empty }) => ($empty ? '2px dashed #e7e5e0' : '0')};
+  border-radius: 50%;
+  background: ${({ $empty }) => ($empty ? '#ffffff' : 'transparent')};
   cursor: pointer;
 
   &:focus-visible {

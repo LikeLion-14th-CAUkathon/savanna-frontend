@@ -86,9 +86,11 @@ const Screen = styled.div`
   max-width: 100%;
   min-height: 100svh;
   margin: 0 auto;
-  padding: 62px 14px 87px;
-  justify-content: space-between;
-  gap: 24px;
+  padding: clamp(24px, calc(100svh - 680px), 60px) 14px
+    clamp(24px, calc(100svh - 677px), 63px);
+  justify-content: center;
+  /* 기본 화면 높이에서는 기존 배치를 유지하고, 긴 화면의 가운데 간격을 제한한다. */
+  gap: clamp(24px, calc(100svh - 607px), 245px);
   overflow: hidden;
   background-color: #feb055;
 
@@ -153,8 +155,11 @@ const LogoFrame = styled.div`
 
 // 로고 크기와 위치
 const LogoImage = styled.img`
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  width: 110%;
+  height: auto;
+  transform: translate(-50%, -50%);
 `;

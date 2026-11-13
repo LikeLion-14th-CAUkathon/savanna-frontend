@@ -139,36 +139,36 @@ export default function Mypage() {
         )}
         {loadStatus === 'ready' && (
           <FormFields disabled={isSaving || isLoggingOut}>
-          <CharacterSection aria-label="나의 캐릭터">
-            <AvatarButton type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
-              onClick={() => setOpenSheet('character')}>
-              {/* 기존에 캐릭터 처리하기전에 회원가입한 계정을 위해 혹시 몰라 넣어논 코드입니다..! */}
-              <AvatarImage src={character?.image ?? pawIcon} alt="" />
-              <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
-            </AvatarButton>
-            <CharacterCaption>
-              <CharacterLabel>나의 캐릭터 <OptionalBadge>선택</OptionalBadge></CharacterLabel>
-              <CharacterHelp>캐릭터를 눌러 바꿀 수 있어요.</CharacterHelp>
-            </CharacterCaption>
-          </CharacterSection>
+            <CharacterSection aria-label="나의 캐릭터">
+              <AvatarButton type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
+                onClick={() => setOpenSheet('character')}>
+                {/* 기존에 캐릭터 처리하기전에 회원가입한 계정을 위해 혹시 몰라 넣어논 코드입니다..! */}
+                <AvatarImage src={character?.image ?? pawIcon} alt="" />
+                <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
+              </AvatarButton>
+              <CharacterCaption>
+                <CharacterLabel>나의 캐릭터 <OptionalBadge>선택</OptionalBadge></CharacterLabel>
+                <CharacterHelp>캐릭터를 눌러 바꿀 수 있어요.</CharacterHelp>
+              </CharacterCaption>
+            </CharacterSection>
 
-        <ProfileInfoForm
-          name={name}
-          nameError={isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined}
-          schoolStatus={schoolStatus}
-          schoolOptions={schoolOptions}
-          selectedRegions={selectedRegions}
-          onNameChange={setName}
-          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
-          onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
-          onOpenRegionSelect={() => setOpenSheet('region')}
-        />
-        <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
-        <LogoutArea>
-          <LogoutButton type="button" onClick={handleLogout}>
-            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-          </LogoutButton>
-        </LogoutArea>
+            <ProfileInfoForm
+              name={name}
+              nameError={isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined}
+              schoolStatus={schoolStatus}
+              schoolOptions={schoolOptions}
+              selectedRegions={selectedRegions}
+              onNameChange={setName}
+              onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
+              onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
+              onOpenRegionSelect={() => setOpenSheet('region')}
+            />
+            <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
+            <LogoutArea>
+              <LogoutButton type="button" onClick={handleLogout}>
+                {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+              </LogoutButton>
+            </LogoutArea>
           </FormFields>
         )}
       </Content>

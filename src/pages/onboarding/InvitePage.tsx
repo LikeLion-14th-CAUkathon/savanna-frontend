@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
@@ -23,6 +23,9 @@ function InvitationContent({ token }: { token: string | null }) {
   const [loadError, setLoadError] = useState(token ? '' : '초대 링크를 확인해 주세요.');
   const [message, setMessage] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const joinInProgress = useRef(false);
+  const autoJoinStarted = useRef(false);
+  const autoJoin = (location.state as { autoJoin?: boolean } | null)?.autoJoin === true;
 
   // 초대 주소의 토큰으로 실제 팀 정보를 조회한다.
   useEffect(() => {
@@ -52,8 +55,9 @@ function InvitationContent({ token }: { token: string | null }) {
   }, [token]);
 
   // 합류 결과의 팀 ID를 팀 공간에 전달한다.
-  const handleJoin = async () => {
-    if (!token || !team || isJoining) return;
+  const handleJoin = useCallback(async () => {
+    if (!token || !team || joinInProgress.current) return;
+    joinInProgress.current = true;
     // 구글 인증으로 페이지를 떠나도 초대 주소가 유지되도록 저장한다.
     sessionStorage.setItem('pendingInvitationUrl', location.pathname + location.search + location.hash);
     setIsJoining(true);
@@ -70,7 +74,7 @@ function InvitationContent({ token }: { token: string | null }) {
         navigate('/profile');
       } else if (status === 409) {
         sessionStorage.removeItem('pendingInvitationUrl');
-        setMessage('이미 가입한 팀이에요.');
+        navigate(`/team?teamId=${team.teamId}`, { replace: true });
       } else if (status === 404 || status === 410) {
         setTeam(null);
         setLoadError('초대 링크가 유효하지 않아요. 새 초대 링크를 받아 주세요.');
@@ -79,9 +83,20 @@ function InvitationContent({ token }: { token: string | null }) {
         setMessage('팀에 합류하지 못했어요. 다시 시도해 주세요.');
       }
     } finally {
+      joinInProgress.current = false;
       setIsJoining(false);
     }
-  };
+  }, [token, team, location.pathname, location.search, location.hash, navigate]);
+
+  // 로그인·정보 입력을 마치고 돌아오면 한 번만 자동으로 합류한다.
+  useEffect(() => {
+    if (!autoJoin || !team || autoJoinStarted.current) return;
+    const timer = window.setTimeout(() => {
+      autoJoinStarted.current = true;
+      void handleJoin();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [autoJoin, team, handleJoin]);
 
   return (
     <Page>

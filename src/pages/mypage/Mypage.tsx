@@ -140,10 +140,10 @@ export default function Mypage() {
         {loadStatus === 'ready' && (
           <FormFields disabled={isSaving || isLoggingOut}>
             <CharacterSection aria-label="나의 캐릭터">
-              <AvatarButton type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
+              <AvatarButton $empty={!character} type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
                 onClick={() => setOpenSheet('character')}>
                 {/* 기존에 캐릭터 처리하기전에 회원가입한 계정을 위해 혹시 몰라 넣어논 코드입니다..! */}
-                <AvatarImage src={character?.image ?? pawIcon} alt="" />
+                {character ? <AvatarImage src={character.image} alt="" /> : <img src={pawIcon} alt="" />}
                 <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
               </AvatarButton>
               <CharacterCaption>
@@ -305,15 +305,18 @@ const CharacterSection = styled.section`
   width: 100%;
 `;
 
-const AvatarButton = styled.button`
+const AvatarButton = styled.button<{ $empty: boolean }>`
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   width: 78px;
   height: 78px;
   padding: 0;
-  border: 0;
-  border-radius: 36px;
-  background: transparent;
+  border: ${({ $empty }) => ($empty ? '2px dashed #e7e5e0' : '0')};
+  border-radius: 50%;
+  background: ${({ $empty }) => ($empty ? '#ffffff' : 'transparent')};
   cursor: pointer;
 
   &:focus-visible {

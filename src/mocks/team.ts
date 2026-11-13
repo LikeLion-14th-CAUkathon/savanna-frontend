@@ -5,7 +5,6 @@ export const MOCK_TEAM_SPACE: {
   team: TeamDetailResponse;
   myUserId: number;
   inviteUrl: string;
-  hasNewTeamNews: boolean;
   memberCharacterIds: Record<number, string>; // userId → 캐릭터 id. 팀 API에 아직 없는 값
 } = {
   team: {
@@ -25,6 +24,5 @@ export const MOCK_TEAM_SPACE: {
   },
   myUserId: 1,
   inviteUrl: 'https://savanna.app/invite/7731',
-  hasNewTeamNews: true,
   memberCharacterIds: { 1: 'baby-lion', 2: 'elephant', 3: 'giraffe', 4: 'giraffe' },
 };

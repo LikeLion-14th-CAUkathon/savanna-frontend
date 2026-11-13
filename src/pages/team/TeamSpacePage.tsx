@@ -70,9 +70,9 @@ export default function TeamSpacePage() {
             {/* TODO: B02 팀 정보 수정 화면 연결 */}
             <ActionButton variant="secondary">정보 수정</ActionButton>
             <NewsButtonWrap>
-              {/* TODO: B03 팀 소식 화면 연결 */}
               <ActionButton
                 variant="secondary"
+                onClick={() => navigate('/team/news')}
                 aria-label={hasNewTeamNews ? '팀 소식, 새 소식 있음' : '팀 소식'}
               >
                 <img src={mailIcon} alt="" />

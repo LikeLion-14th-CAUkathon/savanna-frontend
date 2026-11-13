@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 import homeIcon from '../../assets/icons/tabs/tab-home.svg';
 import homeActiveIcon from '../../assets/icons/tabs/tab-home-active.svg';
@@ -13,25 +14,33 @@ export type TabId = 'oasis' | 'search' | 'team' | 'mypage'; // 탭 id를 Union T
 interface Tab {
   id: TabId;
   label: string;
+  path: string;        // 눌렀을 때 이동할 화면 주소
   icon: string;        // 선택 안 됐을 때 아이콘 (회색)
   activeIcon: string;  // 선택됐을 때 아이콘 (주황)
 }
 
 interface TabBarProps {
   activeTab: TabId;                    // 지금 선택된 탭 (부모가 알려줌)
-  onTabChange: (tab: TabId) => void;   // 탭을 눌렀을 때 부모에게 알려주는 함수
   hasNew?: boolean;                    // 팀 공간 탭에 새 소식 점 표시
   rounded?: boolean;                   // 위쪽 모서리를 둥글게 (오아시스 홈 화면)
 }
 
 const TAB_LIST: Tab[] = [
-  { id: 'oasis', label: '오아시스', icon: homeIcon, activeIcon: homeActiveIcon },
-  { id: 'search', label: '공고 찾기', icon: searchIcon, activeIcon: searchActiveIcon },
-  { id: 'team', label: '팀 공간', icon: teamIcon, activeIcon: teamActiveIcon },
-  { id: 'mypage', label: '마이페이지', icon: profileIcon, activeIcon: profileActiveIcon },
+  { id: 'oasis', label: '오아시스', path: '/oasis', icon: homeIcon, activeIcon: homeActiveIcon },
+  { id: 'search', label: '공고 찾기', path: '/contest', icon: searchIcon, activeIcon: searchActiveIcon },
+  { id: 'team', label: '팀 공간', path: '/team', icon: teamIcon, activeIcon: teamActiveIcon },
+  { id: 'mypage', label: '마이페이지', path: '/mypage', icon: profileIcon, activeIcon: profileActiveIcon },
 ];
 
-export default function TabBar({ activeTab, onTabChange, hasNew = false, rounded = false }: TabBarProps) {
+// 탭을 누르면 해당 화면으로 이동한다. 이미 그 화면이면 이동하지 않는다.
+export default function TabBar({ activeTab, hasNew = false, rounded = false }: TabBarProps) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const goToTab = (tab: Tab) => {
+    if (pathname !== tab.path) navigate(tab.path);
+  };
+
   return (
     <Bar $rounded={rounded}>
       {TAB_LIST.map((tab) => {
@@ -45,7 +54,7 @@ export default function TabBar({ activeTab, onTabChange, hasNew = false, rounded
             $active={isActive}
             aria-current={isActive ? 'page' : undefined}
             aria-label={showNewDot ? `${tab.label}, 새 소식 있음` : tab.label}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => goToTab(tab)}
           >
             <IconWrap>
               <Icon src={isActive ? tab.activeIcon : tab.icon} alt="" />

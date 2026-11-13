@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
-import TabBar, { type TabId } from '../../components/layout/TabBar';
+import TabBar from '../../components/layout/TabBar';
 import ReceivedProposalCard from '../../components/team/team-news/ReceivedProposalCard';
 import SentProposalCard from '../../components/team/team-news/SentProposalCard';
 import SentProposalSelect from '../../components/team/team-news/SentProposalSelect';
@@ -33,12 +33,6 @@ export default function TeamNews() {
 
   const openAnnouncement = (announcementId: number) => navigate(`/contest/${announcementId}`);
 
-  const handleTabChange = (tab: TabId) => {
-    if (tab === 'oasis') navigate('/oasis');
-    if (tab === 'search') navigate('/contest');
-    if (tab === 'team') navigate('/team');
-    if (tab === 'mypage') navigate('/mypage');
-  };
 
   return (
     <Page>
@@ -88,7 +82,7 @@ export default function TeamNews() {
       </Content>
 
       <BottomBar>
-        <TabBar activeTab="team" onTabChange={handleTabChange} />
+        <TabBar activeTab="team" />
       </BottomBar>
     </Page>
   );

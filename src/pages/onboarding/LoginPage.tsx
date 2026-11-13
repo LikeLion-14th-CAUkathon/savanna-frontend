@@ -4,8 +4,8 @@ import { refreshToken } from '../../api/auth';
 import { getMyInfo } from '../../api/user';
 import styled from 'styled-components';
 import LoginCard from '../../components/onboarding/LoginCard';
-import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.png';
-import logo from '../../assets/images/login/logo.png';
+import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.webp';
+import logo from '../../assets/images/login/logo.webp';
 
 interface LoginPageProps {
   onGoogleLogin: () => void;
@@ -126,22 +126,19 @@ const TopFade = styled.div`
   pointer-events: none;
 `;
 
-// 로고 바깥 여백 자르기
+// 로고 영역
 const LogoFrame = styled.div`
   position: relative;
   width: min(319px, 85%);
   aspect-ratio: 319 / 180;
   flex-shrink: 0;
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
-  overflow: hidden;
 `;
 
 // 로고 크기와 위치
 const LogoImage = styled.img`
-  position: absolute;
-  top: -20.36%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 104.92%;
-  height: 139.77%;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 `;

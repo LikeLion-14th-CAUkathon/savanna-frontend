@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import styled from 'styled-components';
 import Button from '../common/Button';
-import googleLogo from '../../assets/icons/login/google-logo.png';
+import googleLogo from '../../assets/icons/login/google-logo.webp';
 
 interface LoginCardProps {
   onGoogleLogin: () => void;
@@ -123,8 +123,8 @@ const GoogleLogo = styled.span`
 
   img {
     display: block;
-    width: 23px;
-    height: 23px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
   }
 `;

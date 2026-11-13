@@ -12,7 +12,7 @@ import ProfileInfoForm from '../../components/common/ProfileInfoForm';
 import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
 import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
 import { characters } from '../../components/onboarding/profileOptions';
-import { MOCK_PROFILE } from '../../mocks/mypage';
+import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import editIcon from '../../assets/icons/team-avatar-edit.svg';
 
 const TOAST_MESSAGES = {
@@ -44,7 +44,7 @@ export default function Mypage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
+  const [characterId, setCharacterId] = useState<string | null>(null);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -62,6 +62,7 @@ export default function Mypage() {
         setName(user.name ?? '');
         setSchoolStatus(user.enrollmentStatus ?? '');
         setSelectedRegions(toRegionNames(user.regions));
+        setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
         setLoadStatus('ready');
       })
       .catch(() => {
@@ -94,10 +95,12 @@ export default function Mypage() {
         name: name.trim(),
         ...(schoolStatus && { enrollmentStatus: schoolStatus }),
         regions: toRegionCodes(selectedRegions),
+        characterId: character?.apiId,
       });
       setName(user.name);
       setSchoolStatus(user.enrollmentStatus ?? '');
       setSelectedRegions(toRegionNames(user.regions));
+      setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
       setToastType('save-success');
     } catch {
       setToastType('save-error');
@@ -136,11 +139,11 @@ export default function Mypage() {
         )}
         {loadStatus === 'ready' && (
           <FormFields disabled={isSaving || isLoggingOut}>
-        {character && (
           <CharacterSection aria-label="나의 캐릭터">
-            <AvatarButton type="button" aria-label={`현재 캐릭터 ${character.name}, 캐릭터 변경`}
+            <AvatarButton type="button" aria-label={character ? `현재 캐릭터 ${character.name}, 캐릭터 변경` : '나의 캐릭터 선택'}
               onClick={() => setOpenSheet('character')}>
-              <AvatarImage src={character.image} alt="" />
+              {/* 기존에 캐릭터 처리하기전에 회원가입한 계정을 위해 혹시 몰라 넣어논 코드입니다..! */}
+              <AvatarImage src={character?.image ?? pawIcon} alt="" />
               <EditBadge aria-hidden="true"><img src={editIcon} alt="" /></EditBadge>
             </AvatarButton>
             <CharacterCaption>
@@ -148,7 +151,6 @@ export default function Mypage() {
               <CharacterHelp>캐릭터를 눌러 바꿀 수 있어요.</CharacterHelp>
             </CharacterCaption>
           </CharacterSection>
-        )}
 
         <ProfileInfoForm
           name={name}

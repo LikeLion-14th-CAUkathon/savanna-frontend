@@ -13,7 +13,6 @@ import { MOCK_TEAM_SPACE } from '../../mocks/team';
 import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
 import { getTeamNewsNotification } from '../../utils/teamNews';
 import type { TeamSpaceLocationState } from '../../types/team';
-import type { TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';

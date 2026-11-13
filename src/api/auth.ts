@@ -5,10 +5,13 @@ import { apiClient, BASE_URL, refreshAccessToken, setAccessToken } from './clien
 /**
  * Google 로그인 시작 URL — GET /oauth2/authorization/google
  * - API 호출이 아니라 페이지 이동으로 사용: window.location.href = GOOGLE_LOGIN_URL
- * - 로그인 성공 후 토큰·온보딩 완료 여부를 프론트로 전달하는 방식은 백엔드 확인 필요
- *   (온보딩 미완료 → A02, 완료 → 팀 선택 또는 오아시스)
+ * - 구글 인증과 Refresh Token 쿠키 설정은 백엔드에서 처리한다.
  */
 export const GOOGLE_LOGIN_URL = `${BASE_URL}/oauth2/authorization/google`;
+
+export const startGoogleLogin = () => {
+  window.location.assign(GOOGLE_LOGIN_URL);
+};
 
 // ===== API =====
 

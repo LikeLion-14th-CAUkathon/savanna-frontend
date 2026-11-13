@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { getAccessToken } from '../../api/client';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
@@ -10,10 +11,17 @@ import { SAMPLE_TEAM } from '../../mocks/invite';
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [message, setMessage] = useState('');
 
   // API 연결 후 팀 합류 요청과 성공·실패 처리
   const handleJoin = () => {
+    // 구글 인증으로 페이지를 떠나도 초대 주소가 유지되도록 저장한다.
+    sessionStorage.setItem('pendingInvitationUrl', location.pathname + location.search + location.hash);
+    if (!getAccessToken()) {
+      navigate('/login');
+      return;
+    }
     setMessage('팀 합류 기능은 아직 연결되지 않았어요.');
   };
 

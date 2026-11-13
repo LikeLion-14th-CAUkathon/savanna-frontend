@@ -40,10 +40,19 @@ let refreshPromise: Promise<string> | null = null;
 /** refreshToken 쿠키로 Access Token을 재발급하고 메모리에 저장한다. */
 export const refreshAccessToken = async (): Promise<TokenData> => {
   // 인터셉터 무한 루프를 막기 위해 apiClient가 아닌 axios로 직접 호출한다.
+  const { data: csrf } = await axios.get<{ csrfToken: string }>(
+    `${BASE_URL}/api/v1/auth/csrf`,
+    { withCredentials: true },
+  );
+
+  // CSRF 토큰과 함께 refreshToken 쿠키를 보내 Access Token을 재발급한다.
   const { data } = await axios.post<ApiResponse<TokenData>>(
     `${BASE_URL}/api/v1/auth/refresh`,
     null,
-    { withCredentials: true },
+    {
+      withCredentials: true,
+      headers: { 'X-XSRF-TOKEN': csrf.csrfToken },
+    },
   );
   setAccessToken(data.data.accessToken);
   return data.data;

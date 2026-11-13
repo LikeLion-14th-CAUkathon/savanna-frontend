@@ -21,16 +21,17 @@ export interface OasisExpedition {
   participantCount: number; // 실제로 합류한 인원
 }
 
-// 화면 상태: 불러오는 중 / 실패 / 성공
+// 화면 상태: 불러오는 중 / 실패 / 소속 팀 없음 / 성공
 export type OasisState =
   | { status: 'loading' }
   | { status: 'error' }
+  | { status: 'noTeam' }
   | { status: 'success'; data: OasisHome };
 
 export interface OasisHome {
   teamId: number;
   teamName: string;
   memberCount: number;
-  hasNewTeamNews: boolean;        // 하단 '팀 공간' 탭 새 소식 표시. TODO: 별도 API인지 백엔드 확인
+  hasNewTeamNews: boolean;        // 하단 '팀 공간' 탭 새 소식 표시 (팀 소식 알림 점 API)
   expeditions: OasisExpedition[]; // 진행 중 원정
 }

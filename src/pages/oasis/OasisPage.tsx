@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
@@ -8,6 +8,7 @@ import TeamSwitchButton from '../../components/oasis/TeamSwitchButton';
 import ExpeditionSign from '../../components/oasis/ExpeditionSign';
 import HomeSign from '../../components/oasis/HomeSign';
 import MapNoticePopup from '../../components/oasis/MapNoticePopup';
+import { fetchOasisHome } from '../../components/oasis/oasisData';
 import { formatDDay, isPastDeadline } from '../../utils/dday';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
@@ -20,6 +21,7 @@ import meerkatImage from '../../assets/images/oasis/meerkat.png';
 
 const MESSAGES = {
   empty: '아직 시작한 원정이 없어요.',
+  noTeam: '아직 소속된 팀이 없어요.',
   error: '원정을 불러오지 못했어요. 다시 시도해 주세요.',
   loading: '원정 지도를 불러오는 중이에요.',
 };
@@ -85,61 +87,41 @@ const sortByDeadline = (expeditions: OasisExpedition[]) =>
 const formatProgress = (expedition: OasisExpedition) =>
   `${EXPEDITION_STAGE_LABEL[expedition.stage]} · 참여 ${expedition.participantCount}명`;
 
-// ---------------------------------------------------------------------------
-// 테스트용 임시 데이터 (TODO: API 연결 시 이 부분을 지우고 실제 요청 결과로 교체)
-// 기본은 데이터가 없는 상태(원정 없음). 주소 뒤에 붙여서 다른 상태 확인:
-//   ?preview=1 ~ ?preview=6  원정 개수 (2개까지 짧은 지도, 3개부터 긴 지도)
-//   ?preview=loading 불러오는 중   ?preview=error  조회 실패
-// ---------------------------------------------------------------------------
-const daysFromNow = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-
-const SAMPLE_TEAM = {
-  teamId: 1,
-  teamName: '사바나 탐험대',
-  memberCount: 3,
-  hasNewTeamNews: false,
-};
-
-const SAMPLE_EXPEDITIONS: OasisExpedition[] = [
-  { id: 1, contestTitle: '헬스케어 AI 아이디어 공모전', deadline: daysFromNow(14), stage: 'DRAFT', participantCount: 2 },
-  { id: 2, contestTitle: '청년 사회문제 해결 해커톤', deadline: daysFromNow(5), stage: 'KICKOFF', participantCount: 1 },
-  { id: 3, contestTitle: '서울 청년 현장 아이디어톤', deadline: daysFromNow(10), stage: 'KICKOFF', participantCount: 1 },
-  { id: 4, contestTitle: '대학생 서비스 기획 경진대회', deadline: daysFromNow(21), stage: 'FINAL_REVIEW', participantCount: 3 },
-  { id: 5, contestTitle: '오픈데이터 앱 디자인 챌린지', deadline: daysFromNow(30), stage: 'KICKOFF', participantCount: 2 },
-  { id: 6, contestTitle: '환경 아이디어 공모전', deadline: daysFromNow(2), stage: 'SUBMIT', participantCount: 3 },
-];
-
-const getPreviewState = (): OasisState => {
-  const preview = new URLSearchParams(window.location.search).get('preview');
-  if (preview === 'loading') return { status: 'loading' };
-  if (preview === 'error') return { status: 'error' };
-  const count = Number(preview);
-  if (count > 0) {
-    return {
-      status: 'success',
-      data: { ...SAMPLE_TEAM, hasNewTeamNews: true, expeditions: SAMPLE_EXPEDITIONS.slice(0, count) },
-    };
-  }
-  return { status: 'success', data: { ...SAMPLE_TEAM, expeditions: [] } };
-};
-// ---------------------------------------------------------------------------
-
-
 // 아직 주소가 없는 화면 (TODO: 해당 화면 주소가 생기면 연결)
 //  - 우리 팀 프로젝트 → B02 팀 공간 / 하단 탭: 팀 공간, 마이페이지
 const CONTEST_SEARCH_PATH = '/contest'; // C01 공고 찾기 (App.tsx 기준)
+const TEAM_CREATE_PATH = '/team/create'; // B01 팀 생성 (App.tsx 기준)
 const goToTeamSpace = () => {};
 
 export default function OasisPage() {
   const navigate = useNavigate();
   const goToExpeditionDetail = (expeditionId: number) => navigate(OASIS_PATHS.expeditionDetail(expeditionId));
   const goToContestSearch = () => navigate(CONTEST_SEARCH_PATH);
+  const goToTeamCreate = () => navigate(TEAM_CREATE_PATH);
   const handleTabChange = (tab: TabId) => {
     if (tab === 'search') navigate(CONTEST_SEARCH_PATH);
   };
 
-  const [state] = useState(getPreviewState);
-  const retry = () => {}; // TODO: API 연결 시 다시 요청
+  const [state, setState] = useState<OasisState>({ status: 'loading' });
+  const [reloadKey, setReloadKey] = useState(0);
+  const retry = () => {
+    setState({ status: 'loading' });
+    setReloadKey((key) => key + 1);
+  };
+
+  useEffect(() => {
+    let ignore = false; // 화면을 떠난 뒤 도착한 응답은 무시
+    fetchOasisHome()
+      .then((home) => {
+        if (!ignore) setState(home ? { status: 'success', data: home } : { status: 'noTeam' });
+      })
+      .catch(() => {
+        if (!ignore) setState({ status: 'error' });
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [reloadKey]);
 
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -224,6 +206,12 @@ export default function OasisPage() {
       {state.status === 'error' && (
         <PopupArea>
           <MapNoticePopup message={MESSAGES.error} actionLabel="다시 시도" onAction={retry} isError />
+        </PopupArea>
+      )}
+
+      {state.status === 'noTeam' && (
+        <PopupArea>
+          <MapNoticePopup message={MESSAGES.noTeam} actionLabel="팀 만들기" onAction={goToTeamCreate} />
         </PopupArea>
       )}
 

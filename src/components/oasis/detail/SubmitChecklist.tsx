@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import styled from 'styled-components';
-import { Card, EmptyText } from './detailStyles';
+import { Card } from './detailStyles';
 import checkedIcon from '../../../assets/icons/expedition-detail/checkbox-checked.svg';
 import type { ChecklistItem } from '../../../types/expedition';
 
@@ -12,8 +12,6 @@ const MESSAGES = {
 
 interface SubmitChecklistProps {
   items: ChecklistItem[];
-  isAdding: boolean;                                  // '+ 추가'를 눌러 새 항목 입력칸이 열린 상태
-  onCancelAdd: () => void;
   onAdd: (content: string) => Promise<boolean>;       // 저장 성공 여부
   onUpdate: (id: number, content: string) => Promise<boolean>;
   onToggle: (id: number) => void;
@@ -21,15 +19,8 @@ interface SubmitChecklistProps {
 }
 
 // 일정·제출 준비 탭 · 제출 체크리스트 (별도 저장 버튼 없이 바로 저장)
-export default function SubmitChecklist({
-  items,
-  isAdding,
-  onCancelAdd,
-  onAdd,
-  onUpdate,
-  onToggle,
-  onDelete,
-}: SubmitChecklistProps) {
+// 새 항목은 목록 마지막 줄의 입력칸에서 바로 추가
+export default function SubmitChecklist({ items, onAdd, onUpdate, onToggle, onDelete }: SubmitChecklistProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [editError, setEditError] = useState('');
@@ -67,10 +58,9 @@ export default function SubmitChecklist({
     else setEditError(MESSAGES.saveFailed); // 입력 내용은 그대로 두고 다시 시도
   };
 
-  const closeAdd = () => {
+  const clearAdd = () => {
     setNewDraft('');
     setNewError('');
-    onCancelAdd();
   };
 
   const submitAdd = async () => {
@@ -83,7 +73,7 @@ export default function SubmitChecklist({
     savingRef.current = true;
     const ok = await onAdd(content);
     savingRef.current = false;
-    if (ok) closeAdd();
+    if (ok) clearAdd(); // 입력칸은 남겨둬서 이어서 추가할 수 있게
     else setNewError(MESSAGES.saveFailed);
   };
 
@@ -96,24 +86,8 @@ export default function SubmitChecklist({
   const handleAddKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing) return;
     if (event.key === 'Enter') submitAdd();
-    if (event.key === 'Escape') closeAdd();
+    if (event.key === 'Escape') clearAdd();
   };
-
-  // 새 항목 칸에서 아무것도 안 쓰고 나가면 그냥 닫음
-  const handleAddBlur = () => {
-    if (!newDraft.trim()) closeAdd();
-    else submitAdd();
-  };
-
-  if (items.length === 0 && !isAdding) {
-    return (
-      <ChecklistCard>
-        <EmptyRow>
-          <EmptyText>등록된 제출 체크리스트가 없어요.</EmptyText>
-        </EmptyRow>
-      </ChecklistCard>
-    );
-  }
 
   return (
     <ChecklistCard>
@@ -158,27 +132,27 @@ export default function SubmitChecklist({
           </Row>
         ))}
 
-        {isAdding && (
-          <Row>
-            <RowMain>
-              <EmptyBox $light aria-hidden="true" />
-              <ItemInput
-                autoFocus
-                value={newDraft}
-                placeholder="항목 내용 입력"
-                aria-invalid={!!newError}
-                aria-label="새 체크리스트 항목"
-                onChange={(event) => {
-                  setNewDraft(event.target.value);
-                  setNewError('');
-                }}
-                onKeyDown={handleAddKeyDown}
-                onBlur={handleAddBlur}
-              />
-            </RowMain>
-            {newError && <ErrorText role="alert">{newError}</ErrorText>}
-          </Row>
-        )}
+        {/* 목록 마지막 줄: 새 항목 입력 */}
+        <Row>
+          <RowMain>
+            <PlusMark aria-hidden="true">+</PlusMark>
+            <NewItemInput
+              value={newDraft}
+              placeholder="항목 내용 입력"
+              aria-invalid={!!newError}
+              aria-label="새 체크리스트 항목"
+              onChange={(event) => {
+                setNewDraft(event.target.value);
+                setNewError('');
+              }}
+              onKeyDown={handleAddKeyDown}
+            />
+            <AddButton type="button" onClick={submitAdd}>
+              추가
+            </AddButton>
+          </RowMain>
+          {newError && <ErrorText role="alert">{newError}</ErrorText>}
+        </Row>
       </List>
     </ChecklistCard>
   );
@@ -186,10 +160,6 @@ export default function SubmitChecklist({
 
 const ChecklistCard = styled(Card)`
   padding: 4px 16px;
-`;
-
-const EmptyRow = styled.div`
-  padding: 12px 0;
 `;
 
 const List = styled.ul`
@@ -227,15 +197,45 @@ const CheckButton = styled.button`
   }
 `;
 
-const EmptyBox = styled.span<{ $light?: boolean }>`
+const EmptyBox = styled.span`
   display: block;
   flex-shrink: 0;
   box-sizing: border-box;
   width: 22px;
   height: 22px;
-  border: 2px solid ${({ $light }) => ($light ? 'var(--color-border)' : '#d7d4cd')};
+  border: 2px solid #d7d4cd;
   border-radius: 6px;
   background: #ffffff;
+`;
+
+// 입력 줄 왼쪽의 '+' (체크박스 자리와 같은 너비)
+const PlusMark = styled.span`
+  flex-shrink: 0;
+  width: 22px;
+  color: var(--color-orange);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 28px;
+  text-align: center;
+`;
+
+const AddButton = styled.button`
+  flex-shrink: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-orange);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-orange);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 `;
 
 const ItemText = styled.button<{ $done: boolean }>`
@@ -276,6 +276,15 @@ const ItemInput = styled.input`
 
   &[aria-invalid='true'] {
     border-bottom-color: var(--color-error);
+  }
+`;
+
+// 새 항목 입력칸: 평소엔 밑줄 없이 안내 문구만, 입력 중일 때만 밑줄
+const NewItemInput = styled(ItemInput)`
+  border-bottom-color: transparent;
+
+  &:focus {
+    border-bottom-color: var(--color-amber);
   }
 `;
 

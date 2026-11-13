@@ -9,12 +9,14 @@ import logo from '../../assets/images/login/logo.png';
 
 interface LoginPageProps {
   onGoogleLogin: () => void;
+  onLoginResult: (result: 'success' | 'error') => void;
 }
 
-export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
+export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isGoogleSuccess = searchParams.get('google') === 'success';
+  const isGoogleFail = searchParams.get('google') === 'fail';
   const [loginStatus, setLoginStatus] = useState<'idle' | 'loading' | 'error'>(
     isGoogleSuccess ? 'loading' : 'idle',
   );
@@ -22,6 +24,11 @@ export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
 
   // 구글 인증 후 돌아왔을 때만 CSRF 확인과 Access Token 발급을 진행한다.
   useEffect(() => {
+    // 구글 인증 자체가 실패해서 돌아온 경우에도 실패 토스트를 표시한다.
+    if (isGoogleFail) {
+      onLoginResult('error');
+      return;
+    }
     if (!isGoogleSuccess) return;
     const controller = new AbortController();
     // 개발 모드에서도 토큰 발급과 내 정보 조회가 중복되지 않도록 재사용한다.
@@ -29,14 +36,17 @@ export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
     loginRequest.current
       .then((user) => {
         if (controller.signal.aborted) return;
+        onLoginResult('success');
         // 내 정보 입력을 마친 사용자는 메인 화면으로 이동한다.
         navigate(user.onboardingCompleted ? '/oasis' : '/profile', { replace: true });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setLoginStatus('error');
+        if (controller.signal.aborted) return;
+        setLoginStatus('error');
+        onLoginResult('error');
       });
     return () => controller.abort();
-  }, [isGoogleSuccess, navigate]);
+  }, [isGoogleSuccess, isGoogleFail, navigate, onLoginResult]);
 
   return (
     <Page>
@@ -49,9 +59,6 @@ export default function LoginPage({ onGoogleLogin }: LoginPageProps) {
 
         <LoginCard onGoogleLogin={onGoogleLogin} isLoading={loginStatus === 'loading'}>
           {loginStatus === 'loading' && <p role="status">로그인을 확인하고 있어요.</p>}
-          {loginStatus === 'error' && (
-            <p role="alert">로그인을 완료하지 못했어요. 다시 시도해 주세요.</p>
-          )}
         </LoginCard>
       </Screen>
     </Page>

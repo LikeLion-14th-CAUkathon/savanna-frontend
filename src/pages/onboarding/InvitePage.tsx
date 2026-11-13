@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
-import { getAccessToken } from '../../api/client';
-import { previewInvitation } from '../../api/invitation';
+import { acceptInvitation, previewInvitation } from '../../api/invitation';
 import type { InvitationPreviewResponse } from '../../api/invitation';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
@@ -23,6 +22,7 @@ function InvitationContent({ token }: { token: string | null }) {
   const [isLoading, setIsLoading] = useState(Boolean(token));
   const [loadError, setLoadError] = useState(token ? '' : '초대 링크를 확인해 주세요.');
   const [message, setMessage] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   // 초대 주소의 토큰으로 실제 팀 정보를 조회한다.
   useEffect(() => {
@@ -51,15 +51,36 @@ function InvitationContent({ token }: { token: string | null }) {
     return () => controller.abort();
   }, [token]);
 
-  // API 연결 후 팀 합류 요청과 성공·실패 처리
-  const handleJoin = () => {
+  // 합류 결과의 팀 ID를 팀 공간에 전달한다.
+  const handleJoin = async () => {
+    if (!token || !team || isJoining) return;
     // 구글 인증으로 페이지를 떠나도 초대 주소가 유지되도록 저장한다.
     sessionStorage.setItem('pendingInvitationUrl', location.pathname + location.search + location.hash);
-    if (!getAccessToken()) {
-      navigate('/login');
-      return;
+    setIsJoining(true);
+    setMessage('');
+    try {
+      const joinedTeam = await acceptInvitation(token);
+      sessionStorage.removeItem('pendingInvitationUrl');
+      navigate(`/team?teamId=${joinedTeam.teamId}`, { replace: true });
+    } catch (error: unknown) {
+      const status = isAxiosError(error) ? error.response?.status : undefined;
+      if (status === 401) {
+        navigate('/login');
+      } else if (status === 403) {
+        navigate('/profile');
+      } else if (status === 409) {
+        sessionStorage.removeItem('pendingInvitationUrl');
+        setMessage('이미 가입한 팀이에요.');
+      } else if (status === 404 || status === 410) {
+        setTeam(null);
+        setLoadError('초대 링크가 유효하지 않아요. 새 초대 링크를 받아 주세요.');
+        sessionStorage.removeItem('pendingInvitationUrl');
+      } else {
+        setMessage('팀에 합류하지 못했어요. 다시 시도해 주세요.');
+      }
+    } finally {
+      setIsJoining(false);
     }
-    setMessage('팀 합류 기능은 아직 연결되지 않았어요.');
   };
 
   return (
@@ -80,7 +101,9 @@ function InvitationContent({ token }: { token: string | null }) {
         {message && <Message role="status">{message}</Message>}
       </Content>
       <Footer>
-        <JoinButton onClick={handleJoin} disabled={isLoading || !team}>합류하기</JoinButton>
+        <JoinButton onClick={handleJoin} disabled={isLoading || !team || isJoining}>
+          {isJoining ? '합류하고 있어요.' : '합류하기'}
+        </JoinButton>
       </Footer>
     </Page>
   );

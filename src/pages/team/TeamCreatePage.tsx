@@ -38,7 +38,7 @@ export default function TeamCreatePage() {
 
   return (
     <Page>
-      <AppBar title="팀 생성" onBack={() => navigate(-1)} />
+      <AppBar title="팀 생성" />
 
       <Content>
         <TeamPhotoPicker photo={photo} onChange={setPhoto} />

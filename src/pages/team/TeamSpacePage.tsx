@@ -10,6 +10,9 @@ import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
 import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_TEAM_SPACE } from '../../mocks/team';
+import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
+import { getTeamNewsNotification } from '../../utils/teamNews';
+import type { TeamSpaceLocationState } from '../../types/team';
 import type { TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
@@ -28,8 +31,10 @@ type CopyToast = keyof typeof COPY_TOAST;
 export default function TeamSpacePage() {
   const navigate = useNavigate();
   // TODO: API 연결 시 getTeamDetail(teamId) · 초대 링크 응답으로 교체
-  const { team: mockTeam, myUserId, inviteUrl, hasNewTeamNews, memberCharacterIds } = MOCK_TEAM_SPACE;
-
+  const { team: mockTeam, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
+  // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 알림 점을 띄운다.
+  const hasNewTeamNews = getTeamNewsNotification(MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS).hasUnread;
+  
   // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
   // 선택 항목(깃허브 · 발표자료 · 기술 스택)을 비워 두면 null로 바꿔 카드에서 줄을 숨긴다.
   const { createdTeam, photo } = (useLocation().state as TeamSpaceLocationState | null) ?? {};

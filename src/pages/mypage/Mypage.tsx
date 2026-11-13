@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router';
+import { logout } from '../../api/auth';
 import { getMyInfo, updateMyInfo } from '../../api/user';
 import type { EnrollmentStatus } from '../../api/common';
 import { toRegionCodes, toRegionNames } from '../../utils/region';
@@ -36,9 +38,11 @@ function getPreviewToast(): ToastType | null {
 }
 
 export default function Mypage() {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus | ''>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [characterId, setCharacterId] = useState<string | null>(MOCK_PROFILE.characterId);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -79,7 +83,7 @@ export default function Mypage() {
   };
 
   const handleSave = async () => {
-    if (isSaving) return;
+    if (isSaving || isLoggingOut) return;
     setIsSubmitted(true);
     if (!name.trim()) return;
 
@@ -102,8 +106,18 @@ export default function Mypage() {
     }
   };
 
-  const handleLogout = () => {
-    // 로그아웃 API 연동 전에는 테스트 상태에서만 토스트 확인
+  const handleLogout = async () => {
+    if (isSaving || isLoggingOut) return;
+    setIsLoggingOut(true);
+    setToastType(null);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch {
+      setToastType('logout-error');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -121,7 +135,7 @@ export default function Mypage() {
           </>
         )}
         {loadStatus === 'ready' && (
-          <FormFields disabled={isSaving}>
+          <FormFields disabled={isSaving || isLoggingOut}>
         {character && (
           <CharacterSection aria-label="나의 캐릭터">
             <AvatarButton type="button" aria-label={`현재 캐릭터 ${character.name}, 캐릭터 변경`}
@@ -149,7 +163,9 @@ export default function Mypage() {
         />
         <SaveButton onClick={handleSave} disabled={isSaving}>{isSaving ? '저장 중...' : '저장'}</SaveButton>
         <LogoutArea>
-          <LogoutButton type="button" onClick={handleLogout}>로그아웃</LogoutButton>
+          <LogoutButton type="button" onClick={handleLogout}>
+            {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+          </LogoutButton>
         </LogoutArea>
           </FormFields>
         )}

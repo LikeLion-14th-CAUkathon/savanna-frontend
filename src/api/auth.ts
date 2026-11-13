@@ -1,4 +1,5 @@
-import { apiClient, BASE_URL, refreshAccessToken, setAccessToken } from './client';
+import axios from 'axios';
+import { BASE_URL, getAccessToken, refreshAccessToken, setAccessToken } from './client';
 
 // ===== Google 로그인 =====
 
@@ -30,10 +31,18 @@ export const refreshToken = () => refreshAccessToken();
  * - Refresh Token 무효화 및 인증 쿠키 정리. 응답 본문은 쓸 일이 없음
  */
 export const logout = async () => {
-  try {
-    const { data } = await apiClient.post<unknown>('/api/v1/auth/logout');
-    return data;
-  } finally {
-    setAccessToken(null);
-  }
+  const { data: csrf } = await axios.get<{ csrfToken: string }>(
+    `${BASE_URL}/api/v1/auth/csrf`,
+    { withCredentials: true },
+  );
+  const token = getAccessToken();
+  // 로그아웃에도 CSRF 토큰을 보내고, 성공했을 때만 로그인 정보를 지운다.
+  await axios.post(`${BASE_URL}/api/v1/auth/logout`, null, {
+    withCredentials: true,
+    headers: {
+      'X-XSRF-TOKEN': csrf.csrfToken,
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  setAccessToken(null);
 };

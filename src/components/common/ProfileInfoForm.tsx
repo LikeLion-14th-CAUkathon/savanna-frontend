@@ -10,6 +10,7 @@ interface ProfileInfoFormProps {
   name: string;
   nameError?: string;
   schoolStatus: string;
+  schoolOptions?: ReadonlyArray<{ value: string; label: string }>;
   selectedRegions: string[];
   onNameChange: (value: string) => void;
   onSchoolStatusChange: (value: string) => void;
@@ -22,6 +23,7 @@ export default function ProfileInfoForm({
   name,
   nameError,
   schoolStatus,
+  schoolOptions = SCHOOL_LIST.map((label) => ({ value: label, label })),
   selectedRegions,
   onNameChange,
   onSchoolStatusChange,
@@ -40,9 +42,9 @@ export default function ProfileInfoForm({
       <Field>
         <FieldTitle>학적 상태</FieldTitle>
         <SchoolOptions role="group" aria-label="학적 상태">
-          {SCHOOL_LIST.map((status) => (
-            <SchoolChip key={status} selected={schoolStatus === status} $active={schoolStatus === status}
-              onClick={() => onSchoolStatusChange(status)}>{status}</SchoolChip>
+          {schoolOptions.map(({ value, label }) => (
+            <SchoolChip key={value} selected={schoolStatus === value} $active={schoolStatus === value}
+              onClick={() => onSchoolStatusChange(value)}>{label}</SchoolChip>
           ))}
         </SchoolOptions>
       </Field>

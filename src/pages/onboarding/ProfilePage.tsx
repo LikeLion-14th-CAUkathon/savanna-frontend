@@ -16,23 +16,17 @@ import infoIcon from '../../assets/icons/notice/info.svg';
 import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import plusIcon from '../../assets/icons/onboarding/plus.svg';
 
-const schoolStatusLabels: Record<EnrollmentStatus, string> = {
-  ENROLLED: '재학',
-  ON_LEAVE: '휴학',
-  GRADUATED: '졸업',
-};
-
-const schoolStatusCodes: Record<string, EnrollmentStatus> = {
-  재학: 'ENROLLED',
-  휴학: 'ON_LEAVE',
-  졸업: 'GRADUATED',
-};
+const schoolOptions = [
+  { value: 'ENROLLED', label: '재학' },
+  { value: 'ON_LEAVE', label: '휴학' },
+  { value: 'GRADUATED', label: '졸업' },
+] as const;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false); // 시작하기를 눌렀는지
-  const [schoolStatus, setSchoolStatus] = useState('재학');
+  const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus>('ENROLLED');
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
@@ -49,7 +43,7 @@ export default function ProfilePage() {
       .then((user) => {
         if (controller.signal.aborted) return;
         setName(user.name ?? '');
-        setSchoolStatus(user.enrollmentStatus ? schoolStatusLabels[user.enrollmentStatus] : '재학');
+        setSchoolStatus(user.enrollmentStatus ?? 'ENROLLED');
         setSelectedRegions(toRegionNames(user.regions));
         setLoadStatus('ready');
       })
@@ -88,10 +82,10 @@ export default function ProfilePage() {
     setIsSaving(true);
     setSaveResult(null);
     try {
-      // 화면의 학적 상태와 지역명을 API 코드로 변환해 저장한다.
+      // 학적 상태는 API 코드를 그대로 보내고, 지역명만 코드로 변환한다.
       const user = await updateMyInfo({
         name: name.trim(),
-        enrollmentStatus: schoolStatusCodes[schoolStatus],
+        enrollmentStatus: schoolStatus,
         regions: toRegionCodes(selectedRegions),
       });
       setSaveResult(user.onboardingCompleted ? 'success' : 'error');
@@ -141,9 +135,10 @@ export default function ProfilePage() {
           name={name}
           nameError={nameError}
           schoolStatus={schoolStatus}
+          schoolOptions={schoolOptions}
           selectedRegions={selectedRegions}
           onNameChange={setName}
-          onSchoolStatusChange={setSchoolStatus}
+          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
           onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
           onOpenRegionSelect={() => setOpenSheet('region')}
         />

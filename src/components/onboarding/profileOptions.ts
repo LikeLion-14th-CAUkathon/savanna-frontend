@@ -1,12 +1,12 @@
-import babyLion from '../../assets/images/avatar/lion.png';
-import adultLion from '../../assets/images/avatar/lion-2.png';
-import elephant from '../../assets/images/avatar/elephant.png';
-import giraffe from '../../assets/images/avatar/giraffe.png';
-import zebra from '../../assets/images/avatar/zebra.png';
-import meerkat from '../../assets/images/avatar/meerkat.png';
-import cheetah from '../../assets/images/avatar/cheetah.png';
-import hippo from '../../assets/images/avatar/hippo.png';
-import ostrich from '../../assets/images/avatar/ostrich.png';
+import babyLion from '../../assets/images/avatar/lion.webp';
+import adultLion from '../../assets/images/avatar/lion-2.webp';
+import elephant from '../../assets/images/avatar/elephant.webp';
+import giraffe from '../../assets/images/avatar/giraffe.webp';
+import zebra from '../../assets/images/avatar/zebra.webp';
+import meerkat from '../../assets/images/avatar/meerkat.webp';
+import cheetah from '../../assets/images/avatar/cheetah.webp';
+import hippo from '../../assets/images/avatar/hippo.webp';
+import ostrich from '../../assets/images/avatar/ostrich.webp';
 
 // 서버에 저장하는 apiId는 기존 사용자 캐릭터가 바뀌지 않도록 고정한다.
 export const characters = [

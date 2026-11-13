@@ -36,9 +36,6 @@ export default function TeamSpacePage() {
 
   // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
   // 선택 항목(깃허브 · 발표자료 · 기 꿔 카드에서 줄을 숨긴다.
-해결 코드
-
-충돌 부분 전체(표시 줄 포함)를 아래로 바꾸세요.
 
   const { team: mockTeam, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
   // 새 제안 또는 내가 보낸 제안의 새 알림 점을 띄운다.

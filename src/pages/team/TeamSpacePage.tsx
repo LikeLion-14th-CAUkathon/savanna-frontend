@@ -12,8 +12,6 @@ import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_TEAM_SPACE } from '../../mocks/team';
 import type { TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
-import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
-import { getTeamNewsNotification } from '../../utils/teamNews';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
 
@@ -30,20 +28,11 @@ type CopyToast = keyof typeof COPY_TOAST;
 export default function TeamSpacePage() {
   const navigate = useNavigate();
   // TODO: API 연결 시 getTeamDetail(teamId) · 초대 링크 응답으로 교체
-  const { team: mockTeam, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
-  // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 알림 점을 띄운다.
-  const hasNewTeamNews = getTeamNewsNotification(MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS).hasUnread;
-
-  // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
-  // 선택 항목(깃허브 · 발표자료 · 기 꿔 카드에서 줄을 숨긴다.
-
-  const { team: mockTeam, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
-  // 새 제안 또는 내가 보낸 제안의 새 알림 점을 띄운다.
-  const hasNewTeamNews = getTeamNewsNotification(MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS).hasUnread;
+  const { team: mockTeam, myUserId, inviteUrl, hasNewTeamNews, memberCharacterIds } = MOCK_TEAM_SPACE;
 
   // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
   // 선택 항목(깃허브 · 발표자료 · 기술 스택)을 비워 두면 null로 바꿔 카드에서 줄을 숨긴다.
-  const { createdTeam, photo } = (useLocationState | null) ?? {};
+  const { createdTeam, photo } = (useLocation().state as TeamSpaceLocationState | null) ?? {};
 
   // 고른 사진을 이미지 주소(data URL)로 읽어 프로필에 보여준다. 사진이 없으면 이니셜.
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -65,10 +54,10 @@ export default function TeamSpacePage() {
     ? {
         ...mockTeam,
         name: createdTeam.name,
-        projectName: createdTeam.proje
+        projectName: createdTeam.projectName,
         projectIntro: createdTeam.projectIntro,
         githubUrl: createdTeam.githubUrl || null,
-        presentationUrl: createdTeam.p
+        presentationUrl: createdTeam.presentationUrl || null,
         stack: createdTeam.stack || null,
       }
     : mockTeam;

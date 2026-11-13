@@ -10,7 +10,7 @@ import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
 import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_TEAM_SPACE } from '../../mocks/team';
-import headerImage from '../../assets/images/team/team-space-header.png';
+import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
 

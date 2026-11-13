@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
@@ -12,7 +12,8 @@ import { characters } from '../../components/onboarding/profileOptions';
 import { MOCK_TEAM_SPACE } from '../../mocks/team';
 import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
 import { getTeamNewsNotification } from '../../utils/teamNews';
-import type { TeamSpaceLocationState } from '../../types/team';
+import type { TeamEditLocationState, TeamSpaceLocationState } from '../../types/team';
+import { useFileDataUrl } from '../../utils/useFileDataUrl';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
@@ -38,22 +39,7 @@ export default function TeamSpacePage() {
   // 선택 항목(깃허브 · 발표자료 · 기술 스택)을 비워 두면 null로 바꿔 카드에서 줄을 숨긴다.
   const { createdTeam, photo } = (useLocation().state as TeamSpaceLocationState | null) ?? {};
 
-  // 고른 사진을 이미지 주소(data URL)로 읽어 프로필에 보여준다. 사진이 없으면 이니셜.
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!photo) return;
-    let isActive = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (isActive && typeof reader.result === 'string') setPhotoDataUrl(reader.result);
-    };
-    reader.readAsDataURL(photo);
-    return () => {
-      isActive = false;
-      reader.abort();
-    };
-  }, [photo]);
-  const photoUrl = photo ? photoDataUrl : null;
+  const photoUrl = useFileDataUrl(photo);
   const team = createdTeam
     ? {
         ...mockTeam,
@@ -84,6 +70,17 @@ export default function TeamSpacePage() {
       .catch(() => showToast('copy-error'));
   };
 
+  // 지금 팀 정보와 사진을 들고 B02 팀 정보 수정으로 간다.
+  const openEdit = () => {
+    const state: TeamEditLocationState = { team, photo };
+    navigate('/team/edit', { state });
+  };
+
+  const handleTabChange = (tab: TabId) => {
+    if (tab === 'oasis') navigate('/oasis');
+    if (tab === 'search') navigate('/contest');
+    if (tab === 'mypage') navigate('/mypage');
+  };
 
   // 나를 맨 앞에 둔다.
   const members = [...team.members].sort(
@@ -99,8 +96,9 @@ export default function TeamSpacePage() {
           <TeamName>{team.name}</TeamName>
           <MemberCount>팀원 {team.members.length}명</MemberCount>
           <Actions>
-            {/* TODO: B02 팀 정보 수정 화면 연결 */}
-            <ActionButton variant="secondary">정보 수정</ActionButton>
+            <ActionButton variant="secondary" onClick={openEdit}>
+              정보 수정
+            </ActionButton>
             <NewsButtonWrap>
               <ActionButton
                 variant="secondary"

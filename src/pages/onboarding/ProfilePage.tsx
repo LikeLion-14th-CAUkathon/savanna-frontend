@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { getMyInfo, updateMyInfo } from '../../api/user';
+import type { EnrollmentStatus } from '../../api/common';
+import { toRegionCodes, toRegionNames } from '../../utils/region';
+import Toast from '../../components/toast/Toast';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import ProfileInfoForm from '../../components/common/ProfileInfoForm';
@@ -12,14 +16,49 @@ import infoIcon from '../../assets/icons/notice/info.svg';
 import pawIcon from '../../assets/icons/onboarding/paw.svg';
 import plusIcon from '../../assets/icons/onboarding/plus.svg';
 
+const schoolOptions = [
+  { value: 'ENROLLED', label: '재학' },
+  { value: 'ON_LEAVE', label: '휴학' },
+  { value: 'GRADUATED', label: '졸업' },
+] as const;
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false); // 시작하기를 눌렀는지
-  const [schoolStatus, setSchoolStatus] = useState('재학');
+  const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus>('ENROLLED');
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
+  const closeSaveToast = useCallback(() => {
+    // 온보딩 완료 후 성공 안내가 끝나면 오아시스로 이동한다.
+    if (saveResult === 'success') {
+      navigate('/oasis', { replace: true });
+      return;
+    }
+    setSaveResult(null);
+  }, [saveResult, navigate]);
+
+  // 기존 정보를 불러온 뒤 입력을 시작해 조회 결과가 작성 중인 값을 덮어쓰지 않게 한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    getMyInfo()
+      .then((user) => {
+        if (controller.signal.aborted) return;
+        setName(user.name ?? '');
+        setSchoolStatus(user.enrollmentStatus ?? 'ENROLLED');
+        setSelectedRegions(toRegionNames(user.regions));
+        setLoadStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadStatus('error');
+      });
+    return () => controller.abort();
+  }, [loadAttempt]);
 
   // 선택한 캐릭터와 이름 에러 문구
   const character = characters.find((item) => item.id === characterId);
@@ -38,7 +77,8 @@ export default function ProfilePage() {
   };
 
   // 시작하기: 이름 확인 후, 캐릭터를 안 골랐으면 자동으로 선택
-  const handleStart = () => {
+  const handleStart = async () => {
+    if (isSaving || saveResult === 'success') return;
     setIsSubmitted(true);
     if (!name.trim()) return; // 이름이 비어 있으면 여기서 멈춤
 
@@ -46,14 +86,47 @@ export default function ProfilePage() {
       const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
       setCharacterId(randomCharacter.id);
     }
-    // API 연결 후 정보 저장하고 다음 화면으로 이동
+    setIsSaving(true);
+    setSaveResult(null);
+    try {
+      // 학적 상태는 API 코드를 그대로 보내고, 지역명만 코드로 변환한다.
+      const user = await updateMyInfo({
+        name: name.trim(),
+        enrollmentStatus: schoolStatus,
+        regions: toRegionCodes(selectedRegions),
+      });
+      setSaveResult(user.onboardingCompleted ? 'success' : 'error');
+    } catch {
+      setSaveResult('error');
+    } finally {
+      setIsSaving(false);
+    }
   };
-
+  if (loadStatus !== 'ready') {
+    return (
+      <Page>
+        <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
+        <Content>
+          {loadStatus === 'loading' ? (
+            <p role="status">내 정보를 불러오고 있어요.</p>
+          ) : (
+            <>
+              <p role="alert">내 정보를 불러오지 못했어요. 다시 시도해 주세요.</p>
+              <Button onClick={() => {
+                setLoadStatus('loading');
+                setLoadAttempt((attempt) => attempt + 1);
+              }}>다시 시도</Button>
+            </>
+          )}
+        </Content>
+      </Page>
+    );
+  }
 
   return (
     <Page>
       <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
-      <Content>
+      <Content as="fieldset" disabled={isSaving || saveResult === 'success'} style={{ border: 0, margin: 0, minWidth: 0 }}>
         <CharacterSection>
           <AvatarButton aria-label="나의 캐릭터 선택" onClick={() => setOpenSheet('character')}>
             {character ? <AvatarImage src={character.image} alt={character.name} /> : <img src={pawIcon} alt="" />}
@@ -69,9 +142,10 @@ export default function ProfilePage() {
           name={name}
           nameError={nameError}
           schoolStatus={schoolStatus}
+          schoolOptions={schoolOptions}
           selectedRegions={selectedRegions}
           onNameChange={setName}
-          onSchoolStatusChange={setSchoolStatus}
+          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
           onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
           onOpenRegionSelect={() => setOpenSheet('region')}
         />
@@ -79,7 +153,21 @@ export default function ProfilePage() {
         <Notice icon={infoIcon}>입력하지 않은 자격 정보는 공고 조건 확인 시 ‘확인 필요’로 표시돼요.</Notice>
       </Content>
 
-      <Footer><StartButton onClick={handleStart}>시작하기</StartButton></Footer>
+      <Footer>
+        <StartButton onClick={handleStart} disabled={isSaving || saveResult === 'success'}>
+          {isSaving ? '저장하고 있어요.' : '시작하기'}
+        </StartButton>
+      </Footer>
+
+      {saveResult && (
+        <ToastArea>
+          <Toast variant={saveResult} onClose={closeSaveToast}>
+            {saveResult === 'success'
+              ? '내 정보를 저장했어요.'
+              : '내 정보를 저장하지 못했어요. 다시 시도해 주세요.'}
+          </Toast>
+        </ToastArea>
+      )}
 
       {openSheet === 'character' && (
         <CharacterSelectSheet selectedId={characterId} onClose={() => setOpenSheet(null)}
@@ -94,6 +182,16 @@ export default function ProfilePage() {
 }
 
 // 모바일 화면 너비와 배경
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(91px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 200;
+  width: 354px;
+  max-width: calc(100% - 48px);
+  transform: translateX(-50%);
+`;
+
 const Page = styled.main`
   display: flex;
   flex-direction: column;

@@ -4,6 +4,7 @@ type MemberTileProps = {
   name: string
   isMe?: boolean
   tone?: 'peach' | 'mint' | 'coral'
+  characterImage: string // 팀원이 고른(또는 자동 배정된) 동물 캐릭터 이미지
 }
 
 const avatarColors = {
@@ -12,12 +13,12 @@ const avatarColors = {
   coral: '#fbefe5',
 }
 
-export default function MemberTile({ name, isMe = false, tone = 'peach' }: MemberTileProps) {
-  const initial = Array.from(name.trim())[0]?.toUpperCase() ?? '?'
-
+export default function MemberTile({ name, isMe = false, tone = 'peach', characterImage }: MemberTileProps) {
   return (
     <Tile $isMe={isMe}>
-      <Avatar $tone={tone} aria-hidden="true">{initial}</Avatar>
+      <Avatar $tone={tone} aria-hidden="true">
+        <img src={characterImage} alt="" />
+      </Avatar>
       <Name>{name}</Name>
       <Badge $isMe={isMe}>{isMe ? '나' : '팀원'}</Badge>
     </Tile>
@@ -44,17 +45,24 @@ const Tile = styled.div<{ $isMe: boolean }>`
   text-align: center;
 `
 
+// 캐릭터는 원보다 크게 그려 얼굴이 원을 채우도록 잘라 보여준다 (피그마 Member Avatar 72px 기준)
 const Avatar = styled.div<{ $tone: MemberTileProps['tone'] }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
   border-radius: 50%;
   background-color: ${({ $tone = 'peach' }) => avatarColors[$tone]};
-  color: #3a7a2e;
-  font-size: 15px;
+
+  img {
+    position: absolute;
+    top: -1px;
+    left: -11.5px;
+    width: 95px;
+    height: 95px;
+    object-fit: cover;
+  }
 `
 
 const Name = styled.p`

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { refreshToken } from '../../api/auth';
 import { getMyInfo } from '../../api/user';
+import { getMyTeams } from '../../api/team';
 import styled, { keyframes } from 'styled-components';
 import LoginCard from '../../components/onboarding/LoginCard';
 import backgroundImage from '../../assets/images/background/표지판 없는 노을빛 구불길 풍경 1.webp';
@@ -20,7 +21,7 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
   const [loginStatus, setLoginStatus] = useState<'idle' | 'loading' | 'error'>(
     isGoogleSuccess ? 'loading' : 'idle',
   );
-  const loginRequest = useRef<ReturnType<typeof getMyInfo> | null>(null);
+  const loginRequest = useRef<Promise<{ path: string; autoJoin?: boolean }> | null>(null);
 
   // 구글 인증 후 돌아왔을 때만 CSRF 확인과 Access Token 발급을 진행한다.
   useEffect(() => {
@@ -31,18 +32,25 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
     }
     if (!isGoogleSuccess) return;
     const controller = new AbortController();
-    // 개발 모드에서도 토큰 발급과 내 정보 조회가 중복되지 않도록 재사용한다.
-    loginRequest.current ??= refreshToken().then(() => getMyInfo());
+    // 개발 모드에서도 로그인 확인과 팀 조회가 중복되지 않도록 재사용한다.
+    loginRequest.current ??= refreshToken().then(async () => {
+      const user = await getMyInfo();
+      if (!user.onboardingCompleted) return { path: '/profile' };
+
+      const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
+      if (invitationUrl?.startsWith('/invite?')) {
+        return { path: invitationUrl, autoJoin: true };
+      }
+
+      // 일반 접속한 기존 사용자는 소속 팀 유무에 따라 이동한다.
+      const teams = await getMyTeams();
+      return { path: teams.length > 0 ? '/oasis' : '/team/create' };
+    });
     loginRequest.current
-      .then((user) => {
+      .then(({ path, autoJoin }) => {
         if (controller.signal.aborted) return;
         onLoginResult('success');
-        const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
-        if (user.onboardingCompleted && invitationUrl?.startsWith('/invite?')) {
-          navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
-        } else {
-          navigate(user.onboardingCompleted ? '/oasis' : '/profile', { replace: true });
-        }
+        navigate(path, { replace: true, state: { autoJoin } });
       })
       .catch(() => {
         if (controller.signal.aborted) return;

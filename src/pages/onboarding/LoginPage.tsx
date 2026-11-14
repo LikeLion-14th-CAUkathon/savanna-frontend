@@ -108,7 +108,9 @@ const Screen = styled.div`
     /* 주소창을 제외한 높이에 맞추고, 내용이 넘치면 세로로 늘어난다. */
     min-height: 100dvh;
     padding: clamp(24px, 5dvh, 48px) 14px;
-    gap: clamp(24px, calc(100dvh - 607px), 245px);
+    gap: clamp(64px, calc(100dvh - 607px), 245px);
+    /* 짧은 화면에서는 로고와 카드의 크기를 같은 기준으로 조절한다. */
+    --login-scale: min(1px, 100dvh / 800);
   }
 `;
 
@@ -161,7 +163,7 @@ const LogoFrame = styled.div`
   animation: ${logoAppear} 1s ease-out;
 
   @media (max-width: 480px) {
-    width: min(319px, 85%, 42dvh);
+    width: min(319px, 85%, calc(319 * var(--login-scale)));
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -66,6 +66,13 @@ const Card = styled.section`
     0 3px 0 #d7d4cd;
   animation: ${appear} 2s ease 0.3s backwards;
 
+  @media (max-width: 480px) {
+    max-width: calc(374 * var(--login-scale));
+    padding: calc(28 * var(--login-scale)) calc(26 * var(--login-scale));
+    gap: calc(28 * var(--login-scale));
+  }
+
+
   @media (prefers-reduced-motion: reduce) {
     animation: none;
   }
@@ -78,6 +85,9 @@ const Copy = styled.div`
   align-items: center;
   gap: 12px;
   text-align: center;
+  @media (max-width: 480px) {
+    gap: calc(12 * var(--login-scale));
+  }
 `;
 
 // 제목 위 안내 문구
@@ -91,6 +101,9 @@ const Tagline = styled.p`
   font-weight: 400;
   line-height: 17px;
   letter-spacing: -0.3px;
+  @media (max-width: 480px) {
+    font-size: max(12px, calc(15 * var(--login-scale)));
+  }
 `;
 
 // 로그인 제목
@@ -102,6 +115,10 @@ const Title = styled.h1`
   font-weight: 400;
   line-height: 35px;
   letter-spacing: -0.28px;
+  @media (max-width: 480px) {
+    font-size: max(22px, calc(28 * var(--login-scale)));
+    line-height: 1.25;
+  }
 `;
 
 // 제목 아래 설명
@@ -112,6 +129,10 @@ const Description = styled.p`
   font-weight: 400;
   line-height: 23px;
   letter-spacing: -0.18px;
+  @media (max-width: 480px) {
+    font-size: max(14px, calc(18 * var(--login-scale)));
+    line-height: 1.3;
+  }
 `;
 
 // 구글 로그인 버튼
@@ -122,6 +143,10 @@ const GoogleButton = styled(Button)`
   line-height: 20px;
   letter-spacing: 0;
   padding: 0 46px;
+  @media (max-width: 480px) {
+    height: max(44px, calc(52 * var(--login-scale)));
+    font-size: max(14px, calc(17 * var(--login-scale)));
+  }
 `;
 
 // 버튼 왼쪽 구글 로고

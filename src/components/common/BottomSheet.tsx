@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
 import styled from 'styled-components';
 import closeIcon from '../../assets/icons/bottom-sheet/close.svg';
 
@@ -14,6 +14,25 @@ interface BottomSheetProps {
 export default function BottomSheet({ title, description, onClose, children }: BottomSheetProps) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
+  const [startY, setStartY] = useState<number | null>(null);
+  const [offsetY, setOffsetY] = useState(0);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    setStartY(event.clientY);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (startY === null) return;
+    setOffsetY(Math.max(0, event.clientY - startY));
+  };
+
+  // 손잡이를 80px 이상 내리면 닫고, 덜 내렸으면 제자리로 돌아간다.
+  const handlePointerUp = () => {
+    if (offsetY >= 80) onClose();
+    setStartY(null);
+    setOffsetY(0);
+  };
 
   // 바텀시트가 열린 동안 배경을 고정하고, 닫히면 원래 스크롤 위치를 복원한다.
   useEffect(() => {
@@ -43,8 +62,26 @@ export default function BottomSheet({ title, description, onClose, children }: B
   return (
     <>
       <Scrim onClick={onClose} aria-hidden="true" />
-      <Sheet ref={sheetRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <Handle aria-hidden="true" />
+      <Sheet
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        $dragging={startY !== null}
+        style={{ transform: `translate(-50%, ${offsetY}px)` }}
+      >
+        <DragArea
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={() => {
+            setStartY(null);
+            setOffsetY(0);
+          }}
+        >
+          <Handle aria-hidden="true" />
+        </DragArea>
         <Header>
           <TitleRow>
             <Title id={titleId}>{title}</Title>
@@ -67,7 +104,7 @@ const Scrim = styled.div`
   background: rgba(30, 30, 30, 0.45);
 `;
 
-const Sheet = styled.section`
+const Sheet = styled.section<{ $dragging: boolean }>`
   position: fixed;
   bottom: 0;
   left: 50%;
@@ -80,11 +117,12 @@ const Sheet = styled.section`
   max-width: 100%;
   max-height: 90svh;
   overflow-y: auto;
-  padding: 12px 24px 34px;
+  padding: 0 24px 34px;
   border-radius: 24px 24px 0 0;
   background: var(--color-bg);
   box-shadow: 0 -5px 22px rgba(59, 42, 22, 0.17);
   transform: translateX(-50%);
+  transition: ${({ $dragging }) => ($dragging ? 'none' : 'transform 0.2s')};
   font-family: 'Pretendard', sans-serif;
   line-height: normal;
   letter-spacing: 0;
@@ -92,11 +130,18 @@ const Sheet = styled.section`
   outline: none;
 `;
 
-const Handle = styled.div`
+const DragArea = styled.div`
   flex-shrink: 0;
-  align-self: center;
+  padding: 12px 0;
+  margin-bottom: -12px;
+  touch-action: none;
+  cursor: grab;
+`;
+
+const Handle = styled.div`
   width: 40px;
   height: 4px;
+  margin: 0 auto;
   border-radius: 2px;
   background: #d7d4cd;
 `;

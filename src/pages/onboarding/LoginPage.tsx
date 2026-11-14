@@ -38,7 +38,7 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
       if (!user.onboardingCompleted) return { path: '/profile' };
 
       const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
-      if (invitationUrl?.startsWith('/invite?')) {
+      if (invitationUrl?.startsWith('/invite/')) {
         return { path: invitationUrl, autoJoin: true };
       }
 

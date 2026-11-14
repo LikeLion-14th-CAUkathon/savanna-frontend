@@ -16,8 +16,10 @@ export default function BottomSheet({ title, description, onClose, children }: B
   const sheetRef = useRef<HTMLElement>(null);
   const [startY, setStartY] = useState<number | null>(null);
   const [offsetY, setOffsetY] = useState(0);
+  const suppressClick = useRef(false);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') return;
     setStartY(event.clientY);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -33,6 +35,76 @@ export default function BottomSheet({ title, description, onClose, children }: B
     setStartY(null);
     setOffsetY(0);
   };
+
+  // 내용이 맨 위에서 시작한 아래 방향 터치만 시트 드래그로 처리한다.
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    const gesture: { start: { x: number; y: number } | null; distance: number } = {
+      start: null,
+      distance: 0,
+    };
+
+    const reset = () => {
+      gesture.start = null;
+      gesture.distance = 0;
+      setStartY(null);
+      setOffsetY(0);
+    };
+    const handleTouchStart = (event: TouchEvent) => {
+      reset();
+      suppressClick.current = false;
+      if (event.touches.length !== 1) return;
+      const target = event.target as HTMLElement;
+      const isHandle = target.closest('[data-sheet-handle]');
+      if (!isHandle) {
+        // 내부에 별도 스크롤 영역이 있어도 맨 위인지 함께 확인한다.
+        for (let element: HTMLElement | null = target; element; element = element.parentElement) {
+          if (element.scrollTop > 0) return;
+          if (element === sheet) break;
+        }
+      }
+      gesture.start = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    };
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!gesture.start) return;
+      if (event.touches.length !== 1) {
+        reset();
+        return;
+      }
+      const deltaY = event.touches[0].clientY - gesture.start.y;
+      const deltaX = event.touches[0].clientX - gesture.start.x;
+      if (gesture.distance === 0 && (deltaY < -5 || Math.abs(deltaX) > Math.max(5, deltaY))) {
+        gesture.start = null;
+        return;
+      }
+      if (deltaY <= 5 && gesture.distance === 0) return;
+      if (!event.cancelable) {
+        reset();
+        return;
+      }
+      event.preventDefault();
+      gesture.distance = Math.max(0, deltaY);
+      suppressClick.current = true;
+      setStartY(gesture.start.y);
+      setOffsetY(gesture.distance);
+    };
+    const handleTouchEnd = () => {
+      if (gesture.distance >= 80) onClose();
+      reset();
+    };
+
+    sheet.addEventListener('touchstart', handleTouchStart, { passive: true });
+    sheet.addEventListener('touchmove', handleTouchMove, { passive: false });
+    sheet.addEventListener('touchend', handleTouchEnd);
+    sheet.addEventListener('touchcancel', reset);
+    return () => {
+      sheet.removeEventListener('touchstart', handleTouchStart);
+      sheet.removeEventListener('touchmove', handleTouchMove);
+      sheet.removeEventListener('touchend', handleTouchEnd);
+      sheet.removeEventListener('touchcancel', reset);
+    };
+  }, [onClose]);
 
   // 바텀시트가 열린 동안 배경을 고정하고, 닫히면 원래 스크롤 위치를 복원한다.
   useEffect(() => {
@@ -70,8 +142,15 @@ export default function BottomSheet({ title, description, onClose, children }: B
         tabIndex={-1}
         $dragging={startY !== null}
         style={{ transform: `translate(-50%, ${offsetY}px)` }}
+        onClickCapture={(event) => {
+          if (!suppressClick.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClick.current = false;
+        }}
       >
         <DragArea
+          data-sheet-handle
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -117,6 +196,7 @@ const Sheet = styled.section<{ $dragging: boolean }>`
   max-width: 100%;
   max-height: 90svh;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 0 24px 34px;
   border-radius: 24px 24px 0 0;
   background: var(--color-bg);

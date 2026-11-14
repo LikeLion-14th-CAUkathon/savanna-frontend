@@ -34,6 +34,7 @@ function App() {
       <Route path="/login" element={<LoginPage onGoogleLogin={startGoogleLogin} onLoginResult={setLoginResult} />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/invite" element={<InvitePage />} />
+      <Route path="/invite/:token" element={<InvitePage />} />
       <Route path="/mypage" element={<Mypage onLogoutSuccess={() => setLoginResult('logout')} />} />
       <Route path="/team" element={<TeamSpacePage />} />
       <Route path="/team/create" element={<TeamCreatePage />} />

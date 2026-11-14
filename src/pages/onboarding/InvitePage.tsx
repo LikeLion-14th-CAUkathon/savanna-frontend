@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
 import { acceptInvitation, previewInvitation } from '../../api/invitation';
@@ -10,8 +10,9 @@ import InviteInfoField from '../../components/onboarding/InviteInfoField';
 
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
+  const { token: pathToken } = useParams<{ token: string }>();
   const location = useLocation();
-  const token = new URLSearchParams(location.search).get('token');
+  const token = pathToken ?? new URLSearchParams(location.search).get('token');
   return <InvitationContent key={token} token={token} />;
 }
 

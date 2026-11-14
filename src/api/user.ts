@@ -24,7 +24,7 @@ export interface UserUpdateRequest {
   universityName?: string;
   enrollmentStatus?: EnrollmentStatus;
   regions?: RegionCode[]; // 전달 시 기존 목록 전체 교체
-  characterId?: number; // 1~9, 생략하면 기존 캐릭터 유지
+  characterId: number; // 필수, 1~9
 }
 
 /** 내 정보 수정 결과 */

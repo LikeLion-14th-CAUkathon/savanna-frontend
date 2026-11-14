@@ -43,6 +43,14 @@ export interface AnnouncementDetailResponse {
   participationRegion: string;
   posterUrl: string;
   applicationPeriodRaw: string;
+  applicationInstructions: string;
+  formNote: string;
+  lengthNote: string;
+  teamType: string;
+  csvRequiredRegionRaw: string;
+  venueNote: string;
+  detailStatus: string;
+  dateSource: string;
 }
 
 export interface AnnouncementListParams extends PageParams {

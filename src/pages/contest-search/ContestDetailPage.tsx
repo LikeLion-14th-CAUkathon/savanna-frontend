@@ -14,7 +14,7 @@ import {
   getContestPhase,
   type ContestPhase,
 } from '../../components/contest-search/contest-detail/contestPhase';
-import { MOCK_TODAY, fetchContestDetail } from '../../mocks/contests';
+import { fetchContestDetail } from '../../components/contest-search/contestData';
 import type { ContestDetail } from '../../types/contest';
 
 type LoadState = 'loading' | 'success' | 'not-found' | 'error';
@@ -35,14 +35,22 @@ export default function ContestDetailPage() {
   const [detail, setDetail] = useState<ContestDetail | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
 
+  // D-day · 접수 단계 계산 기준 시각. 화면을 연 시점으로 한 번만 정한다.
+  const [today] = useState(() => new Date());
+
+  // 주소의 공고 id가 숫자가 아니면 요청하지 않고 '찾을 수 없어요'를 보여준다.
+  const id = Number(contestId);
+  const isValidId = Number.isInteger(id) && id > 0;
+
   const loadDetail = useCallback(() => {
-    fetchContestDetail(Number(contestId))
+    if (!isValidId) return;
+    fetchContestDetail(id)
       .then((result) => {
         setDetail(result);
         setLoadState(result ? 'success' : 'not-found');
       })
       .catch(() => setLoadState('error'));
-  }, [contestId]);
+  }, [id, isValidId]);
 
   useEffect(() => {
     loadDetail();
@@ -59,12 +67,14 @@ export default function ContestDetailPage() {
     else navigate(-1);
   };
 
+  const viewState: LoadState = isValidId ? loadState : 'not-found';
+
   return (
     <Page>
       <AppBar title="공고 상세" onBack={goBack} />
 
-      {loadState === 'loading' && <StatusMessage title="공고를 불러오는 중이에요." />}
-      {loadState === 'not-found' && (
+      {viewState === 'loading' && <StatusMessage title="공고를 불러오는 중이에요." />}
+      {viewState === 'not-found' && (
         <StatusMessage
           title="공고를 찾을 수 없어요."
           description="삭제되었거나 주소가 잘못되었어요."
@@ -72,7 +82,7 @@ export default function ContestDetailPage() {
           onAction={() => navigate('/contest')}
         />
       )}
-      {loadState === 'error' && (
+      {viewState === 'error' && (
         <StatusMessage
           title="공고를 불러오지 못했어요."
           description="잠시 후 다시 시도해 주세요."
@@ -81,7 +91,7 @@ export default function ContestDetailPage() {
         />
       )}
 
-      {loadState === 'success' && detail && <DetailContent detail={detail} today={MOCK_TODAY} />}
+      {viewState === 'success' && detail && <DetailContent detail={detail} today={today} />}
     </Page>
   );
 }

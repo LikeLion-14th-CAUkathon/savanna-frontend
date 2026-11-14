@@ -82,7 +82,7 @@ export async function fetchContests(): Promise<Contest[]> {
 /** 우리 팀 AI 추천 공고 (점수순). 소속 팀이 없으면 빈 목록. */
 export async function fetchRecommendedContests(): Promise<RecommendedContest[]> {
   const teams = await getMyTeams();
-  // TODO: 팀 전환 기능이 생기면 선택한 팀으로. 지금은 오아시스처럼 첫 번째 팀
+  // 한 사람은 한 팀에만 속한다.
   const team = teams[0];
   if (!team) return [];
 

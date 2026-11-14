@@ -3,17 +3,18 @@ import Button from '../../common/Button';
 import linkIcon from '../../../assets/icons/team/team-space/link.svg';
 
 interface InviteLinkCardProps {
-  inviteUrl: string;
+  inviteUrl: string | null; // 아직 없으면(불러오는 중 · 실패) placeholder를 보여주고 복사를 막는다
+  placeholder?: string;
   onCopy: () => void;
 }
 
 // B02 초대 링크 카드. 링크는 https:// 를 떼고 보여준다.
-export default function InviteLinkCard({ inviteUrl, onCopy }: InviteLinkCardProps) {
+export default function InviteLinkCard({ inviteUrl, placeholder = '', onCopy }: InviteLinkCardProps) {
   return (
     <Card>
       <Icon src={linkIcon} alt="" />
-      <Url>{inviteUrl.replace(/^https?:\/\//i, '')}</Url>
-      <CopyButton onClick={onCopy} aria-label="초대 링크 복사">
+      <Url $muted={!inviteUrl}>{inviteUrl ? inviteUrl.replace(/^https?:\/\//i, '') : placeholder}</Url>
+      <CopyButton disabled={!inviteUrl} onClick={onCopy} aria-label="초대 링크 복사">
         복사
       </CopyButton>
     </Card>
@@ -37,14 +38,14 @@ const Icon = styled.img`
   margin: 0 2.34px;
 `;
 
-const Url = styled.p`
+const Url = styled.p<{ $muted: boolean }>`
   flex: 1;
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: #1e1e1e;
-  font-size: 15px;
-  font-weight: 700;
+  color: ${({ $muted }) => ($muted ? '#999896' : '#1e1e1e')};
+  font-size: ${({ $muted }) => ($muted ? 14 : 15)}px;
+  font-weight: ${({ $muted }) => ($muted ? 400 : 700)};
   text-overflow: ellipsis;
   white-space: nowrap;
 `;

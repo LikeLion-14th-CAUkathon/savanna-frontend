@@ -9,7 +9,7 @@ import type { ProposalTeam } from '../../types/proposal';
 /** 제안을 보낼 내 팀(프로젝트 · 받는 사람). 소속 팀이 없으면 null */
 export async function fetchProposalTeam(): Promise<ProposalTeam | null> {
   const [teams, me] = await Promise.all([getMyTeams(), getMyInfo()]);
-  // TODO: 팀 전환 기능이 생기면 선택한 팀으로. 지금은 오아시스처럼 첫 번째 팀
+  // 한 사람은 한 팀에만 속한다.
   const team = teams[0];
   if (!team) return null;
 

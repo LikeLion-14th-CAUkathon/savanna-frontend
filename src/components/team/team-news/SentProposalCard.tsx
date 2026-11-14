@@ -38,7 +38,12 @@ export default function SentProposalCard({ proposal, onOpenAnnouncement }: SentP
     <ProposalCard>
       <AnnouncementLink
         title={proposal.announcementTitle}
-        description={`${proposal.projectName} 프로젝트 · ${formatMonthDay(proposal.createdAt)} 보냄`}
+        description={[
+          proposal.projectName && `${proposal.projectName} 프로젝트`,
+          `${formatMonthDay(proposal.createdAt)} 보냄`,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         onClick={onOpenAnnouncement}
       />
 

@@ -9,7 +9,8 @@ import Toast from '../../components/toast/Toast';
 import TeamInfoFields from '../../components/team/team-form/TeamInfoFields';
 import TeamPhotoCaption from '../../components/team/team-form/TeamPhotoCaption';
 import { getApiErrorMessage } from '../../api/client';
-import { getMyTeams, getTeamDetail, updateTeam, type TeamInfo } from '../../api/team';
+import { getTeamDetail, updateTeam, type TeamInfo } from '../../api/team';
+import { resolveTeamId } from '../../components/team/team-space/teamSpaceData';
 import type { TeamEditLocationState, TeamSpaceLocationState } from '../../types/team';
 import { getTeamFormErrors, toTeamForm, toTeamRequest, type TeamForm } from '../../utils/teamForm';
 import { useFileDataUrl } from '../../utils/useFileDataUrl';
@@ -36,15 +37,6 @@ const getSaveErrorMessage = (error: unknown) => {
   if (status === 403) return NO_PERMISSION;
   if (status === 404) return NOT_FOUND;
   return getApiErrorMessage(error, SAVE_FAILED);
-};
-
-// 수정할 팀 id. 주소(?teamId=)에 없으면 오아시스처럼 내 첫 번째 팀, 팀이 없으면 null
-// TODO: 팀 전환 기능이 생기면 선택한 팀으로
-const resolveTeamId = async (search: string) => {
-  const teamId = Number(new URLSearchParams(search).get('teamId'));
-  if (Number.isInteger(teamId) && teamId > 0) return teamId;
-  const teams = await getMyTeams();
-  return teams[0]?.teamId ?? null;
 };
 
 // 저장하지 않고 B02로 돌아간다. 이전 기록이 없으면(주소로 바로 들어옴) 팀 공간으로
@@ -137,9 +129,9 @@ function TeamEditForm({ team }: { team: TeamInfo }) {
     setIsSaving(true);
     updateTeam(team.teamId, body)
       .then(() => {
-        // B02로 돌아가며 수정한 정보를 넘긴다. 뒤로가기로 수정 폼에 다시 오지 않도록 replace
-        // TODO: B02가 API로 연결되면 teamId로 다시 불러오고 state는 사진만 남긴다.
-        const state: TeamSpaceLocationState = { createdTeam: body, photo };
+        // B02로 돌아간다. B02가 teamId로 수정된 정보를 다시 불러오고, 사진만 넘긴다.
+        // 뒤로가기로 수정 폼에 다시 오지 않도록 replace
+        const state: TeamSpaceLocationState = { photo };
         navigate(`/team?teamId=${team.teamId}`, { replace: true, state });
       })
       .catch((error: unknown) => {

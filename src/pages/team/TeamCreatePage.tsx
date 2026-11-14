@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
@@ -6,7 +6,7 @@ import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import Toast from '../../components/toast/Toast';
 import { getApiErrorMessage } from '../../api/client';
-import { createTeam } from '../../api/team';
+import { createTeam, getMyTeams } from '../../api/team';
 import TeamPhotoPicker from '../../components/team/team-create/TeamPhotoPicker';
 import TeamInfoFields from '../../components/team/team-form/TeamInfoFields';
 import type { TeamSpaceLocationState } from '../../types/team';
@@ -21,8 +21,42 @@ const getCreateErrorMessage = (error: unknown) =>
     ? ONBOARDING_REQUIRED
     : getApiErrorMessage(error, CREATE_FAILED);
 
-// B01 팀 생성
+// B01 팀 생성. 한 사람은 한 팀에만 속하므로, 이미 팀이 있으면 폼 대신 B02 팀 공간으로 보낸다.
 export default function TeamCreatePage() {
+  const navigate = useNavigate();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    let ignore = false;
+    getMyTeams()
+      .then((teams) => {
+        if (ignore) return;
+        // 뒤로가기로 생성 화면에 다시 오지 않도록 replace
+        if (teams[0]) navigate(`/team?teamId=${teams[0].teamId}`, { replace: true });
+        else setIsChecking(false);
+      })
+      // 확인하지 못하면 폼을 보여준다. 이미 팀이 있으면 생성 요청에서 서버가 다시 막는다.
+      .catch(() => {
+        if (!ignore) setIsChecking(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [navigate]);
+
+  if (isChecking) {
+    return (
+      <Page>
+        <AppBar title="팀 생성" />
+        <CheckingMessage role="status">잠시만 기다려 주세요.</CheckingMessage>
+      </Page>
+    );
+  }
+
+  return <TeamCreateForm />;
+}
+
+function TeamCreateForm() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<TeamForm>(EMPTY_TEAM_FORM);
@@ -49,9 +83,9 @@ export default function TeamCreatePage() {
     // 프로필 사진(photo)은 팀 API에 필드가 없어 아직 보내지 않는다.
     createTeam(body)
       .then(({ teamId }) => {
-        // B02 팀 공간으로 이동하며 입력한 정보를 넘긴다. 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
-        // TODO: B02가 API로 연결되면 teamId로 팀 상세를 불러오고 state는 사진만 남긴다.
-        const state: TeamSpaceLocationState = { createdTeam: body, photo };
+        // B02 팀 공간으로 이동한다. 팀 정보는 B02가 teamId로 불러오고, 사진만 넘긴다.
+        // 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
+        const state: TeamSpaceLocationState = { photo };
         navigate(`/team?teamId=${teamId}`, { replace: true, state });
       })
       .catch((error: unknown) => {
@@ -99,6 +133,14 @@ const Page = styled.main`
   font-family: 'Pretendard', sans-serif;
   line-height: normal;
   text-align: left;
+`;
+
+const CheckingMessage = styled.p`
+  margin: 0;
+  padding: 80px 24px 40px;
+  color: #5b5b5b;
+  font-size: 15px;
+  text-align: center;
 `;
 
 const Content = styled.div`

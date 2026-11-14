@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { isAxiosError } from 'axios';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import TeamAvatar from '../../components/common/TeamAvatar';
@@ -8,10 +9,13 @@ import MemberTile from '../../components/common/MemberTile';
 import Toast from '../../components/toast/Toast';
 import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
+import {
+  fetchInviteUrl,
+  fetchTeamSpace,
+  type TeamSpaceData,
+} from '../../components/team/team-space/teamSpaceData';
 import { characters } from '../../components/onboarding/profileOptions';
-import { MOCK_TEAM_SPACE } from '../../mocks/team';
-import { MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS } from '../../mocks/teamNews';
-import { getTeamNewsNotification } from '../../utils/teamNews';
+import { getProposalNotifications } from '../../api/proposal';
 import type { TeamEditLocationState, TeamSpaceLocationState } from '../../types/team';
 import { useFileDataUrl } from '../../utils/useFileDataUrl';
 import headerImage from '../../assets/images/team/team-space-header.webp';
@@ -27,38 +31,94 @@ const COPY_TOAST = {
 
 type CopyToast = keyof typeof COPY_TOAST;
 
-// B02 팀 공간
+type LoadState =
+  | { type: 'loading' }
+  | { type: 'success'; data: TeamSpaceData }
+  | { type: 'no-team' }
+  | { type: 'error'; message: string; canRetry: boolean };
+
+// 불러오기 실패 안내. 403은 팀에 소속되지 않음, 404는 없는 팀이라 다시 시도해도 같다.
+const toLoadError = (error: unknown): LoadState => {
+  const status = isAxiosError(error) ? error.response?.status : undefined;
+  if (status === 403) return { type: 'error', message: '이 팀에 소속되어 있지 않아요.', canRetry: false };
+  if (status === 404) return { type: 'error', message: '팀을 찾을 수 없어요.', canRetry: false };
+  return { type: 'error', message: '팀 정보를 불러오지 못했어요.', canRetry: true };
+};
+
+// 사진 등 캐릭터 정보가 없거나 모르는 id면 깨진 이미지 대신 첫 번째 캐릭터
+const getCharacterImage = (characterId?: string) =>
+  (characters.find((character) => character.id === characterId) ?? characters[0]).image;
+
+// B02 팀 공간. 주소의 teamId가 바뀌면 새로 불러오도록 key로 다시 그린다.
 export default function TeamSpacePage() {
+  const { search } = useLocation();
+  return <TeamSpaceContent key={search} search={search} />;
+}
+
+function TeamSpaceContent({ search }: { search: string }) {
   const navigate = useNavigate();
-  // TODO: API 연결 시 getTeamDetail(teamId) · 초대 링크 응답으로 교체
-  const { team: mockTeam, myUserId, inviteUrl, memberCharacterIds } = MOCK_TEAM_SPACE;
-  // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 알림 점을 띄운다.
-  const hasNewTeamNews = getTeamNewsNotification(MOCK_RECEIVED_PROPOSALS, MOCK_SENT_PROPOSALS).hasUnread;
-  
-  // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
-  // 선택 항목(깃허브 · 발표자료 · 기술 스택)을 비워 두면 null로 바꿔 카드에서 줄을 숨긴다.
   const location = useLocation();
-  const { createdTeam, photo } = (location.state as TeamSpaceLocationState | null) ?? {};
-  const teamIdParam = new URLSearchParams(location.search).get('teamId');
 
+  // 팀 프로필 사진은 팀 API에 필드가 없어, B01 · 팀 정보 수정에서 고른 사진만 화면 사이로 넘겨받는다.
+  const { photo } = (location.state as TeamSpaceLocationState | null) ?? {};
   const photoUrl = useFileDataUrl(photo);
-  const team = createdTeam
-    ? {
-        ...mockTeam,
-        name: createdTeam.name,
-        projectName: createdTeam.projectName,
-        projectIntro: createdTeam.projectIntro,
-        githubUrl: createdTeam.githubUrl || null,
-        presentationUrl: createdTeam.presentationUrl || null,
-        stack: createdTeam.stack || null,
-      }
-    : mockTeam;
 
-  // 팀원은 항상 동물 캐릭터를 가진다(고르지 않으면 가입 시 자동 배정).
-  // 혹시 값이 없거나 모르는 id면 깨진 이미지 대신 첫 번째 캐릭터를 보여준다.
-  const getCharacterImage = (userId: number) =>
-    (characters.find((character) => character.id === memberCharacterIds[userId]) ?? characters[0]).image;
+  // ===== 팀 · 팀원 =====
+  const [loadState, setLoadState] = useState<LoadState>({ type: 'loading' });
 
+  const loadTeam = useCallback(() => {
+    fetchTeamSpace(search)
+      .then((data) => setLoadState(data ? { type: 'success', data } : { type: 'no-team' }))
+      .catch((error: unknown) => setLoadState(toLoadError(error)));
+  }, [search]);
+
+  useEffect(() => {
+    loadTeam();
+  }, [loadTeam]);
+
+  const retryLoad = () => {
+    setLoadState({ type: 'loading' });
+    loadTeam();
+  };
+
+  const data = loadState.type === 'success' ? loadState.data : null;
+  const teamId = data?.team.teamId;
+
+  // ===== 초대 링크 (팀을 불러온 뒤) =====
+  const [invite, setInvite] = useState<{ teamId: number; url: string | null; failed: boolean } | null>(null);
+  useEffect(() => {
+    if (teamId === undefined) return;
+    let ignore = false;
+    fetchInviteUrl(teamId)
+      .then((url) => {
+        if (!ignore) setInvite({ teamId, url, failed: false });
+      })
+      .catch(() => {
+        if (!ignore) setInvite({ teamId, url: null, failed: true });
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [teamId]);
+  const inviteUrl = invite && invite.teamId === teamId ? invite.url : null;
+  const invitePlaceholder = invite?.failed ? '초대 링크를 만들지 못했어요.' : '초대 링크를 만들고 있어요.';
+
+  // ===== 팀 소식 알림 점 =====
+  // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 점을 띄운다. (서버가 계산) 못 불러오면 숨긴다.
+  const [hasNewTeamNews, setHasNewTeamNews] = useState(false);
+  useEffect(() => {
+    let ignore = false;
+    getProposalNotifications()
+      .then(({ hasUnread }) => {
+        if (!ignore) setHasNewTeamNews(hasUnread);
+      })
+      .catch(() => {});
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // ===== 복사 토스트 =====
   // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
   const [toastState, setToastState] = useState<{ type: CopyToast; id: number } | null>(null);
   const toast = toastState ? COPY_TOAST[toastState.type] : null;
@@ -66,17 +126,52 @@ export default function TeamSpacePage() {
   const closeToast = useCallback(() => setToastState(null), []);
 
   const copyInviteLink = () => {
+    if (!inviteUrl) return;
     navigator.clipboard
       .writeText(inviteUrl)
       .then(() => showToast('copied'))
       .catch(() => showToast('copy-error'));
   };
 
-  // B02 팀 정보 수정으로 간다. 팀 정보는 수정 화면이 teamId로 서버에서 불러오고, 사진만 넘긴다.
-  // 주소에 teamId가 없으면 수정 화면이 내 첫 번째 팀을 연다.
+  const bottomBar = (
+    <BottomBar>
+      <TabBar activeTab="team" hasNew={hasNewTeamNews} />
+    </BottomBar>
+  );
+
+  if (!data) {
+    return (
+      <Page>
+        <StatusBox role={loadState.type === 'loading' ? 'status' : 'alert'}>
+          {loadState.type === 'loading' && <StatusMessage>팀 정보를 불러오고 있어요.</StatusMessage>}
+          {loadState.type === 'no-team' && (
+            <>
+              <StatusMessage>아직 소속된 팀이 없어요.</StatusMessage>
+              <Button onClick={() => navigate('/team/create')}>팀 만들기</Button>
+            </>
+          )}
+          {loadState.type === 'error' && (
+            <>
+              <StatusMessage>{loadState.message}</StatusMessage>
+              {loadState.canRetry && (
+                <Button variant="secondary" onClick={retryLoad}>
+                  다시 시도
+                </Button>
+              )}
+            </>
+          )}
+        </StatusBox>
+        {bottomBar}
+      </Page>
+    );
+  }
+
+  const { team, myUserId, myCharacterId } = data;
+
+  // 팀 정보 수정으로 간다. 팀 정보는 수정 화면이 teamId로 다시 불러오고, 사진만 넘긴다.
   const openEdit = () => {
     const state: TeamEditLocationState = { photo };
-    navigate(teamIdParam ? `/team/edit?teamId=${teamIdParam}` : '/team/edit', { state });
+    navigate(`/team/edit?teamId=${team.teamId}`, { state });
   };
 
   // 나를 맨 앞에 둔다.
@@ -124,29 +219,31 @@ export default function TeamSpacePage() {
             함께하는 사자들 <Count>{team.members.length}명</Count>
           </SectionTitle>
           <MemberList>
-            {members.map((member, index) => (
-              <li key={member.userId}>
-                <MemberTile
-                  name={member.name}
-                  isMe={member.userId === myUserId}
-                  tone={TILE_TONES[index % TILE_TONES.length]}
-                  characterImage={getCharacterImage(member.userId)}
-                />
-              </li>
-            ))}
+            {members.map((member, index) => {
+              const isMe = member.userId === myUserId;
+              return (
+                <li key={member.userId}>
+                  <MemberTile
+                    name={member.name}
+                    isMe={isMe}
+                    tone={TILE_TONES[index % TILE_TONES.length]}
+                    // 팀 API에 팀원 캐릭터가 없어 나만 내 캐릭터, 다른 팀원은 기본 캐릭터
+                    characterImage={getCharacterImage(isMe ? myCharacterId : undefined)}
+                  />
+                </li>
+              );
+            })}
           </MemberList>
         </Section>
 
         <Section $gap={10}>
           <SectionTitle>초대 링크</SectionTitle>
           <Description>팀원 누구나 같은 링크로 초대할 수 있어요.</Description>
-          <InviteLinkCard inviteUrl={inviteUrl} onCopy={copyInviteLink} />
+          <InviteLinkCard inviteUrl={inviteUrl} placeholder={invitePlaceholder} onCopy={copyInviteLink} />
         </Section>
       </Sheet>
 
-      <BottomBar>
-        <TabBar activeTab="team" hasNew={hasNewTeamNews} />
-      </BottomBar>
+      {bottomBar}
 
       {toastState && toast && (
         <ToastArea>
@@ -158,6 +255,23 @@ export default function TeamSpacePage() {
     </Page>
   );
 }
+
+// 불러오는 중 · 팀 없음 · 실패 안내. 탭바를 아래에 두도록 남은 높이를 채운다.
+const StatusBox = styled.main`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 80px 24px 40px;
+`;
+
+const StatusMessage = styled.p`
+  margin: 0;
+  color: #5b5b5b;
+  font-size: 15px;
+  text-align: center;
+`;
 
 const Page = styled.div`
   display: flex;

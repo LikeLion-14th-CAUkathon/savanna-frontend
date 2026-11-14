@@ -1,14 +1,12 @@
-import type { TeamCreateRequest } from '../api/team';
+// 팀 화면끼리 이동할 때 함께 넘기는 값 (라우터 state)
+// 팀 정보는 각 화면이 주소의 teamId로 서버에서 불러오고, 팀 API에 필드가 없는 프로필 사진만 넘긴다.
 
-// B01 팀 생성 · B02 팀 정보 수정 → B02 팀 공간으로 이동할 때 함께 넘기는 값 (라우터 state)
-// TODO: API 연결 후에는 teamId로 getTeamDetail을 다시 불러오고 이 state는 없앤다.
+// B01 팀 생성 · B02 팀 정보 수정 → B02 팀 공간
 export interface TeamSpaceLocationState {
-  createdTeam?: TeamCreateRequest; // 새로 만들었거나 수정한 팀 정보
-  photo?: File | null; // 고른 팀 프로필 사진 (팀 API에 아직 사진 필드가 없음)
+  photo?: File | null; // 고른 팀 프로필 사진
 }
 
-// B02 팀 공간 → B02 팀 정보 수정으로 이동할 때 넘기는 값
-// 팀 정보는 수정 화면이 주소의 teamId로 서버에서 불러오고, 사진만 여기로 넘긴다.
+// B02 팀 공간 → B02 팀 정보 수정
 export interface TeamEditLocationState {
   photo?: File | null;
 }

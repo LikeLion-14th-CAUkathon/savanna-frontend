@@ -79,43 +79,61 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
 
 // 전체 배경
 const Page = styled.main`
-  min-height: 100svh;
+  min-height: 100dvh;
   background-color: #ffffff;
+
+  /* 태블릿·데스크톱에서는 폰 화면을 정가운데에 둔다. */
+  @media (min-width: 481px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 `;
 
-// 모바일 화면 배치
+// 모바일 화면 배치: 로고는 위, 카드는 아래에 두고 남는 높이는 가운데 간격이 차지한다.
 const Screen = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
-  min-height: 100svh;
+  width: 100%;
+  max-width: 402px;
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: clamp(24px, calc(100svh - 680px), 60px) 14px
-    clamp(24px, calc(100svh - 677px), 63px);
-  justify-content: center;
-  /* 기본 화면 높이에서는 기존 배치를 유지하고, 긴 화면의 가운데 간격을 제한한다. */
-  gap: clamp(24px, calc(100svh - 607px), 245px);
+  /* Figma 기준 높이(874px)보다 길면 남는 높이를 위아래 여백으로 나눠 가운데 간격이 넓어지지 않게 한다. */
+  padding: calc(clamp(40px, 7dvh, 60px) + max(0px, (100dvh - 874px) / 2)) 14px
+    max(calc(clamp(40px, 7dvh, 63px) + max(0px, (100dvh - 874px) / 2)), env(safe-area-inset-bottom));
   overflow: hidden;
   background-color: #feb055;
 
-  /* 모바일에서는 화면 너비에 맞춰 양옆 여백을 없앤다. */
+  /* 모바일에서는 화면 너비를 꽉 채운다. */
   @media (max-width: 480px) {
-    width: 100%;
+    max-width: none;
+  }
+
+  /* 태블릿·데스크톱에서는 Figma 폰 화면 크기(402×874)로 고정하고, 화면이 더 짧으면 높이만 맞춘다. */
+  @media (min-width: 481px) {
+    height: min(874px, 100dvh);
+    min-height: 0;
+    padding: 60px 14px 63px;
   }
 `;
 
-// 풍경 위쪽을 하늘색과 겹쳐 이미지 시작 경계를 부드럽게 연결한다.
-const MapBackground = styled.div`
+// 풍경은 화면 아래에 붙이고, 위쪽 하늘 영역은 최소 160px을 남긴다.
+const MapBackground = styled.img.attrs({ src: backgroundImage, alt: '', draggable: false })`
   position: absolute;
-  inset: 160px 0 0;
-  background-image: url('${backgroundImage}');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100% - 160px);
+  object-fit: cover;
+  object-position: center top;
+  /* 이미지 위쪽 경계를 하늘색과 부드럽게 연결한다. */
   mask-image: linear-gradient(to bottom, transparent, #000 100px);
   pointer-events: none;
 `;
@@ -126,7 +144,7 @@ const TopFade = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 300px;
+  height: 265px;
   background: linear-gradient(
     to bottom,
     rgba(255, 247, 234, 0.88) 0%,
@@ -150,7 +168,8 @@ const logoAppear = keyframes`
 // 로고 영역
 const LogoFrame = styled.div`
   position: relative;
-  width: min(319px, 85%);
+  /* Figma 비율(402px 화면에서 319px)로 화면 너비에 맞추고, 화면 높이 680px 이하에서는 높이에 맞춰 줄어든다. */
+  width: min(85%, 46.9dvh);
   aspect-ratio: 319 / 180;
   flex-shrink: 0;
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));

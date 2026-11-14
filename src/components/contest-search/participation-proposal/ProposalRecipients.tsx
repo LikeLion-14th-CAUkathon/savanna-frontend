@@ -13,10 +13,11 @@ export default function ProposalRecipients({ members }: { members: ProposalMembe
     <Row>
       <Avatars aria-hidden="true">
         {members.slice(0, MAX_AVATARS).map((member, index) => {
-          const character = characters.find((item) => item.id === member.characterId);
+          // 팀원은 항상 동물 캐릭터로 보여준다. 정보가 없으면 기본(첫 번째) 캐릭터
+          const character = characters.find((item) => item.id === member.characterId) ?? characters[0];
           return (
             <Avatar key={member.id} $background={AVATAR_BACKGROUNDS[index % AVATAR_BACKGROUNDS.length]}>
-              {character && <img src={character.image} alt="" />}
+              <img src={character.image} alt="" />
             </Avatar>
           );
         })}

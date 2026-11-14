@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import membersIcon from '../../assets/icons/oasis/status-members.png';
-import expeditionIcon from '../../assets/icons/oasis/status-expedition.png';
-import deadlineIcon from '../../assets/icons/oasis/status-deadline.png';
+import membersIcon from '../../assets/icons/oasis/status-members.webp';
+import expeditionIcon from '../../assets/icons/oasis/status-expedition.webp';
+import deadlineIcon from '../../assets/icons/oasis/status-deadline.webp';
 
 // 값이 없으면(불러오는 중·실패) '-'로 표시
 interface ExpeditionStatusCardProps {
@@ -62,22 +62,17 @@ const Item = styled.div`
   gap: 8px;
 `;
 
-// 일러스트 여백이 넓어서 145%로 키운 뒤 34px 상자에 맞춰 자름 (Figma 기준)
+
 const IconBox = styled.span`
-  position: relative;
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  overflow: hidden;
 `;
 
 const IconImage = styled.img`
-  position: absolute;
-  top: -22.73%;
-  left: -22.73%;
-  width: 145.45%;
-  height: 145.45%;
-  max-width: none;
+  display: block;
+  width: 100%;
+  height: 100%;
 `;
 
 const Texts = styled.div`

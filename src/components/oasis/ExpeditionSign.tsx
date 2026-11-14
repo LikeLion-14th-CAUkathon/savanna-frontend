@@ -1,9 +1,9 @@
 import styled from 'styled-components';
-import pondSignImage from '../../assets/images/oasis/pond-sign.png';
+import pondSignImage from '../../assets/images/oasis/pond-sign.webp';
 import progressDot from '../../assets/icons/oasis/progress-dot.svg';
 
 interface ExpeditionSignProps {
-  left: number;           // 웅덩이 세트 그림 왼쪽 위 위치 (지도 기준 px)
+  left: number;         
   top: number;
   title: string;          // 공모전 이름
   dDayLabel: string;      // 'D-5'
@@ -11,7 +11,7 @@ interface ExpeditionSignProps {
   onClick: () => void;
 }
 
-// 원정 하나 = 물웅덩이 + 표지판 하나. 그림 위에 공고명·D-day·진행 단계를 올림
+
 export default function ExpeditionSign({ left, top, title, dDayLabel, progressLabel, onClick }: ExpeditionSignProps) {
   return (
     <Wrapper style={{ left, top }}>
@@ -28,7 +28,7 @@ export default function ExpeditionSign({ left, top, title, dDayLabel, progressLa
   );
 }
 
-// 그림(1254px 정사각형)을 217px로 줄였을 때 판자 위치: 왼쪽 42.4 / 위 62.6 / 131.8 x 47.6
+
 const SET_SIZE = 217;
 
 const Wrapper = styled.div`

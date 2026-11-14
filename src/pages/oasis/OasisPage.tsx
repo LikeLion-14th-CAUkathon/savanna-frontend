@@ -12,11 +12,11 @@ import { formatDDay, isPastDeadline } from '../../utils/dday';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
 import type { OasisExpedition, OasisState } from '../../types/oasis';
-import shortMapImage from '../../assets/images/oasis/oasis-short-map.png';
-import longMapImage from '../../assets/images/oasis/oasis-long-map.png';
-import lionImage from '../../assets/images/oasis/lion.png';
-import elephantImage from '../../assets/images/oasis/elephant.png';
-import meerkatImage from '../../assets/images/oasis/meerkat.png';
+import shortMapImage from '../../assets/images/oasis/oasis-short-map.webp';
+import longMapImage from '../../assets/images/oasis/oasis-long-map.webp';
+import lionImage from '../../assets/images/oasis/lion.webp';
+import elephantImage from '../../assets/images/oasis/elephant.webp';
+import meerkatImage from '../../assets/images/oasis/meerkat.webp';
 
 const MESSAGES = {
   empty: '아직 시작한 원정이 없어요.',
@@ -142,27 +142,9 @@ export default function OasisPage() {
         <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor }}>
           <MapImage src={map.image} alt="" style={{ height: map.height }} />
 
-          <Character style={{ ...map.home.elephant, transform: 'scaleX(-1)' }} aria-hidden="true">
-            <CharacterImage
-              src={elephantImage}
-              alt=""
-              style={{ left: '-11.04%', top: '-24.56%', width: '123.67%', height: '146.58%' }}
-            />
-          </Character>
-          <Character style={map.home.meerkat} aria-hidden="true">
-            <CharacterImage
-              src={meerkatImage}
-              alt=""
-              style={{ left: '-31.37%', top: '-16.99%', width: '169.64%', height: '134.38%' }}
-            />
-          </Character>
-          <Character style={map.home.lion} aria-hidden="true">
-            <CharacterImage
-              src={lionImage}
-              alt=""
-              style={{ left: '-16.14%', top: '-16.61%', width: '133.12%', height: '132.7%' }}
-            />
-          </Character>
+          <Character src={elephantImage} alt="" style={map.home.elephant} />
+          <Character src={meerkatImage} alt="" style={map.home.meerkat} />
+          <Character src={lionImage} alt="" style={map.home.lion} />
 
          
           {visibleExpeditions
@@ -266,15 +248,11 @@ const MapImage = styled.img`
   user-select: none;
 `;
 
-const Character = styled.div`
+const Character = styled.img`
   position: absolute;
-  overflow: hidden;
+  display: block;
   pointer-events: none;
-`;
-
-const CharacterImage = styled.img`
-  position: absolute;
-  max-width: none;
+  user-select: none;
 `;
 
 const StatusArea = styled.div`

@@ -37,7 +37,9 @@ export default function TeamSpacePage() {
   
   // B01에서 팀을 만들고 넘어왔으면 입력한 정보로 보여준다.
   // 선택 항목(깃허브 · 발표자료 · 기술 스택)을 비워 두면 null로 바꿔 카드에서 줄을 숨긴다.
-  const { createdTeam, photo } = (useLocation().state as TeamSpaceLocationState | null) ?? {};
+  const location = useLocation();
+  const { createdTeam, photo } = (location.state as TeamSpaceLocationState | null) ?? {};
+  const teamIdParam = new URLSearchParams(location.search).get('teamId');
 
   const photoUrl = useFileDataUrl(photo);
   const team = createdTeam
@@ -70,10 +72,11 @@ export default function TeamSpacePage() {
       .catch(() => showToast('copy-error'));
   };
 
-  // 지금 팀 정보와 사진을 들고 B02 팀 정보 수정으로 간다.
+  // B02 팀 정보 수정으로 간다. 팀 정보는 수정 화면이 teamId로 서버에서 불러오고, 사진만 넘긴다.
+  // 주소에 teamId가 없으면 수정 화면이 내 첫 번째 팀을 연다.
   const openEdit = () => {
-    const state: TeamEditLocationState = { team, photo };
-    navigate('/team/edit', { state });
+    const state: TeamEditLocationState = { photo };
+    navigate(teamIdParam ? `/team/edit?teamId=${teamIdParam}` : '/team/edit', { state });
   };
 
   // 나를 맨 앞에 둔다.

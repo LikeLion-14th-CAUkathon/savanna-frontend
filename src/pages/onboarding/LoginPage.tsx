@@ -105,6 +105,10 @@ const Screen = styled.div`
   /* 모바일에서는 화면 너비에 맞춰 양옆 여백을 없앤다. */
   @media (max-width: 480px) {
     width: 100%;
+    /* 주소창을 제외한 높이에 맞추고, 내용이 넘치면 세로로 늘어난다. */
+    min-height: 100dvh;
+    padding: clamp(24px, 5dvh, 48px) 14px;
+    gap: clamp(24px, calc(100dvh - 607px), 245px);
   }
 `;
 
@@ -155,6 +159,10 @@ const LogoFrame = styled.div`
   flex-shrink: 0;
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.25));
   animation: ${logoAppear} 1s ease-out;
+
+  @media (max-width: 480px) {
+    width: min(319px, 85%, 42dvh);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;

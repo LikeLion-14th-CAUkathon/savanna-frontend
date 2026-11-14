@@ -10,7 +10,7 @@ import FilterButton from '../../components/contest-search/contest-search/FilterB
 import AppliedFilters from '../../components/contest-search/contest-search/AppliedFilters';
 import StatusMessage from '../../components/contest-search/StatusMessage';
 import FilterSheet from '../../components/contest-search/contest-filter/FilterSheet';
-import { fetchContests, fetchRecommendedContests } from '../../mocks/contests';
+import { fetchContests, fetchRecommendedContests } from '../../components/contest-search/contestData';
 import {
   CONTEST_STATUS_LABEL,
   EMPTY_CONTEST_FILTERS,
@@ -33,8 +33,9 @@ export default function ContestSearchPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // 공고 목록과 AI 추천을 함께 불러온다. (처음 로딩 상태는 useState 초기값으로 처리)
+  // AI 추천은 실패해도(소속 팀 없음 · AI 미연결 등) 전체 공고는 보여 주고 추천 영역만 숨긴다.
   const loadContests = useCallback(() => {
-    Promise.all([fetchContests(), fetchRecommendedContests()])
+    Promise.all([fetchContests(), fetchRecommendedContests().catch((): RecommendedContest[] => [])])
       .then(([contestList, recommendedList]) => {
         setContests(contestList);
         setRecommended(recommendedList);

@@ -11,8 +11,9 @@ import {
   markReceivedProposalRead,
   respondToProposal,
 } from '../../../api/proposal';
-import { getMyTeams } from '../../../api/team';
+import { getMyTeams, getTeamDetail } from '../../../api/team';
 import type { ReceivedProposal, SentProposal } from '../../../types/teamNews';
+import { toCharacterId } from '../../../utils/character';
 
 // 서버는 마감 날짜('2026-11-14')만 준다. 그날 끝까지로 보고 D-day를 계산한다. (C03과 같은 기준)
 const toDeadlineAt = (date: string) => `${date}T23:59:59+09:00`;
@@ -27,6 +28,13 @@ export async function fetchTeamNews(): Promise<{ received: ReceivedProposal[]; s
   const projectNameOf = (teamId: number) =>
     myTeams.find((team) => team.teamId === teamId)?.projectName ?? null;
 
+  // 제안 API에는 캐릭터가 없다. 보낸 제안의 받는 사람은 모두 내 팀원이라(한 사람 한 팀) 팀 상세에서 찾는다.
+  // 못 불러오면 기본 캐릭터로 보여준다.
+  const myTeam = myTeams[0];
+  const members = myTeam ? ((await getTeamDetail(myTeam.teamId).catch(() => null))?.members ?? []) : [];
+  const characterOf = (userId: number) =>
+    toCharacterId(members.find((member) => member.userId === userId)?.characterId);
+
   const [received, sent] = await Promise.all([
     // 받은 제안에는 팀 · 마감일이 없어 원정 정보로 채운다. 못 불러오면 그 값만 비워 둔다.
     Promise.all(
@@ -40,13 +48,20 @@ export async function fetchTeamNews(): Promise<{ received: ReceivedProposal[]; s
       }),
     ),
     Promise.all(
-      sentItems.map(
-        async (item): Promise<SentProposal> => ({
+      sentItems.map(async (item): Promise<SentProposal> => {
+        const responses = await getProposalRecipients(item.proposalId);
+        return {
           ...item,
           projectName: projectNameOf(item.teamId),
-          responses: await getProposalRecipients(item.proposalId),
-        }),
-      ),
+          responses: {
+            ...responses,
+            recipients: responses.recipients.map((recipient) => ({
+              ...recipient,
+              characterId: characterOf(recipient.userId),
+            })),
+          },
+        };
+      }),
     ),
   ]);
 

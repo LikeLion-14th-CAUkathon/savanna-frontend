@@ -6,7 +6,8 @@ import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import Toast from '../../components/toast/Toast';
 import { getApiErrorMessage } from '../../api/client';
-import { createTeam, getMyTeams } from '../../api/team';
+import { createTeam, getMyTeams, uploadTeamPhoto } from '../../api/team';
+import { getTeamPhotoError, getTeamPhotoUploadErrorMessage } from '../../utils/teamPhoto';
 import TeamPhotoPicker from '../../components/team/team-create/TeamPhotoPicker';
 import TeamInfoFields from '../../components/team/team-form/TeamInfoFields';
 import type { TeamSpaceLocationState } from '../../types/team';
@@ -67,31 +68,51 @@ function TeamCreateForm() {
   const [errorToast, setErrorToast] = useState<{ message: string; id: number } | null>(null);
   const closeToast = useCallback(() => setErrorToast(null), []);
 
+  const showError = (message: string) =>
+    setErrorToast((prev) => ({ message, id: (prev?.id ?? 0) + 1 }));
+
   const updateField = (key: keyof TeamForm, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  // 서버가 받지 않는 사진(JPEG · PNG 아님, 5MB 초과)은 고르지 않은 것으로 하고 안내한다.
+  const changePhoto = (file: File | null) => {
+    const photoError = file && getTeamPhotoError(file);
+    if (photoError) {
+      setPhoto(null);
+      showError(photoError);
+      return;
+    }
+    setPhoto(file);
+  };
 
   // 팀 생성을 누른 뒤부터 오류 문구를 보여준다.
   const errors = getTeamFormErrors(form);
   const hasError = Object.values(errors).some(Boolean);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitted(true);
     if (hasError) return;
 
-    const body = toTeamRequest(form);
     setIsSending(true);
-    // 프로필 사진(photo)은 팀 API에 필드가 없어 아직 보내지 않는다.
-    createTeam(body)
-      .then(({ teamId }) => {
-        // B02 팀 공간으로 이동한다. 팀 정보는 B02가 teamId로 불러오고, 사진만 넘긴다.
-        // 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
-        const state: TeamSpaceLocationState = { photo };
-        navigate(`/team?teamId=${teamId}`, { replace: true, state });
-      })
-      .catch((error: unknown) => {
-        setIsSending(false);
-        setErrorToast((prev) => ({ message: getCreateErrorMessage(error), id: (prev?.id ?? 0) + 1 }));
+    let teamId: number;
+    try {
+      ({ teamId } = await createTeam(toTeamRequest(form)));
+    } catch (error) {
+      setIsSending(false);
+      showError(getCreateErrorMessage(error));
+      return;
+    }
+
+    // 사진은 팀을 만든 뒤 따로 올린다. 실패해도 팀은 만들어졌으니 B02로 가서 안내한다.
+    const state: TeamSpaceLocationState = {};
+    if (photo) {
+      await uploadTeamPhoto(teamId, photo).catch((error: unknown) => {
+        state.photoError = `팀은 만들었지만 ${getTeamPhotoUploadErrorMessage(error)}`;
       });
+    }
+
+    // B02가 teamId로 팀 정보 · 사진을 불러온다. 뒤로가기로 생성 폼에 다시 돌아오지 않도록 replace
+    navigate(`/team?teamId=${teamId}`, { replace: true, state });
   };
 
   return (
@@ -99,7 +120,7 @@ function TeamCreateForm() {
       <AppBar title="팀 생성" />
 
       <Content>
-        <TeamPhotoPicker photo={photo} onChange={setPhoto} />
+        <TeamPhotoPicker photo={photo} onChange={changePhoto} />
 
         <TeamInfoFields form={form} onChange={updateField} errors={isSubmitted ? errors : {}} />
       </Content>

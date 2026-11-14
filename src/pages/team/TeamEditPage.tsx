@@ -9,10 +9,12 @@ import Toast from '../../components/toast/Toast';
 import TeamInfoFields from '../../components/team/team-form/TeamInfoFields';
 import TeamPhotoCaption from '../../components/team/team-form/TeamPhotoCaption';
 import { getApiErrorMessage } from '../../api/client';
-import { getTeamDetail, updateTeam, type TeamInfo } from '../../api/team';
+import { getTeamDetail, updateTeam, uploadTeamPhoto, type TeamDetailResponse } from '../../api/team';
+import { getMyInfo } from '../../api/user';
 import { resolveTeamId } from '../../components/team/team-space/teamSpaceData';
-import type { TeamEditLocationState, TeamSpaceLocationState } from '../../types/team';
+import type { TeamSpaceLocationState } from '../../types/team';
 import { getTeamFormErrors, toTeamForm, toTeamRequest, type TeamForm } from '../../utils/teamForm';
+import { getTeamPhotoError, getTeamPhotoUploadErrorMessage, TEAM_PHOTO_ACCEPT } from '../../utils/teamPhoto';
 import { useFileDataUrl } from '../../utils/useFileDataUrl';
 
 const LOAD_FAILED = '팀 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -54,20 +56,22 @@ export default function TeamEditPage() {
   const { search } = useLocation();
   const goBack = useGoBack();
 
-  const [team, setTeam] = useState<TeamInfo | null>(null);
+  const [loaded, setLoaded] = useState<{ team: TeamDetailResponse; isLeader: boolean } | null>(null);
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     let ignore = false;
-    resolveTeamId(search)
-      .then(async (teamId) => {
+    Promise.all([resolveTeamId(search), getMyInfo()])
+      .then(async ([teamId, me]) => {
         if (ignore) return;
         if (teamId === null) {
           setLoadError(NO_TEAM);
           return;
         }
-        const detail = await getTeamDetail(teamId);
-        if (!ignore) setTeam(detail);
+        const team = await getTeamDetail(teamId);
+        // 팀 사진은 팀장만 바꿀 수 있다.
+        const isLeader = team.members.some((member) => member.userId === me.userId && member.role === 'LEADER');
+        if (!ignore) setLoaded({ team, isLeader });
       })
       .catch((error: unknown) => {
         if (!ignore) setLoadError(getLoadErrorMessage(error));
@@ -77,7 +81,7 @@ export default function TeamEditPage() {
     };
   }, [search]);
 
-  if (team) return <TeamEditForm team={team} />;
+  if (loaded) return <TeamEditForm team={loaded.team} canEditPhoto={loaded.isLeader} />;
 
   return (
     <Page>
@@ -89,23 +93,22 @@ export default function TeamEditPage() {
   );
 }
 
-function TeamEditForm({ team }: { team: TeamInfo }) {
+function TeamEditForm({ team, canEditPhoto }: { team: TeamDetailResponse; canEditPhoto: boolean }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const goBack = useGoBack();
 
-  // 팀 프로필 사진은 팀 API에 필드가 없어 B02에서 넘겨받은 것만 쓴다.
-  const editState = location.state as TeamEditLocationState | null;
-
   const [form, setForm] = useState<TeamForm>(() => toTeamForm(team));
-  const [photo, setPhoto] = useState<File | null>(editState?.photo ?? null);
+  const [photo, setPhoto] = useState<File | null>(null); // 새로 고른 사진. 없으면 지금 팀 사진 유지
   const [isSubmitted, setIsSubmitted] = useState(false); // 저장을 눌렀는지
   const [isSaving, setIsSaving] = useState(false); // 요청 중에는 버튼을 막아 중복 저장을 막는다
   // id: 같은 오류가 연달아 나도 토스트를 새로 띄운다.
   const [errorToast, setErrorToast] = useState<{ message: string; id: number } | null>(null);
   const closeToast = useCallback(() => setErrorToast(null), []);
-  const photoUrl = useFileDataUrl(photo);
+  const newPhotoUrl = useFileDataUrl(photo);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const showError = (message: string) =>
+    setErrorToast((prev) => ({ message, id: (prev?.id ?? 0) + 1 }));
 
   const updateField = (key: keyof TeamForm, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -114,30 +117,40 @@ function TeamEditForm({ team }: { team: TeamInfo }) {
   const errors = getTeamFormErrors(form);
   const hasError = Object.values(errors).some(Boolean);
 
+  // 서버가 받지 않는 사진(JPEG · PNG 아님, 5MB 초과)은 반영하지 않고 안내한다.
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // 같은 사진을 다시 골라도 반영되도록 비워 둔다
-    if (file) setPhoto(file);
+    if (!file) return;
+    const photoError = getTeamPhotoError(file);
+    if (photoError) showError(photoError);
+    else setPhoto(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSubmitted(true);
     if (hasError) return;
 
-    // 비운 선택 항목도 ''로 보내 기존 값을 지운다. 프로필 사진(photo)은 API 필드가 없어 보내지 않는다.
-    const body = toTeamRequest(form);
+    // 비운 선택 항목도 ''로 보내 기존 값을 지운다. photoUrl은 보내지 않아 지금 사진을 유지한다.
     setIsSaving(true);
-    updateTeam(team.teamId, body)
-      .then(() => {
-        // B02로 돌아간다. B02가 teamId로 수정된 정보를 다시 불러오고, 사진만 넘긴다.
-        // 뒤로가기로 수정 폼에 다시 오지 않도록 replace
-        const state: TeamSpaceLocationState = { photo };
-        navigate(`/team?teamId=${team.teamId}`, { replace: true, state });
-      })
-      .catch((error: unknown) => {
-        setIsSaving(false);
-        setErrorToast((prev) => ({ message: getSaveErrorMessage(error), id: (prev?.id ?? 0) + 1 }));
+    try {
+      await updateTeam(team.teamId, toTeamRequest(form));
+    } catch (error) {
+      setIsSaving(false);
+      showError(getSaveErrorMessage(error));
+      return;
+    }
+
+    // 새로 고른 사진은 정보를 저장한 뒤 따로 올린다. 실패해도 정보는 저장됐으니 B02로 가서 안내한다.
+    const state: TeamSpaceLocationState = {};
+    if (photo) {
+      await uploadTeamPhoto(team.teamId, photo).catch((error: unknown) => {
+        state.photoError = `정보는 저장했지만 ${getTeamPhotoUploadErrorMessage(error)}`;
       });
+    }
+
+    // B02가 teamId로 수정된 정보 · 사진을 다시 불러온다. 뒤로가기로 수정 폼에 다시 오지 않도록 replace
+    navigate(`/team?teamId=${team.teamId}`, { replace: true, state });
   };
 
   return (
@@ -146,12 +159,21 @@ function TeamEditForm({ team }: { team: TeamInfo }) {
 
       <Content>
         <PhotoSection>
-          {/* 사진이나 연필 버튼을 누르면 사진을 고른다. 연필 버튼 클릭도 여기로 올라온다. */}
-          <PhotoArea onClick={() => fileInputRef.current?.click()}>
-            <TeamAvatar teamName={form.name} photoUrl={photoUrl} editable />
-          </PhotoArea>
-          <HiddenInput ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} />
-          <TeamPhotoCaption help="사진을 눌러 바꿀 수 있어요." />
+          {canEditPhoto ? (
+            <>
+              {/* 사진이나 연필 버튼을 누르면 사진을 고른다. 연필 버튼 클릭도 여기로 올라온다. */}
+              <PhotoArea onClick={() => fileInputRef.current?.click()}>
+                <TeamAvatar teamName={form.name} photoUrl={newPhotoUrl ?? team.photoUrl} editable />
+              </PhotoArea>
+              <HiddenInput ref={fileInputRef} type="file" accept={TEAM_PHOTO_ACCEPT} onChange={handlePhotoChange} />
+              <TeamPhotoCaption help="사진을 눌러 바꿀 수 있어요." />
+            </>
+          ) : (
+            <>
+              <TeamAvatar teamName={form.name} photoUrl={team.photoUrl} />
+              <TeamPhotoCaption help="사진은 팀장만 바꿀 수 있어요." />
+            </>
+          )}
         </PhotoSection>
 
         <TeamInfoFields form={form} onChange={updateField} errors={isSubmitted ? errors : {}} />

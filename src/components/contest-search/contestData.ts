@@ -139,7 +139,7 @@ const toContestDetail = (item: AnnouncementDetailResponse): ContestDetail => ({
       .map((line) => line.trim())
       .filter(Boolean),
     form: text(item.formNote),
-    consent: '', // 동의서 정보는 API에 없다
+    consent: text(item.consentRequirements),
   },
 });
 

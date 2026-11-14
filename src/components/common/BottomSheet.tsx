@@ -15,6 +15,21 @@ export default function BottomSheet({ title, description, onClose, children }: B
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
 
+  // 바텀시트가 열린 동안 배경을 고정하고, 닫히면 원래 스크롤 위치를 복원한다.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const originalStyle = document.body.style.cssText;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.cssText = originalStyle;
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
+    };
+  }, []);
+
   // 열리면 시트로 포커스를 옮기고, Esc로 닫을 수 있게 한다.
   useEffect(() => {
     sheetRef.current?.focus();

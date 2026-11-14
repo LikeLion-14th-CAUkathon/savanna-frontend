@@ -3,7 +3,6 @@
 import { createInvitation, getInvitations } from '../../../api/invitation';
 import { getMyTeams, getTeamDetail, type TeamDetailResponse } from '../../../api/team';
 import { getMyInfo } from '../../../api/user';
-import { characters } from '../../onboarding/profileOptions';
 
 /**
  * 보여줄 팀 id. 한 사람은 한 팀에만 속하므로, 주소(?teamId=)에 없으면 내 팀 목록의 유일한 팀. 소속 팀이 없으면 null
@@ -16,9 +15,8 @@ export async function resolveTeamId(search: string) {
 }
 
 export interface TeamSpaceData {
-  team: TeamDetailResponse;
+  team: TeamDetailResponse; // 팀 사진(photoUrl) · 팀원 캐릭터(characterId) 포함
   myUserId: number;
-  myCharacterId?: string; // onboarding/profileOptions의 캐릭터 id
 }
 
 /** 팀 공간 정보(팀 · 팀원 · 나). 소속 팀이 없으면 null */
@@ -27,12 +25,7 @@ export async function fetchTeamSpace(search: string): Promise<TeamSpaceData | nu
   if (teamId === null) return null;
 
   const team = await getTeamDetail(teamId);
-  return {
-    team,
-    myUserId: me.userId,
-    // 서버 캐릭터 번호(1~9) → 화면 캐릭터 id. 다른 팀원은 팀 API에 캐릭터가 없어 기본 캐릭터로 보여준다.
-    myCharacterId: characters.find((character) => character.apiId === me.characterId)?.id,
-  };
+  return { team, myUserId: me.userId };
 }
 
 // ===== 초대 링크 =====

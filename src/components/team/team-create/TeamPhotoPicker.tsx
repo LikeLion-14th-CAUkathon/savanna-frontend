@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import cameraIcon from '../../../assets/icons/team/team-create/camera.svg';
 import plusIcon from '../../../assets/icons/onboarding/plus.svg';
 import TeamPhotoCaption from '../team-form/TeamPhotoCaption';
+import { TEAM_PHOTO_ACCEPT } from '../../../utils/teamPhoto';
 
 interface TeamPhotoPickerProps {
   photo: File | null;                     // 고른 사진 (부모가 들고 있음)
@@ -48,7 +49,7 @@ export default function TeamPhotoPicker({ photo, onChange }: TeamPhotoPickerProp
           <img src={plusIcon} alt="" />
         </AddBadge>
       </PhotoButton>
-      <HiddenInput ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} />
+      <HiddenInput ref={fileInputRef} type="file" accept={TEAM_PHOTO_ACCEPT} onChange={handleFileChange} />
 
       <TeamPhotoCaption help="고르지 않으면 팀 이름 첫 글자로 표시돼요." />
     </Section>

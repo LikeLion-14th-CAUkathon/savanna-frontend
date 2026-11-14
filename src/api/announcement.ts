@@ -51,6 +51,7 @@ export interface AnnouncementDetailResponse {
   venueNote: string;
   detailStatus: string;
   dateSource: string;
+  consentRequirements: string | null; // 동의서 제출 안내. 미확인은 null (제출 불필요라는 뜻이 아님)
 }
 
 export interface AnnouncementListParams extends PageParams {

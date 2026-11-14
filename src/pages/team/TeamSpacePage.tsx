@@ -16,20 +16,14 @@ import {
 } from '../../components/team/team-space/teamSpaceData';
 import { characters } from '../../components/onboarding/profileOptions';
 import { getProposalNotifications } from '../../api/proposal';
-import type { TeamEditLocationState, TeamSpaceLocationState } from '../../types/team';
-import { useFileDataUrl } from '../../utils/useFileDataUrl';
+import type { TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
 
 const TILE_TONES = ['peach', 'mint', 'coral'] as const;
 
-const COPY_TOAST = {
-  copied: { variant: 'success', message: '초대 링크를 복사했어요.' },
-  'copy-error': { variant: 'error', message: '링크를 복사하지 못했어요. 다시 시도해 주세요.' },
-} as const;
-
-type CopyToast = keyof typeof COPY_TOAST;
+type ToastState = { variant: 'success' | 'error'; message: string; id: number };
 
 type LoadState =
   | { type: 'loading' }
@@ -45,9 +39,9 @@ const toLoadError = (error: unknown): LoadState => {
   return { type: 'error', message: '팀 정보를 불러오지 못했어요.', canRetry: true };
 };
 
-// 사진 등 캐릭터 정보가 없거나 모르는 id면 깨진 이미지 대신 첫 번째 캐릭터
-const getCharacterImage = (characterId?: string) =>
-  (characters.find((character) => character.id === characterId) ?? characters[0]).image;
+// 캐릭터를 고르지 않았거나(null) 모르는 번호면 깨진 이미지 대신 첫 번째 캐릭터
+const getCharacterImage = (apiId: number | null) =>
+  (characters.find((character) => character.apiId === apiId) ?? characters[0]).image;
 
 // B02 팀 공간. 주소의 teamId가 바뀌면 새로 불러오도록 key로 다시 그린다.
 export default function TeamSpacePage() {
@@ -59,9 +53,21 @@ function TeamSpaceContent({ search }: { search: string }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 팀 프로필 사진은 팀 API에 필드가 없어, B01 · 팀 정보 수정에서 고른 사진만 화면 사이로 넘겨받는다.
-  const { photo } = (location.state as TeamSpaceLocationState | null) ?? {};
-  const photoUrl = useFileDataUrl(photo);
+  // ===== 토스트 =====
+  // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
+  // B01 · 팀 정보 수정에서 사진 업로드만 실패하고 넘어왔으면 처음에 그 안내를 띄운다.
+  const [toastState, setToastState] = useState<ToastState | null>(() => {
+    const { photoError } = (location.state as TeamSpaceLocationState | null) ?? {};
+    return photoError ? { variant: 'error', message: photoError, id: 1 } : null;
+  });
+  const showToast = (variant: ToastState['variant'], message: string) =>
+    setToastState((prev) => ({ variant, message, id: (prev?.id ?? 0) + 1 }));
+  const closeToast = useCallback(() => setToastState(null), []);
+
+  // 안내는 한 번만. 새로고침 · 뒤로가기로 다시 오면 뜨지 않도록 기록의 state를 비운다.
+  useEffect(() => {
+    if (location.state) navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [location, navigate]);
 
   // ===== 팀 · 팀원 =====
   const [loadState, setLoadState] = useState<LoadState>({ type: 'loading' });
@@ -118,19 +124,12 @@ function TeamSpaceContent({ search }: { search: string }) {
     };
   }, []);
 
-  // ===== 복사 토스트 =====
-  // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
-  const [toastState, setToastState] = useState<{ type: CopyToast; id: number } | null>(null);
-  const toast = toastState ? COPY_TOAST[toastState.type] : null;
-  const showToast = (type: CopyToast) => setToastState((prev) => ({ type, id: (prev?.id ?? 0) + 1 }));
-  const closeToast = useCallback(() => setToastState(null), []);
-
   const copyInviteLink = () => {
     if (!inviteUrl) return;
     navigator.clipboard
       .writeText(inviteUrl)
-      .then(() => showToast('copied'))
-      .catch(() => showToast('copy-error'));
+      .then(() => showToast('success', '초대 링크를 복사했어요.'))
+      .catch(() => showToast('error', '링크를 복사하지 못했어요. 다시 시도해 주세요.'));
   };
 
   const bottomBar = (
@@ -166,13 +165,10 @@ function TeamSpaceContent({ search }: { search: string }) {
     );
   }
 
-  const { team, myUserId, myCharacterId } = data;
+  const { team, myUserId } = data;
 
-  // 팀 정보 수정으로 간다. 팀 정보는 수정 화면이 teamId로 다시 불러오고, 사진만 넘긴다.
-  const openEdit = () => {
-    const state: TeamEditLocationState = { photo };
-    navigate(`/team/edit?teamId=${team.teamId}`, { state });
-  };
+  // 팀 정보 수정으로 간다. 팀 정보 · 사진은 수정 화면이 teamId로 다시 불러온다.
+  const openEdit = () => navigate(`/team/edit?teamId=${team.teamId}`);
 
   // 나를 맨 앞에 둔다.
   const members = [...team.members].sort(
@@ -184,7 +180,7 @@ function TeamSpaceContent({ search }: { search: string }) {
       <HeaderBand>
         <Title>팀 공간</Title>
         <Profile>
-          <TeamAvatar teamName={team.name} photoUrl={photoUrl} />
+          <TeamAvatar teamName={team.name} photoUrl={team.photoUrl} />
           <TeamName>{team.name}</TeamName>
           <MemberCount>팀원 {team.members.length}명</MemberCount>
           <Actions>
@@ -219,20 +215,16 @@ function TeamSpaceContent({ search }: { search: string }) {
             함께하는 사자들 <Count>{team.members.length}명</Count>
           </SectionTitle>
           <MemberList>
-            {members.map((member, index) => {
-              const isMe = member.userId === myUserId;
-              return (
-                <li key={member.userId}>
-                  <MemberTile
-                    name={member.name}
-                    isMe={isMe}
-                    tone={TILE_TONES[index % TILE_TONES.length]}
-                    // 팀 API에 팀원 캐릭터가 없어 나만 내 캐릭터, 다른 팀원은 기본 캐릭터
-                    characterImage={getCharacterImage(isMe ? myCharacterId : undefined)}
-                  />
-                </li>
-              );
-            })}
+            {members.map((member, index) => (
+              <li key={member.userId}>
+                <MemberTile
+                  name={member.name}
+                  isMe={member.userId === myUserId}
+                  tone={TILE_TONES[index % TILE_TONES.length]}
+                  characterImage={getCharacterImage(member.characterId)}
+                />
+              </li>
+            ))}
           </MemberList>
         </Section>
 
@@ -245,10 +237,10 @@ function TeamSpaceContent({ search }: { search: string }) {
 
       {bottomBar}
 
-      {toastState && toast && (
+      {toastState && (
         <ToastArea>
-          <Toast key={toastState.id} variant={toast.variant} onClose={closeToast}>
-            {toast.message}
+          <Toast key={toastState.id} variant={toastState.variant} onClose={closeToast}>
+            {toastState.message}
           </Toast>
         </ToastArea>
       )}

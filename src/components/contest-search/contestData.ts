@@ -1,11 +1,18 @@
-// C01 공고 찾기 API 호출 + 화면용 데이터 변환
+// C01 공고 찾기 · C03 공고 상세 API 호출 + 화면용 데이터 변환
 // 서버 응답(src/api/announcement)과 화면 타입(src/types/contest)이 달라서 여기서 맞춘다.
 
-import { getAnnouncements, getRecommendations } from '../../api/announcement';
-import type { AnnouncementResponse } from '../../api/announcement';
-import type { AnnouncementField, AnnouncementStatus } from '../../api/common';
+import { isAxiosError } from 'axios';
+import { getAnnouncement, getAnnouncements, getRecommendations } from '../../api/announcement';
+import type { AnnouncementDetailResponse, AnnouncementResponse } from '../../api/announcement';
+import type { AnnouncementField, AnnouncementStatus, ApplicationMethod } from '../../api/common';
 import { getMyTeams } from '../../api/team';
-import type { Contest, ContestCategory, ContestStatus, RecommendedContest } from '../../types/contest';
+import type {
+  Contest,
+  ContestCategory,
+  ContestDetail,
+  ContestStatus,
+  RecommendedContest,
+} from '../../types/contest';
 
 // ===== 값 변환 (서버 → 화면) =====
 
@@ -85,4 +92,63 @@ export async function fetchRecommendedContests(): Promise<RecommendedContest[]> 
     const status = STATUS_FROM_API[item.status];
     return status ? [{ ...toContest(item, status, now), reason: item.reason }] : [];
   });
+}
+
+// ===== C03 공고 상세 =====
+
+// 지원 방법 안내 문구가 없을 때 접수 방식만이라도 보여준다. 기타는 비워서 줄을 숨긴다.
+const METHOD_LABEL: Record<ApplicationMethod, string> = {
+  WEB: '온라인 접수',
+  EMAIL: '이메일 접수',
+  OTHER: '',
+};
+
+// 서버 값이 비어 있거나 null이면 빈 문자열 → 화면에서 그 줄을 숨긴다.
+const text = (value: string | null | undefined) => value?.trim() ?? '';
+
+// 최소 · 최대 인원 → '2~5명' / '3명' / '2명 이상' / '5명 이하'
+const toTeamSize = (min: number | null, max: number | null) => {
+  if (min && max) return min === max ? `${min}명` : `${min}~${max}명`;
+  if (min) return `${min}명 이상`;
+  if (max) return `${max}명 이하`;
+  return '';
+};
+
+const toContestDetail = (item: AnnouncementDetailResponse): ContestDetail => ({
+  id: item.announcementId,
+  title: item.title,
+  host: item.host,
+  startAt: item.applicationStartsAt,
+  // 서버는 마감 날짜만 준다. 그날 끝까지 접수 가능하도록 23:59:59(한국 시간)로
+  deadlineAt: `${item.deadline}T23:59:59+09:00`,
+  sourceUrl: text(item.sourceUrl) || text(item.applyUrl),
+  eligibility: {
+    target: text(item.enrollmentRequirement),
+    teamSize: toTeamSize(item.minMembers, item.maxMembers),
+    region: text(item.participationRegion) || text(item.region),
+  },
+  overview: {
+    topic: text(item.theme),
+    criteria: text(item.evaluationCriteria),
+  },
+  application: {
+    method: text(item.applicationInstructions) || METHOD_LABEL[item.applicationMethod] || '',
+    // 제출물은 한 줄에 하나씩 온다고 보고 줄바꿈으로 나눈다.
+    submissions: text(item.submissionRequirements)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean),
+    form: text(item.formNote),
+    consent: '', // 동의서 정보는 API에 없다
+  },
+});
+
+/** 공고 상세. 없는 공고(404)면 null */
+export async function fetchContestDetail(announcementId: number): Promise<ContestDetail | null> {
+  try {
+    return toContestDetail(await getAnnouncement(announcementId));
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) return null;
+    throw error;
+  }
 }

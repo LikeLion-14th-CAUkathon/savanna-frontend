@@ -10,13 +10,11 @@ import InviteInfoField from '../../components/onboarding/InviteInfoField';
 
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
-  const { token: pathToken } = useParams<{ token: string }>();
-  const location = useLocation();
-  const token = pathToken ?? new URLSearchParams(location.search).get('token');
+  const { token } = useParams<{ token: string }>();
   return <InvitationContent key={token} token={token} />;
 }
 
-function InvitationContent({ token }: { token: string | null }) {
+function InvitationContent({ token }: { token: string | undefined }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [team, setTeam] = useState<InvitationPreviewResponse | null>(null);

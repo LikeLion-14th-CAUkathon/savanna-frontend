@@ -38,7 +38,7 @@ export default function ProfilePage() {
     // 초대에서 시작했다면 정보 저장 후 합류를 이어간다.
     if (saveResult === 'success') {
       const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
-      if (invitationUrl?.startsWith('/invite/') || invitationUrl?.startsWith('/invite?')) {
+      if (invitationUrl?.startsWith('/invite/')) {
         navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
       } else {
         navigate('/team/create', { replace: true });

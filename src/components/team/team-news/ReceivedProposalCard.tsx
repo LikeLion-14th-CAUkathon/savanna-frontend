@@ -58,7 +58,12 @@ export default function ReceivedProposalCard({
 
       <LinkRow
         title={proposal.announcementTitle}
-        description={`${proposal.projectName} 프로젝트 · 마감 ${formatDDay(proposal.deadline)}`}
+        description={[
+          proposal.projectName && `${proposal.projectName} 프로젝트`,
+          proposal.deadline && `마감 ${formatDDay(proposal.deadline)}`,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         onClick={onOpenAnnouncement}
       />
 

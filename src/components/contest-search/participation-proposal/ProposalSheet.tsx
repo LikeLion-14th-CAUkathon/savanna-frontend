@@ -4,7 +4,12 @@ import BottomSheet from '../../common/BottomSheet';
 import Button from '../../common/Button';
 import Input from '../../common/Input';
 import ProposalRecipients from './ProposalRecipients';
-import { fetchProposalTeam, sendProposal } from '../../../mocks/proposal';
+import {
+  fetchProposalTeam,
+  getSendProposalError,
+  sendProposal,
+  type SendProposalError,
+} from '../proposalData';
 import { PROPOSAL_MESSAGE_MAX, type ProposalTeam } from '../../../types/proposal';
 import type { ContestDetail } from '../../../types/contest';
 import { formatDDay } from '../../../utils/dday';
@@ -13,6 +18,7 @@ import { formatDateTime } from '../../../utils/date';
 type TeamState =
   | { status: 'loading' }
   | { status: 'error' }
+  | { status: 'no-team' }
   | { status: 'success'; team: ProposalTeam };
 
 interface ProposalSheetProps {
@@ -20,7 +26,7 @@ interface ProposalSheetProps {
   today: Date;
   onClose: () => void;     // 닫기 · 바깥 영역 · Esc
   onSent: () => void;      // 전송 성공
-  onSendError: () => void; // 전송 실패 (시트는 열어 둔다)
+  onSendError: (reason: SendProposalError) => void; // 전송 실패 (시트는 열어 둔다)
 }
 
 // C04 공고 참여 제안 바텀시트. 부모가 열 때만 렌더링한다.
@@ -30,12 +36,13 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
   const [showEmptyError, setShowEmptyError] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // 팀 정보(프로젝트 · 받는 사람)를 불러온다.
+  // 내 팀 정보(프로젝트 · 받는 사람)를 불러온다.
   useEffect(() => {
     let ignore = false;
     fetchProposalTeam()
       .then((team) => {
-        if (!ignore) setTeamState({ status: 'success', team });
+        if (ignore) return;
+        setTeamState(team ? { status: 'success', team } : { status: 'no-team' });
       })
       .catch(() => {
         if (!ignore) setTeamState({ status: 'error' });
@@ -55,16 +62,17 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
   };
 
   const handleSubmit = () => {
+    if (!team) return;
     if (message.trim() === '') {
       setShowEmptyError(true);
       return;
     }
     setIsSending(true);
-    sendProposal(contest.id, message.trim())
+    sendProposal(contest.id, team.teamId, message.trim())
       .then(onSent)
-      .catch(() => {
+      .catch((error: unknown) => {
         setIsSending(false);
-        onSendError();
+        onSendError(getSendProposalError(error));
       });
   };
 
@@ -93,6 +101,12 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
           <InfoValue>
             {teamState.status === 'loading' && <SubText>팀원 정보를 불러오는 중이에요.</SubText>}
             {teamState.status === 'error' && <ValueText $danger>팀원 정보를 불러오지 못했어요.</ValueText>}
+            {teamState.status === 'no-team' && (
+              <>
+                <ValueText $danger>아직 소속된 팀이 없어요.</ValueText>
+                <SubText>팀을 만들거나 초대 링크로 팀에 들어가 주세요.</SubText>
+              </>
+            )}
             {team && hasRecipients && <ProposalRecipients members={team.members} />}
             {team && !hasRecipients && (
               <>

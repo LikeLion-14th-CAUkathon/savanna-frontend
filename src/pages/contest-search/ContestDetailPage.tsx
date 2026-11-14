@@ -15,6 +15,7 @@ import {
   type ContestPhase,
 } from '../../components/contest-search/contest-detail/contestPhase';
 import { fetchContestDetail } from '../../components/contest-search/contestData';
+import type { SendProposalError } from '../../components/contest-search/proposalData';
 import type { ContestDetail } from '../../types/contest';
 
 type LoadState = 'loading' | 'success' | 'not-found' | 'error';
@@ -22,6 +23,7 @@ type LoadState = 'loading' | 'success' | 'not-found' | 'error';
 const PROPOSAL_TOAST = {
   sent: { variant: 'success', message: '팀원에게 참여 제안을 보냈어요.' },
   'send-error': { variant: 'error', message: '제안을 보내지 못했어요. 다시 시도해 주세요.' },
+  duplicate: { variant: 'error', message: '이미 이 공고로 팀원에게 제안을 보냈어요.' },
 } as const;
 
 type ProposalToast = keyof typeof PROPOSAL_TOAST;
@@ -119,7 +121,8 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
   };
 
   // 실패하면 시트는 열어 둔 채로 버튼 위에 알린다.
-  const handleProposalError = () => showToast('send-error');
+  const handleProposalError = (reason: SendProposalError) =>
+    showToast(reason === 'duplicate' ? 'duplicate' : 'send-error');
 
   return (
     <>

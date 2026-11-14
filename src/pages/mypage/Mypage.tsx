@@ -88,6 +88,9 @@ export default function Mypage({ onLogoutSuccess }: { onLogoutSuccess: () => voi
     setIsSubmitted(true);
     if (!name.trim()) return;
 
+    // 캐릭터가 없는 기존 계정도 화면과 저장 요청에 같은 캐릭터를 사용한다.
+    const selectedCharacter = character ?? characters[Math.floor(Math.random() * characters.length)];
+    setCharacterId(selectedCharacter.id);
     setIsSaving(true);
     setToastType(null);
     try {
@@ -95,7 +98,7 @@ export default function Mypage({ onLogoutSuccess }: { onLogoutSuccess: () => voi
         name: name.trim(),
         ...(schoolStatus && { enrollmentStatus: schoolStatus }),
         regions: toRegionCodes(selectedRegions),
-        characterId: character?.apiId,
+        characterId: selectedCharacter.apiId,
       });
       setName(user.name);
       setSchoolStatus(user.enrollmentStatus ?? '');

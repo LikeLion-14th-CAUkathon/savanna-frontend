@@ -2,7 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import Button from '../common/Button';
 import FilterChip from '../common/FilterChip';
-import ProfileSheet from './ProfileSheet';
+import BottomSheet from '../common/BottomSheet';
 import { regions } from './profileOptions';
 
 interface RegionSelectSheetProps {
@@ -26,7 +26,7 @@ export default function RegionSelectSheet({ selectedRegions, onSelect, onClose }
   };
 
   return (
-    <ProfileSheet title="지역 추가" onClose={onClose}>
+    <BottomSheet title="지역 추가" onClose={onClose}>
       <Description>현장 행사에 참석할 수 있는 시·도를 모두 골라 주세요.</Description>
       <RegionList>
         {regions.map((region) => (
@@ -38,7 +38,7 @@ export default function RegionSelectSheet({ selectedRegions, onSelect, onClose }
       <ConfirmButton onClick={() => onSelect(draftRegions)}>
         {draftRegions.length}개 지역 선택 완료
       </ConfirmButton>
-    </ProfileSheet>
+    </BottomSheet>
   );
 }
 

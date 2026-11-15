@@ -1,8 +1,8 @@
 import styled from 'styled-components';
 import Button from '../../common/Button';
 
-// 아직 응답 안 함(제안 뒤에 합류한 팀원 포함) → 두 버튼 / 쉬어가는 중 → '합류하기'만
-export type RespondableStatus = 'PENDING' | 'NONE' | 'RESTING';
+// 아직 응답 안 함(제안 뒤에 합류한 팀원 포함) → 두 버튼 / 쉬어가는 중 → '합류하기'만 / 합류 → '이번엔 쉬어가기'만
+export type RespondableStatus = 'PENDING' | 'NONE' | 'RESTING' | 'JOINED';
 
 interface ResponseButtonsProps {
   status: RespondableStatus;
@@ -15,9 +15,19 @@ export default function ResponseButtons({ status, isSaving, onRespond }: Respons
   if (status === 'RESTING') {
     return (
       <Row>
-        <JoinOnlyButton disabled={isSaving} onClick={() => onRespond(true)}>
+        <SingleButton disabled={isSaving} onClick={() => onRespond(true)}>
           합류하기
-        </JoinOnlyButton>
+        </SingleButton>
+      </Row>
+    );
+  }
+
+  if (status === 'JOINED') {
+    return (
+      <Row>
+        <SingleButton variant="secondary" disabled={isSaving} onClick={() => onRespond(false)}>
+          이번엔 쉬어가기
+        </SingleButton>
       </Row>
     );
   }
@@ -50,6 +60,7 @@ const ResponseButton = styled(Button)`
   font-size: 14px;
 `;
 
-const JoinOnlyButton = styled(ResponseButton)`
+// 버튼이 하나일 때는 오른쪽에 165px
+const SingleButton = styled(ResponseButton)`
   flex: 0 0 165px;
 `;

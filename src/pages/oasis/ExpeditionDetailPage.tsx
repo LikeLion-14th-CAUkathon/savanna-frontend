@@ -260,9 +260,8 @@ export default function ExpeditionDetailPage() {
             <Section title="제안과 응답 현황">
               <ResponseStatus responses={detail.responses} />
             </Section>
-            {(detail.myResponse?.status === 'PENDING' ||
-              detail.myResponse?.status === 'NONE' ||
-              detail.myResponse?.status === 'RESTING') && (
+            {/* 제안자는 응답할 수 없어서 버튼 없음 */}
+            {detail.myResponse && detail.myResponse.status !== 'SENDER' && (
               <ResponseButtons status={detail.myResponse.status} isSaving={isResponding} onRespond={respond} />
             )}
           </>

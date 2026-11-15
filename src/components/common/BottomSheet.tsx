@@ -4,14 +4,15 @@ import styled from 'styled-components';
 import closeIcon from '../../assets/icons/bottom-sheet/close.svg';
 
 interface BottomSheetProps {
-  title: string;          // 시트 제목
+  title?: string;         // 시트 제목. 없으면 제목 줄 · 닫기 버튼 없이 손잡이 아래에 바로 내용을 둔다 (예: 사진 메뉴)
+  ariaLabel?: string;     // 제목이 없을 때 화면 읽기 프로그램에 알려 줄 시트 이름
   description?: string;   // 제목 아래 보조 설명 (있을 때만)
   onClose: () => void;    // 닫기 버튼 · 바깥 영역 · Esc
   children: ReactNode;    // 제목 아래 내용 (항목 사이 간격 24px)
 }
 
 // 화면 아래에서 올라오는 선택창. 부모가 열 때만 렌더링한다.
-export default function BottomSheet({ title, description, onClose, children }: BottomSheetProps) {
+export default function BottomSheet({ title, ariaLabel, description, onClose, children }: BottomSheetProps) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
   const [startY, setStartY] = useState<number | null>(null);
@@ -138,7 +139,8 @@ export default function BottomSheet({ title, description, onClose, children }: B
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel}
         tabIndex={-1}
         $dragging={startY !== null}
         style={{ transform: `translate(-50%, ${offsetY}px)` }}
@@ -151,6 +153,7 @@ export default function BottomSheet({ title, description, onClose, children }: B
       >
         <DragArea
           data-sheet-handle
+          $compact={!title}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -161,15 +164,17 @@ export default function BottomSheet({ title, description, onClose, children }: B
         >
           <Handle aria-hidden="true" />
         </DragArea>
-        <Header>
-          <TitleRow>
-            <Title id={titleId}>{title}</Title>
-            <CloseButton type="button" aria-label="닫기" onClick={onClose}>
-              <img src={closeIcon} alt="" />
-            </CloseButton>
-          </TitleRow>
-          {description && <Description>{description}</Description>}
-        </Header>
+        {title && (
+          <Header>
+            <TitleRow>
+              <Title id={titleId}>{title}</Title>
+              <CloseButton type="button" aria-label="닫기" onClick={onClose}>
+                <img src={closeIcon} alt="" />
+              </CloseButton>
+            </TitleRow>
+            {description && <Description>{description}</Description>}
+          </Header>
+        )}
         {children}
       </Sheet>
     </>
@@ -210,10 +215,11 @@ const Sheet = styled.section<{ $dragging: boolean }>`
   outline: none;
 `;
 
-const DragArea = styled.div`
+// 손잡이 아래 내용까지: 제목이 있으면 24px, 제목이 없으면 12px
+const DragArea = styled.div<{ $compact: boolean }>`
   flex-shrink: 0;
   padding: 12px 0;
-  margin-bottom: -12px;
+  margin-bottom: ${({ $compact }) => ($compact ? '-24px' : '-12px')};
   touch-action: none;
   cursor: grab;
 `;

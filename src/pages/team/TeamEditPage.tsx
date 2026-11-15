@@ -8,6 +8,7 @@ import TeamAvatar from '../../components/common/TeamAvatar';
 import Toast from '../../components/toast/Toast';
 import TeamInfoFields from '../../components/team/team-form/TeamInfoFields';
 import TeamPhotoCaption from '../../components/team/team-form/TeamPhotoCaption';
+import TeamPhotoMenuSheet from '../../components/team/team-form/TeamPhotoMenuSheet';
 import { getApiErrorMessage } from '../../api/client';
 import { getTeamDetail, updateTeam, uploadTeamPhoto, type TeamDetailResponse } from '../../api/team';
 import { getMyInfo } from '../../api/user';
@@ -99,6 +100,8 @@ function TeamEditForm({ team, canEditPhoto }: { team: TeamDetailResponse; canEdi
 
   const [form, setForm] = useState<TeamForm>(() => toTeamForm(team));
   const [photo, setPhoto] = useState<File | null>(null); // 새로 고른 사진. 없으면 지금 팀 사진 유지
+  const [isPhotoDeleted, setIsPhotoDeleted] = useState(false); // 지금 팀 사진을 지웠는지 (저장할 때 반영)
+  const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false); // 저장을 눌렀는지
   const [isSaving, setIsSaving] = useState(false); // 요청 중에는 버튼을 막아 중복 저장을 막는다
   // id: 같은 오류가 연달아 나도 토스트를 새로 띄운다.
@@ -123,18 +126,44 @@ function TeamEditForm({ team, canEditPhoto }: { team: TeamDetailResponse; canEdi
     e.target.value = ''; // 같은 사진을 다시 골라도 반영되도록 비워 둔다
     if (!file) return;
     const photoError = getTeamPhotoError(file);
-    if (photoError) showError(photoError);
-    else setPhoto(file);
+    if (photoError) {
+      showError(photoError);
+      return;
+    }
+    setPhoto(file);
+    setIsPhotoDeleted(false);
+  };
+
+  // 사진 삭제는 화면에만 먼저 반영하고, 저장을 눌러야 서버에서 지운다.
+  const deletePhoto = () => {
+    setPhoto(null);
+    setIsPhotoDeleted(true);
+  };
+
+  // 화면에 보여줄 사진: 새로 고른 사진 → (지우지 않았다면) 지금 팀 사진
+  const currentPhotoUrl = photo ? newPhotoUrl : isPhotoDeleted ? null : team.photoUrl;
+  const hasPhoto = !!photo || (!isPhotoDeleted && !!team.photoUrl);
+
+  const openFilePicker = () => fileInputRef.current?.click();
+  // 사진이 있으면 변경 / 삭제 메뉴를 열고, 없으면 바로 사진을 고른다.
+  const handlePhotoClick = () => {
+    if (hasPhoto) setIsPhotoMenuOpen(true);
+    else openFilePicker();
   };
 
   const handleSave = async () => {
     setIsSubmitted(true);
     if (hasError) return;
 
-    // 비운 선택 항목도 ''로 보내 기존 값을 지운다. photoUrl은 보내지 않아 지금 사진을 유지한다.
+    // 비운 선택 항목도 ''로 보내 기존 값을 지운다.
+    // 사진을 지웠으면 photoUrl: ''로 삭제하고, 아니면 photoUrl을 보내지 않아 지금 사진을 유지한다.
+    // 지운 뒤 새 사진을 골랐다면 삭제 대신 아래에서 새 사진을 올린다.
     setIsSaving(true);
     try {
-      await updateTeam(team.teamId, toTeamRequest(form));
+      await updateTeam(team.teamId, {
+        ...toTeamRequest(form),
+        ...(isPhotoDeleted && !photo ? { photoUrl: '' as const } : {}),
+      });
     } catch (error) {
       setIsSaving(false);
       showError(getSaveErrorMessage(error));
@@ -161,12 +190,21 @@ function TeamEditForm({ team, canEditPhoto }: { team: TeamDetailResponse; canEdi
         <PhotoSection>
           {canEditPhoto ? (
             <>
-              {/* 사진이나 연필 버튼을 누르면 사진을 고른다. 연필 버튼 클릭도 여기로 올라온다. */}
-              <PhotoArea onClick={() => fileInputRef.current?.click()}>
-                <TeamAvatar teamName={form.name} photoUrl={newPhotoUrl ?? team.photoUrl} editable />
+              {/* 사진이나 카메라 버튼을 누르면 메뉴를 열거나 사진을 고른다. 카메라 버튼 클릭도 여기로 올라온다. */}
+              <PhotoArea onClick={handlePhotoClick}>
+                <TeamAvatar teamName={form.name} photoUrl={currentPhotoUrl} editable />
               </PhotoArea>
               <HiddenInput ref={fileInputRef} type="file" accept={TEAM_PHOTO_ACCEPT} onChange={handlePhotoChange} />
-              <TeamPhotoCaption help="사진을 눌러 바꿀 수 있어요." />
+              <TeamPhotoCaption
+                help={hasPhoto ? '카메라 버튼을 눌러 사진을 바꾸거나 삭제할 수 있어요.' : '사진을 눌러 바꿀 수 있어요.'}
+              />
+              {isPhotoMenuOpen && (
+                <TeamPhotoMenuSheet
+                  onChangePhoto={openFilePicker}
+                  onDeletePhoto={deletePhoto}
+                  onClose={() => setIsPhotoMenuOpen(false)}
+                />
+              )}
             </>
           ) : (
             <>

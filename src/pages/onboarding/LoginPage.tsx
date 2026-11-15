@@ -93,6 +93,9 @@ const Page = styled.main`
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 앱 전체가 가운데 폰 화면 프레임 안에 있으므로 프레임 높이에 맞춘다. */
+    height: 100%;
+    min-height: 0;
   }
 `;
 

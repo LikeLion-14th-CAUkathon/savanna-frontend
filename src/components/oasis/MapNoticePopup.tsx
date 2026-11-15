@@ -24,8 +24,7 @@ const Popup = styled.section`
   align-items: center;
   gap: 16px;
   box-sizing: border-box;
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
   padding: 24px 20px 20px;
   border: 2px solid #fff0cc;
   border-radius: 20px;

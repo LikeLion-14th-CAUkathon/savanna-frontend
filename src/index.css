@@ -72,6 +72,26 @@ body {
   min-height: 100svh;
 }
 
+/* 태블릿·노트북에서는 로그인 화면처럼 Figma 폰 화면(402×874)을 정가운데에 띄운다.
+   화면이 874px보다 짧으면 높이만 맞추고, 각 페이지는 이 프레임 안에서 스크롤한다.
+   transform이 있으면 하단 버튼·토스트·바텀시트(position: fixed)가 창이 아닌 프레임 기준으로 붙는다. */
+@media (min-width: 481px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+  }
+
+  #root {
+    width: 402px;
+    height: min(874px, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+}
+
 h1,
 h2,
 h3,

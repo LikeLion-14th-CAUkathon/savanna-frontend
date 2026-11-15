@@ -45,8 +45,7 @@ const Card = styled.section`
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
   height: 56px;
   padding: 10px 20px;
   border-radius: 26px;

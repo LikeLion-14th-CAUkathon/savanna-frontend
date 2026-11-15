@@ -209,11 +209,21 @@ export default function OasisPage() {
 // 지도가 화면보다 길면 지도 영역만 끌어서 봄
 const Stage = styled.main`
   position: relative;
-  width: ${MAP_WIDTH}px;
-  max-width: 100%;
+  width: 100%;
+  max-width: ${MAP_WIDTH}px;
   height: 100svh;
   margin: 0 auto;
   overflow: hidden;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 높이에 맞춘다. */
+  @media (min-width: 481px) {
+    height: 100%;
+  }
 `;
 
 // 지도만 위아래로 끌어서 보는 영역 (상단 카드·하단 탭바는 고정)
@@ -237,7 +247,12 @@ const MapContent = styled.div`
   position: relative;
   flex-shrink: 0;
   width: ${MAP_WIDTH}px;
-  margin-top: auto;
+  margin: auto auto 0;
+
+  /* 폰에서는 지도·캐릭터·웅덩이 위치를 화면 너비 비율(화면 너비 ÷ 402)로 함께 키우거나 줄인다. */
+  @media (max-width: 480px) {
+    zoom: tan(atan2(100vw, ${MAP_WIDTH}px));
+  }
 `;
 
 const MapImage = styled.img`
@@ -254,22 +269,26 @@ const Character = styled.img`
   user-select: none;
 `;
 
+// 카드는 화면 좌우 24px 여백 안에서 너비를 채운다.
 const StatusArea = styled.div`
   position: absolute;
   top: 58px;
+  right: 24px;
   left: 24px;
 `;
 
+// 402px 화면 기준 위치(left 246px)를 유지하면서 넓은 화면에서는 오른쪽 기준으로 따라간다.
 const TeamBadgeArea = styled.div`
   position: absolute;
   top: 133px;
-  left: 246px;
+  left: calc(100% - 156px);
   max-width: 140px;
 `;
 
 const PopupArea = styled.div`
   position: absolute;
   top: 192px;
+  right: 24px;
   left: 24px;
 `;
 

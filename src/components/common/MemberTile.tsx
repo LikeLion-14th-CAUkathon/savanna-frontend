@@ -45,9 +45,8 @@ const Tile = styled.div<{ $isMe: boolean }>`
   text-align: center;
 `
 
-// 캐릭터는 원보다 크게 그려 얼굴이 원을 채우도록 잘라 보여준다 (피그마 Member Avatar 72px 기준)
+// 캐릭터 이미지(정사각형)에 원 배경 · 얼굴이 가운데로 들어 있어 원에 꼭 맞게 넣는다 (피그마 Member Avatar 72px)
 const Avatar = styled.div<{ $tone: MemberTileProps['tone'] }>`
-  position: relative;
   flex-shrink: 0;
   width: 72px;
   height: 72px;
@@ -56,11 +55,9 @@ const Avatar = styled.div<{ $tone: MemberTileProps['tone'] }>`
   background-color: ${({ $tone = 'peach' }) => avatarColors[$tone]};
 
   img {
-    position: absolute;
-    top: -1px;
-    left: -11.5px;
-    width: 95px;
-    height: 95px;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
   }
 `

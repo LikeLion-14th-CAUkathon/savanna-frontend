@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import styled from 'styled-components';
 import Button from '../../common/Button';
 import MemberAvatar from './MemberAvatar';
@@ -11,11 +10,6 @@ import { formatDDay } from '../../../utils/dday';
 
 type Answer = Exclude<ProposalStatus, 'PENDING'>;
 
-const ANSWER_TEXT: Record<Answer, string> = {
-  JOINED: '합류했어요',
-  DECLINED: '이번엔 쉬어가요',
-};
-
 // 오늘 받은 제안은 '오늘 09:20', 이전 제안은 '11.12 09:20'
 const formatReceivedAt = (iso: string) =>
   diffCalendarDays(iso, new Date().toISOString()) === 0
@@ -26,23 +20,17 @@ interface ReceivedProposalCardProps {
   proposal: ReceivedProposal;
   onRespond: (status: Answer) => void;
   onOpenAnnouncement: () => void;
+  isResponding?: boolean; // 응답을 보내는 중이면 버튼을 잠근다 (중복 응답 방지)
 }
 
 // B03 받은 제안 카드: 보낸 사람 말풍선 · 제안한 공고 · 합류/쉬어가기 응답
+// 응답은 제안마다 한 번만 보낼 수 있어서 미응답 제안에만 쓴다.
 export default function ReceivedProposalCard({
   proposal,
   onRespond,
   onOpenAnnouncement,
+  isResponding = false,
 }: ReceivedProposalCardProps) {
-  // '응답 바꾸기'를 누르면 다시 두 버튼을 보여준다.
-  const [isChanging, setIsChanging] = useState(false);
-  const answered = proposal.status !== 'PENDING' && !isChanging ? proposal.status : null;
-
-  const respond = (status: Answer) => {
-    setIsChanging(false);
-    onRespond(status);
-  };
-
   return (
     <ProposalCard>
       <Sender>
@@ -67,21 +55,21 @@ export default function ReceivedProposalCard({
         onClick={onOpenAnnouncement}
       />
 
-      {answered ? (
-        <AnsweredRow>
-          <AnsweredText $status={answered}>{ANSWER_TEXT[answered]}</AnsweredText>
-          <ChangeButton type="button" onClick={() => setIsChanging(true)}>
-            응답 바꾸기
-          </ChangeButton>
-        </AnsweredRow>
-      ) : (
+      <AnswerArea>
         <Answers>
-          <AnswerButton variant="secondary" onClick={() => respond('DECLINED')}>
+          <AnswerButton
+            variant="secondary"
+            disabled={isResponding}
+            onClick={() => onRespond('DECLINED')}
+          >
             이번엔 쉬어가기
           </AnswerButton>
-          <AnswerButton onClick={() => respond('JOINED')}>합류하기</AnswerButton>
+          <AnswerButton disabled={isResponding} onClick={() => onRespond('JOINED')}>
+            합류하기
+          </AnswerButton>
         </Answers>
-      )}
+        <AnswerNote>응답은 제안마다 한 번만 보낼 수 있어요.</AnswerNote>
+      </AnswerArea>
     </ProposalCard>
   );
 }
@@ -142,6 +130,12 @@ const LinkRow = styled(AnnouncementLink)`
   border-top: 1px solid #e7e5e0;
 `;
 
+const AnswerArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
 const Answers = styled.div`
   display: flex;
   gap: 8px;
@@ -159,34 +153,10 @@ const AnswerButton = styled(Button)`
   ${({ variant }) => variant === 'secondary' && 'box-shadow: 0 3px 0 #e2e0da;'}
 `;
 
-const AnsweredRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  height: 44px;
-`;
-
-const AnsweredText = styled.p<{ $status: Answer }>`
+const AnswerNote = styled.p`
   margin: 0;
-  color: ${({ $status }) => ($status === 'JOINED' ? '#4c7a1e' : '#5b5b5b')};
-  font-size: 15px;
-  font-weight: 700;
-`;
-
-const ChangeButton = styled.button`
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
   color: #999896;
-  font-family: 'Pretendard', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid #d97700;
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
+  text-align: center;
 `;

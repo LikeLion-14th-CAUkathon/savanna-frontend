@@ -9,6 +9,7 @@ import MemberTile from '../../components/common/MemberTile';
 import Toast from '../../components/toast/Toast';
 import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
+import LeaveTeamSheet from '../../components/team/team-space/LeaveTeamSheet';
 import {
   fetchInviteUrl,
   fetchTeamSpace,
@@ -16,7 +17,7 @@ import {
 } from '../../components/team/team-space/teamSpaceData';
 import { characters } from '../../components/onboarding/profileOptions';
 import { getProposalNotifications } from '../../api/proposal';
-import type { TeamSpaceLocationState } from '../../types/team';
+import type { OasisLocationState, TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
@@ -133,6 +134,21 @@ function TeamSpaceContent({ search }: { search: string }) {
     };
   }, []);
 
+  // ===== 팀 나가기 =====
+  const [isLeaveSheetOpen, setIsLeaveSheetOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const closeLeaveSheet = useCallback(() => setIsLeaveSheetOpen(false), []);
+
+  // 팀에서 나가면 D01 오아시스로 간다. 소속 팀이 없으니 D01-2(팀 없음)가 보인다.
+  // 뒤로가기로 나간 팀 공간에 다시 오지 않도록 replace
+  const leaveTeam = async () => {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    // TODO: 팀 탈퇴 API 연결. 실패하면 setIsLeaving(false) 후 오류 토스트를 띄우고 이 화면에 남는다.
+    const state: OasisLocationState = { leftTeam: true };
+    navigate('/oasis', { replace: true, state });
+  };
+
   const copyInviteLink = () => {
     if (!inviteUrl) return;
     navigator.clipboard
@@ -240,9 +256,24 @@ function TeamSpaceContent({ search }: { search: string }) {
           <Description>팀원 누구나 같은 링크로 초대할 수 있어요.</Description>
           <InviteLinkCard inviteUrl={inviteUrl} placeholder={invitePlaceholder} onCopy={copyInviteLink} />
         </Section>
+
+        <LeaveArea>
+          <LeaveButton type="button" onClick={() => setIsLeaveSheetOpen(true)}>
+            팀 나가기
+          </LeaveButton>
+        </LeaveArea>
       </Sheet>
 
       {bottomBar}
+
+      {isLeaveSheetOpen && (
+        <LeaveTeamSheet
+          teamName={team.name}
+          isLeaving={isLeaving}
+          onClose={closeLeaveSheet}
+          onConfirm={leaveTeam}
+        />
+      )}
 
       {toastState && (
         <ToastArea>
@@ -452,6 +483,32 @@ const MemberList = styled.ul`
 
   &::-webkit-scrollbar {
     display: none;
+  }
+`;
+
+// 페이지 맨 아래 '팀 나가기'. 마이페이지 로그아웃과 같은 모양
+const LeaveArea = styled.div`
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-border);
+`;
+
+const LeaveButton = styled.button`
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-orange);
+    outline-offset: 2px;
   }
 `;
 

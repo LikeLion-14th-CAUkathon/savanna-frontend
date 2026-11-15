@@ -219,6 +219,11 @@ const Stage = styled.main`
   @media (max-width: 480px) {
     max-width: none;
   }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 높이에 맞춘다. */
+  @media (min-width: 481px) {
+    height: 100%;
+  }
 `;
 
 // 지도만 위아래로 끌어서 보는 영역 (상단 카드·하단 탭바는 고정)

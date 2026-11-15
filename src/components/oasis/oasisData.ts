@@ -117,7 +117,8 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
       contestTitle: expedition.title,
       deadline: deadlineToIso(expedition.deadline),
       stage: STAGE_FROM_API[expedition.stage],
-      participantCount: expedition.joinedCount,
+      // 서버의 joinedCount는 제안을 받은 사람 중 합류한 수라 제안자 본인이 빠져 있음 → 제안자 1명을 더함
+      participantCount: expedition.joinedCount + 1,
     })),
   };
 }
@@ -158,22 +159,22 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
     }));
 
   // 제안이 여러 번이면 최신 제안의 응답을 우선 (같은 사람은 한 번만)
+  // 제안자는 받는 사람 목록에 없어서 직접 맨 앞에 '합류'로 넣는다
   const responses: MemberResponse[] = [];
   const seen = new Set<number>();
+  const addResponse = (userId: number, name: string, status: ResponseStatus) => {
+    if (seen.has(userId)) return;
+    seen.add(userId);
+    responses.push({ memberId: userId, name, isMe: userId === myUserId, status });
+  };
   [...proposals]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .forEach((proposal) =>
-      proposal.recipients.forEach((recipient) => {
-        if (seen.has(recipient.userId)) return;
-        seen.add(recipient.userId);
-        responses.push({
-          memberId: recipient.userId,
-          name: recipient.name,
-          isMe: recipient.userId === myUserId,
-          status: RESPONSE_STATUS[recipient.status],
-        });
-      }),
-    );
+    .forEach((proposal) => {
+      addResponse(proposal.senderId, proposal.senderName, 'JOINED');
+      proposal.recipients.forEach((recipient) =>
+        addResponse(recipient.userId, recipient.name, RESPONSE_STATUS[recipient.status]),
+      );
+    });
 
   return {
     id: expedition.expeditionId,

@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import styled from 'styled-components';
 
 interface InviteInfoFieldProps {
   label: string;
-  value: string;
+  value: ReactNode; // 글자 또는 참여 현황처럼 여러 요소로 된 내용
 }
 
 // 수정할 수 없는 초대 팀 정보 한 항목

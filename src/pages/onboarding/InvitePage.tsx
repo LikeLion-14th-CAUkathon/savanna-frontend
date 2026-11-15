@@ -9,6 +9,8 @@ import { getMyInfo } from '../../api/user';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
+import { characters } from '../../components/onboarding/profileOptions';
+import { toCharacterId } from '../../utils/character';
 
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
@@ -20,6 +22,7 @@ function InvitationGate({ token }: { token: string | undefined }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [myCharacterId, setMyCharacterId] = useState<number | null>(null);
   const authRequest = useRef<ReturnType<typeof getMyInfo> | null>(null);
 
   useEffect(() => {
@@ -27,8 +30,11 @@ function InvitationGate({ token }: { token: string | undefined }) {
     const controller = new AbortController();
     // 쿠키로 로그인 상태를 복원한 뒤 초대 화면을 표시한다.
     authRequest.current ??= getMyInfo();
-    authRequest.current.then(() => {
-      if (!controller.signal.aborted) setStatus('ready');
+    authRequest.current.then((me) => {
+      if (controller.signal.aborted) return;
+      // 참여 현황의 내 프로필에 쓸 캐릭터
+      setMyCharacterId(me.characterId);
+      setStatus('ready');
     }).catch((error: unknown) => {
       if (controller.signal.aborted) return;
       const code = isAxiosError(error) ? error.response?.status : undefined;
@@ -42,7 +48,7 @@ function InvitationGate({ token }: { token: string | undefined }) {
     return () => controller.abort();
   }, [token, location.pathname, location.search, location.hash, navigate]);
 
-  if (!token || status === 'ready') return <InvitationContent token={token} />;
+  if (!token || status === 'ready') return <InvitationContent token={token} myCharacterId={myCharacterId} />;
 
   return (
     <Page>
@@ -58,7 +64,7 @@ function InvitationGate({ token }: { token: string | undefined }) {
   );
 }
 
-function InvitationContent({ token }: { token: string | undefined }) {
+function InvitationContent({ token, myCharacterId }: { token: string | undefined; myCharacterId: number | null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [team, setTeam] = useState<InvitationPreviewResponse | null>(null);
@@ -70,6 +76,8 @@ function InvitationContent({ token }: { token: string | undefined }) {
   const joinInProgress = useRef(false);
   const autoJoinStarted = useRef(false);
   const autoJoin = (location.state as { autoJoin?: boolean } | null)?.autoJoin === true;
+  // 참여 현황의 내 프로필에 보여줄 동물 캐릭터. 미설정이면 '나' 글자를 보여준다.
+  const myImage = characters.find((character) => character.id === toCharacterId(myCharacterId))?.image;
 
   // 초대 주소의 토큰으로 실제 팀 정보를 조회한다.
   useEffect(() => {
@@ -155,8 +163,20 @@ function InvitationContent({ token }: { token: string | undefined }) {
             <InviteInfoField label="팀명" value={team.teamName} />
             <InviteInfoField label="프로젝트 이름" value={team.projectName} />
             <InviteInfoField label="프로젝트 소개" value={team.projectIntro} />
-            <InviteInfoField label="인원"
-              value={`현재 ${team.currentMemberCount}명 → 합류 후 ${team.expectedMemberCount}명`} />
+            <InviteInfoField
+              label="참여 현황"
+              value={
+                <Participation>
+                  <ParticipationTitle>
+                    현재 <ParticipationCount>{team.currentMemberCount}명</ParticipationCount>이 참여했어요
+                  </ParticipationTitle>
+                  <Avatars>
+                    <MyAvatar>{myImage ? <img src={myImage} alt="" /> : '나'}</MyAvatar>
+                  </Avatars>
+                  <ParticipationCaption>수락하면 {team.expectedMemberCount}명이 돼요</ParticipationCaption>
+                </Participation>
+              }
+            />
           </>
         )}
         {message && <Message role={alreadyInTeam ? 'alert' : 'status'}>{message}</Message>}
@@ -237,4 +257,62 @@ const Footer = styled.footer`
 // 공통 버튼의 너비만 확장
 const JoinButton = styled(Button)`
   width: 100%;
+`;
+
+// 참여 현황 상자 안: 현재 인원, 프로필 줄, 합류 후 인원
+const Participation = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const ParticipationTitle = styled.p`
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+`;
+
+// 현재 인원 강조
+const ParticipationCount = styled.span`
+  color: var(--color-orange);
+`;
+
+// 프로필 동그라미를 조금씩 겹쳐 한 줄로 놓는다.
+const Avatars = styled.div`
+  display: flex;
+  align-items: center;
+
+  & > * + * {
+    margin-left: -6px;
+  }
+`;
+
+// 합류할 나: 점선 테두리로 구분하고 내 동물 캐릭터를 보여준다.
+const MyAvatar = styled.span`
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border: 1.5px dashed var(--color-amber);
+  border-radius: 50%;
+  background: var(--color-amber-bg);
+  color: var(--color-orange);
+  font-size: 12px;
+  font-weight: 700;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const ParticipationCaption = styled.p`
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 17px;
 `;

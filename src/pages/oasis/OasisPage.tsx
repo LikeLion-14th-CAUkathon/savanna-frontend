@@ -86,17 +86,16 @@ const sortByDeadline = (expeditions: OasisExpedition[]) =>
 const formatProgress = (expedition: OasisExpedition) =>
   `${EXPEDITION_STAGE_LABEL[expedition.stage]} · 참여 ${expedition.participantCount}명`;
 
-// 아직 주소가 없는 화면 (TODO: 해당 화면 주소가 생기면 연결)
-//  - 우리 팀 프로젝트 → B02 팀 공간 / 하단 탭: 팀 공간, 마이페이지
 const CONTEST_SEARCH_PATH = '/contest'; // C01 공고 찾기 (App.tsx 기준)
+const TEAM_SPACE_PATH = '/team'; // B02 팀 공간 (App.tsx 기준)
 const TEAM_CREATE_PATH = '/team/create'; // B01 팀 생성 (App.tsx 기준)
-const goToTeamSpace = () => {};
 
 export default function OasisPage() {
   const navigate = useNavigate();
   const goToExpeditionDetail = (expeditionId: number) => navigate(OASIS_PATHS.expeditionDetail(expeditionId));
   const goToContestSearch = () => navigate(CONTEST_SEARCH_PATH);
   const goToTeamCreate = () => navigate(TEAM_CREATE_PATH);
+  const goToTeamSpace = () => navigate(TEAM_SPACE_PATH);
 
   const [state, setState] = useState<OasisState>({ status: 'loading' });
   const [reloadKey, setReloadKey] = useState(0);

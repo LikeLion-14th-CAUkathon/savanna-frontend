@@ -38,7 +38,6 @@ const Avatars = styled.div`
 `;
 
 const Avatar = styled.span<{ $background: string }>`
-  position: relative;
   flex-shrink: 0;
   width: 24px;
   height: 24px;
@@ -50,13 +49,11 @@ const Avatar = styled.span<{ $background: string }>`
     margin-left: -6px;
   }
 
-  /* 시안의 Member Avatar처럼 캐릭터를 원보다 크게 놓고 아래쪽을 잘라낸다 */
+  /* 캐릭터 이미지(정사각형)에 원 배경 · 얼굴이 가운데로 들어 있어 원에 꼭 맞게 넣는다 */
   img {
-    position: absolute;
-    top: -1.39%;
-    left: -15.97%;
-    width: 131.94%;
-    height: 131.95%;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
   }
 `;

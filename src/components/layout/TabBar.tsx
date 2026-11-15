@@ -72,8 +72,7 @@ const Bar = styled.nav<{ $rounded: boolean }>`
   display: flex;
   align-items: flex-start;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   height: 75px;
   padding-top: 10px;
   border-top: 1px solid #e7e5e0;

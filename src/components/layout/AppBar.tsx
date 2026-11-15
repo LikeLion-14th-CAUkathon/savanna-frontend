@@ -39,8 +39,7 @@ const Bar = styled.header`
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   height: 56px;
   padding: 0 14px;
   background: var(--color-bg);

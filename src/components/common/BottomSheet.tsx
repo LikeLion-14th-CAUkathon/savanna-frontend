@@ -192,8 +192,7 @@ const Sheet = styled.section<{ $dragging: boolean }>`
   flex-direction: column;
   gap: 24px;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   max-height: 90svh;
   overflow-y: auto;
   overscroll-behavior-y: contain;

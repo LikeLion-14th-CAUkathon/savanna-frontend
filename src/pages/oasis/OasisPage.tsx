@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import ExpeditionStatusCard from '../../components/oasis/ExpeditionStatusCard';
-import TeamSwitchButton from '../../components/oasis/TeamSwitchButton';
+import TeamBadge from '../../components/oasis/TeamBadge';
 import ExpeditionSign from '../../components/oasis/ExpeditionSign';
 import HomeSign from '../../components/oasis/HomeSign';
 import MapNoticePopup from '../../components/oasis/MapNoticePopup';
@@ -174,9 +174,9 @@ export default function OasisPage() {
       </StatusArea>
 
       {data && (
-        <TeamSwitchArea>
-          <TeamSwitchButton teamName={data.teamName} />
-        </TeamSwitchArea>
+        <TeamBadgeArea>
+          <TeamBadge teamName={data.teamName} />
+        </TeamBadgeArea>
       )}
 
       {state.status === 'loading' && <VisuallyHidden role="status">{MESSAGES.loading}</VisuallyHidden>}
@@ -261,7 +261,7 @@ const StatusArea = styled.div`
   left: 24px;
 `;
 
-const TeamSwitchArea = styled.div`
+const TeamBadgeArea = styled.div`
   position: absolute;
   top: 133px;
   left: 246px;

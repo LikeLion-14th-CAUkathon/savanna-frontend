@@ -12,6 +12,10 @@ import InviteInfoField from '../../components/onboarding/InviteInfoField';
 import { characters } from '../../components/onboarding/profileOptions';
 import { toCharacterId } from '../../utils/character';
 
+// 서버 캐릭터 번호(1~9)에 맞는 동물 이미지. 미설정이면 undefined
+const characterImage = (apiId: number | null) =>
+  characters.find((character) => character.id === toCharacterId(apiId))?.image;
+
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -77,7 +81,7 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
   const autoJoinStarted = useRef(false);
   const autoJoin = (location.state as { autoJoin?: boolean } | null)?.autoJoin === true;
   // 참여 현황의 내 프로필에 보여줄 동물 캐릭터. 미설정이면 '나' 글자를 보여준다.
-  const myImage = characters.find((character) => character.id === toCharacterId(myCharacterId))?.image;
+  const myImage = characterImage(myCharacterId);
 
   // 초대 주소의 토큰으로 실제 팀 정보를 조회한다.
   useEffect(() => {
@@ -171,6 +175,14 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
                     현재 <ParticipationCount>{team.currentMemberCount}명</ParticipationCount>이 참여했어요
                   </ParticipationTitle>
                   <Avatars>
+                    {team.members?.map((member, index) => {
+                      const memberImage = characterImage(member.characterId);
+                      return (
+                        <MemberAvatar key={`${member.name}-${index}`} title={member.name}>
+                          {memberImage ? <img src={memberImage} alt={member.name} /> : member.name.slice(0, 1)}
+                        </MemberAvatar>
+                      );
+                    })}
                     <MyAvatar>{myImage ? <img src={myImage} alt="" /> : '나'}</MyAvatar>
                   </Avatars>
                   <ParticipationCaption>수락하면 {team.expectedMemberCount}명이 돼요</ParticipationCaption>
@@ -287,8 +299,9 @@ const Avatars = styled.div`
   }
 `;
 
-// 합류할 나: 점선 테두리로 구분하고 내 동물 캐릭터를 보여준다.
-const MyAvatar = styled.span`
+// 현재 팀원 프로필: 각자 고른 동물 캐릭터. 캐릭터가 없으면 이름 첫 글자를 보여준다.
+// 흰 테두리로 겹친 동그라미끼리 구분한다.
+const MemberAvatar = styled.span`
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -296,10 +309,10 @@ const MyAvatar = styled.span`
   width: 28px;
   height: 28px;
   overflow: hidden;
-  border: 1.5px dashed var(--color-amber);
+  border: 1.5px solid #ffffff;
   border-radius: 50%;
-  background: var(--color-amber-bg);
-  color: var(--color-orange);
+  background: var(--color-cream);
+  color: var(--color-brown);
   font-size: 12px;
   font-weight: 700;
 
@@ -309,6 +322,13 @@ const MyAvatar = styled.span`
     height: 100%;
     object-fit: cover;
   }
+`;
+
+// 합류할 나: 점선 테두리로 구분하고 내 동물 캐릭터를 보여준다.
+const MyAvatar = styled(MemberAvatar)`
+  border: 1.5px dashed var(--color-amber);
+  background: var(--color-amber-bg);
+  color: var(--color-orange);
 `;
 
 const ParticipationCaption = styled.p`

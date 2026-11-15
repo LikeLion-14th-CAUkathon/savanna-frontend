@@ -18,7 +18,7 @@ import type {
 
 const CATEGORY_FROM_API: Record<AnnouncementField, ContestCategory> = {
   ACADEMIC_SCIENCE_IT: '학문·과학·IT',
-  IDEA_ARCHITECTURE_STARTUP: '아이디어·건축·창업',
+  IDEA_ARCHITECTURE_STARTUP: '아이디어·창업',
   ART_DESIGN_WEBTOON: '미술·디자인·웹툰',
 };
 

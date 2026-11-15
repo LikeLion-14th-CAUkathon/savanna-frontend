@@ -1,10 +1,10 @@
 import styled from 'styled-components';
-import editIcon from '../../assets/icons/team-avatar-edit.svg';
+import cameraIcon from '../../assets/icons/team-photo/camera.svg';
 
 interface TeamAvatarProps {
   teamName: string;     // 사용자가 입력한 팀 이름
   photoUrl?: string | null; // 팀 프로필 사진 주소. 없으면 팀 이름 첫 글자를 보여줌
-  editable?: boolean;   // true면 오른쪽 아래에 수정(연필) 버튼을 보여줌
+  editable?: boolean;   // true면 오른쪽 아래에 사진 수정(카메라) 버튼을 보여줌
   onEdit?: () => void;  // 수정 버튼을 눌렀을 때 실행할 함수
 }
 
@@ -29,8 +29,8 @@ export default function TeamAvatar({
 
       {/* editable이 true일 때만 수정 버튼을 그림 */}
       {editable && (
-        <EditButton type="button" aria-label="팀 이미지 수정" onClick={onEdit}>
-          <img src={editIcon} alt="" />
+        <EditButton type="button" aria-label="팀 사진 수정" onClick={onEdit}>
+          <img src={cameraIcon} alt="" />
         </EditButton>
       )}
     </Container>
@@ -71,10 +71,11 @@ const Photo = styled.img`
   object-fit: cover;
 `;
 
+// 원 오른쪽 아래 주황 카메라 버튼 (피그마 B01-2 'add')
 const EditButton = styled.button`
   position: absolute;
-  top: 54px;
-  left: 54px;
+  top: 53px;
+  left: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,9 +83,9 @@ const EditButton = styled.button`
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 2px solid #d7d4cd;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: #ffb72b;
   cursor: pointer;
 
   &:focus-visible {

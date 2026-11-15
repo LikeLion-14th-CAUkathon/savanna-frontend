@@ -1,42 +1,29 @@
 import { apiClient } from './client';
 import type { ApiResponse, TeamRole } from './common';
 
-// 초대 API는 성공 응답이 { status, message, data } 형태로 감싸져 온다.
+
 
 // ===== Types =====
 
-/**
- * 초대 상태
- * - 명세 예시에는 ACTIVE, REVOKED만 있음
- * - EXPIRED는 "만료 시각 기준으로 상태 계산" 로직으로 추정. 백엔드 확인 필요
- */
+/** 초대 상태 */
 export type InvitationStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED';
 
 /** 초대 목록 아이템 */
 export interface InvitationResponse {
   invitationId: number;
-  createdBy: number; // userId
+  teamId: number;
   createdAt: string; // date-time
-  expiresAt: string; // date-time
+  expiresAt: string | null; // date-time. 영구 링크면 null
   revokedAt: string | null; // date-time
   status: InvitationStatus;
 }
 
-/**
- * 초대 링크 생성 결과
- * - inviteUrl은 생성 시점에만 받을 수 있으므로 필요하면 보관할 것 (7일 유효)
- */
+
 export interface InvitationCreateResponse {
   invitationId: number;
-  inviteUrl: string;
-  createdAt: string; // date-time
-  expiresAt: string; // date-time
-}
-
-/** 초대 폐기 결과 */
-export interface InvitationRevokeResponse {
-  invitationId: number;
-  revokedAt: string; // date-time
+  teamId: number;
+  token: string;
+  expiresAt: string | null; // date-time. 영구 링크면 null
 }
 
 /** 초대 미리보기 */
@@ -45,8 +32,9 @@ export interface InvitationPreviewResponse {
   teamName: string;
   projectName: string;
   projectIntro: string;
-  memberCount: number;
-  expiresAt: string; // date-time
+  currentMemberCount: number; // 현재 팀원 수
+  expectedMemberCount: number; // 합류 후 팀원 수 (current + 1)
+  expiresAt: string | null; // date-time. 영구 링크면 null
 }
 
 /** 팀 합류 결과 */
@@ -54,7 +42,6 @@ export interface InvitationAcceptResponse {
   teamId: number;
   teamName: string;
   role: TeamRole; // MEMBER
-  joinedAt: string; // date-time
 }
 
 // ===== API =====
@@ -72,7 +59,8 @@ export const getInvitations = async (teamId: number) => {
 
 /**
  * 팀 초대 링크 생성 — POST /api/v1/teams/{teamId}/invitations
- * - 403: 팀에 소속되지 않음 / 404: 존재하지 않는 팀
+ * - 팀장만 가능. 이미 영구 링크가 있으면 같은 토큰을 다시 준다
+ * - 403: 팀장 아님 / 404: 존재하지 않는 팀
  */
 export const createInvitation = async (teamId: number) => {
   const { data } = await apiClient.post<ApiResponse<InvitationCreateResponse>>(
@@ -83,14 +71,11 @@ export const createInvitation = async (teamId: number) => {
 
 /**
  * 팀 초대 폐기 — DELETE /api/v1/teams/{teamId}/invitations/{invitationId}
- * - revokedAt 기록 (실제 삭제 아님)
+ * - revokedAt 기록 (실제 삭제 아님). 응답에 data 없음
  * - 404: 팀 또는 초대 없음 / 409: 이미 회수된 링크
  */
 export const revokeInvitation = async (teamId: number, invitationId: number) => {
-  const { data } = await apiClient.delete<ApiResponse<InvitationRevokeResponse>>(
-    `/api/v1/teams/${teamId}/invitations/${invitationId}`,
-  );
-  return data.data;
+  await apiClient.delete(`/api/v1/teams/${teamId}/invitations/${invitationId}`);
 };
 
 /**

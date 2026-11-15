@@ -109,7 +109,7 @@ function InvitationContent({ token }: { token: string | undefined }) {
             <InviteInfoField label="프로젝트 이름" value={team.projectName} />
             <InviteInfoField label="프로젝트 소개" value={team.projectIntro} />
             <InviteInfoField label="인원"
-              value={`현재 ${team.memberCount}명 → 합류 후 ${team.memberCount + 1}명`} />
+              value={`현재 ${team.currentMemberCount}명 → 합류 후 ${team.expectedMemberCount}명`} />
           </>
         )}
         {message && <Message role="status">{message}</Message>}

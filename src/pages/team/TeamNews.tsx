@@ -22,9 +22,16 @@ import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 
 type LoadState = 'loading' | 'success' | 'error';
 
+type Answer = Exclude<ProposalStatus, 'PENDING'>;
+
 const RESPOND_FAILED = '응답을 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
+const RESPOND_SUCCESS: Record<Answer, string> = {
+  JOINED: '합류 응답을 보냈어요.',
+  DECLINED: '쉬어가기 응답을 보냈어요.',
+};
 
 // B03 팀 소식: 받은 제안에 응답하고, 내가 보낸 제안의 팀원별 응답을 확인한다.
+// 받은 제안은 미응답 제안을 한 장씩 보여주고, 응답이 저장되면 다음 미응답 제안으로 넘어간다.
 export default function TeamNews() {
   const navigate = useNavigate();
 
@@ -35,9 +42,21 @@ export default function TeamNews() {
   const selectedSent =
     sentProposals.find((proposal) => proposal.proposalId === selectedSentId) ?? sentProposals[0];
 
-  // id: 같은 오류가 연달아 나도 토스트를 새로 띄운다.
-  const [errorToast, setErrorToast] = useState<{ message: string; id: number } | null>(null);
-  const closeToast = useCallback(() => setErrorToast(null), []);
+  // 응답은 제안마다 한 번만 보낼 수 있어 미응답 제안만 한 장씩 보여준다.
+  const pendingProposals = receivedProposals.filter((proposal) => proposal.status === 'PENDING');
+  const currentProposal = pendingProposals[0];
+  // 응답을 보내는 중인 제안. 저장되기 전 버튼을 다시 눌러 중복 응답하지 않도록 잠근다.
+  const [respondingId, setRespondingId] = useState<number | null>(null);
+
+  // id: 같은 문구가 연달아 나도 토스트를 새로 띄운다.
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: 'success' | 'error';
+    id: number;
+  } | null>(null);
+  const closeToast = useCallback(() => setToast(null), []);
+  const showToast = (message: string, variant: 'success' | 'error') =>
+    setToast((prev) => ({ message, variant, id: (prev?.id ?? 0) + 1 }));
 
   const loadNews = useCallback(() => {
     fetchTeamNews()
@@ -88,8 +107,10 @@ export default function TeamNews() {
       .catch(() => markedSentIds.current.delete(selectedSent.proposalId));
   }, [selectedSent]);
 
-  // 서버에 응답을 보내고, 성공하면 서버가 반영한 상태로 카드를 바꾼다.
-  const respond = (proposalRecipientId: number, status: Exclude<ProposalStatus, 'PENDING'>) => {
+  // 서버에 응답을 보내고, 저장되면 그 제안을 응답 완료로 바꿔 다음 미응답 제안이 뜨게 한다.
+  const respond = (proposalRecipientId: number, status: Answer) => {
+    if (respondingId !== null) return;
+    setRespondingId(proposalRecipientId);
     sendResponse(proposalRecipientId, status)
       .then((savedStatus) => {
         setReceivedProposals((prev) =>
@@ -99,13 +120,10 @@ export default function TeamNews() {
               : proposal,
           ),
         );
+        if (savedStatus !== 'PENDING') showToast(RESPOND_SUCCESS[savedStatus], 'success');
       })
-      .catch((error: unknown) => {
-        setErrorToast((prev) => ({
-          message: getApiErrorMessage(error, RESPOND_FAILED),
-          id: (prev?.id ?? 0) + 1,
-        }));
-      });
+      .catch((error: unknown) => showToast(getApiErrorMessage(error, RESPOND_FAILED), 'error'))
+      .finally(() => setRespondingId(null));
   };
 
   const openAnnouncement = (announcementId: number) => navigate(`/contest/${announcementId}`);
@@ -132,21 +150,26 @@ export default function TeamNews() {
       {loadState === 'success' && (
       <Content>
         <Section>
-          <SectionTitle>받은 제안</SectionTitle>
-          {receivedProposals.length > 0 ? (
-            <CardList>
-              {receivedProposals.map((proposal) => (
-                <li key={proposal.proposalRecipientId}>
-                  <ReceivedProposalCard
-                    proposal={proposal}
-                    onRespond={(status) => respond(proposal.proposalRecipientId, status)}
-                    onOpenAnnouncement={() => openAnnouncement(proposal.announcementId)}
-                  />
-                </li>
-              ))}
-            </CardList>
+          <SectionHeader>
+            <SectionTitle>받은 제안</SectionTitle>
+            {pendingProposals.length > 0 && (
+              <RemainingCount>
+                남은 제안 <strong>{pendingProposals.length}개</strong>
+              </RemainingCount>
+            )}
+          </SectionHeader>
+          {currentProposal ? (
+            <ReceivedProposalCard
+              key={currentProposal.proposalRecipientId}
+              proposal={currentProposal}
+              isResponding={respondingId === currentProposal.proposalRecipientId}
+              onRespond={(status) => respond(currentProposal.proposalRecipientId, status)}
+              onOpenAnnouncement={() => openAnnouncement(currentProposal.announcementId)}
+            />
           ) : (
-            <EmptyCard>아직 받은 제안이 없어요.</EmptyCard>
+            <EmptyCard>
+              {receivedProposals.length > 0 ? '응답할 제안이 없어요.' : '아직 받은 제안이 없어요.'}
+            </EmptyCard>
           )}
         </Section>
 
@@ -174,10 +197,10 @@ export default function TeamNews() {
       </Content>
       )}
 
-      {errorToast && (
+      {toast && (
         <ToastArea>
-          <Toast key={errorToast.id} variant="error" onClose={closeToast}>
-            {errorToast.message}
+          <Toast key={toast.id} variant={toast.variant} onClose={closeToast}>
+            {toast.message}
           </Toast>
         </ToastArea>
       )}
@@ -260,13 +283,19 @@ const SectionTitle = styled.h2`
   font-weight: 700;
 `;
 
-const CardList = styled.ul`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+// '남은 제안 3개': 숫자만 굵게
+const RemainingCount = styled.p`
   margin: 0;
-  padding: 0;
-  list-style: none;
+  color: #999896;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  strong {
+    margin-left: 4px;
+    color: #1e1e1e;
+    font-weight: 700;
+  }
 `;
 
 const EmptyCard = styled(Card)`

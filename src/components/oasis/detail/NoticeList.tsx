@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Card, EmptyText } from './detailStyles';
+import { EmptyText } from './detailStyles';
 import noticeDot from '../../../assets/icons/expedition-detail/notice-dot.svg';
 import type { ExpeditionNotice } from '../../../types/expedition';
 
@@ -7,30 +7,26 @@ interface NoticeListProps {
   notices: ExpeditionNotice[];
 }
 
-// 일정·제출 준비 탭 · 공지 목록
+// 일정·제출 준비 탭 · 공지 목록. 팀 준비 카드 안에 들어감
 export default function NoticeList({ notices }: NoticeListProps) {
+  if (notices.length === 0) return <EmptyText>등록된 공지가 없어요.</EmptyText>;
+
   return (
-    <Card>
-      {notices.length === 0 ? (
-        <EmptyText>등록된 공지가 없어요.</EmptyText>
-      ) : (
-        <List>
-          {notices.map((notice) => (
-            <Item key={notice.id}>
-              <img src={noticeDot} alt="" />
-              <Content>{notice.content}</Content>
-            </Item>
-          ))}
-        </List>
-      )}
-    </Card>
+    <List>
+      {notices.map((notice) => (
+        <Item key={notice.id}>
+          <img src={noticeDot} alt="" />
+          <Content>{notice.content}</Content>
+        </Item>
+      ))}
+    </List>
   );
 }
 
 const List = styled.ul`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;

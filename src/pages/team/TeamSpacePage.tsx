@@ -89,13 +89,17 @@ function TeamSpaceContent({ search }: { search: string }) {
 
   const data = loadState.type === 'success' ? loadState.data : null;
   const teamId = data?.team.teamId;
+  const isLeader = !!data?.team.members.some(
+    (member) => member.userId === data.myUserId && member.role === 'LEADER',
+  );
 
   // ===== 초대 링크 (팀을 불러온 뒤) =====
+  // url이 null이고 failed가 아니면 아직 링크가 없는 것 (팀장이 만들기 전)
   const [invite, setInvite] = useState<{ teamId: number; url: string | null; failed: boolean } | null>(null);
   useEffect(() => {
     if (teamId === undefined) return;
     let ignore = false;
-    fetchInviteUrl(teamId)
+    fetchInviteUrl(teamId, isLeader)
       .then((url) => {
         if (!ignore) setInvite({ teamId, url, failed: false });
       })
@@ -105,9 +109,14 @@ function TeamSpaceContent({ search }: { search: string }) {
     return () => {
       ignore = true;
     };
-  }, [teamId]);
-  const inviteUrl = invite && invite.teamId === teamId ? invite.url : null;
-  const invitePlaceholder = invite?.failed ? '초대 링크를 만들지 못했어요.' : '초대 링크를 만들고 있어요.';
+  }, [teamId, isLeader]);
+  const currentInvite = invite && invite.teamId === teamId ? invite : null;
+  const inviteUrl = currentInvite?.url ?? null;
+  const invitePlaceholder = !currentInvite
+    ? '초대 링크를 불러오고 있어요.'
+    : currentInvite.failed
+      ? '초대 링크를 불러오지 못했어요.'
+      : '팀 초대 링크가 여기에 보여요.';
 
   // ===== 팀 소식 알림 점 =====
   // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 점을 띄운다. (서버가 계산) 못 불러오면 숨긴다.

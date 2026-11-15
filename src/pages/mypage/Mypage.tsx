@@ -216,8 +216,7 @@ const ToastArea = styled.div`
 const Page = styled.main`
   display: flex;
   flex-direction: column;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   min-height: 100svh;
   margin: 0 auto;
   padding-bottom: 75px;
@@ -296,8 +295,7 @@ const BottomBar = styled.div`
   bottom: 0;
   left: 50%;
   z-index: 10;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   transform: translateX(-50%);
 `;
 

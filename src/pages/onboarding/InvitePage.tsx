@@ -177,8 +177,7 @@ function InvitationContent({ token }: { token: string | undefined }) {
 const Page = styled.main`
   display: flex;
   flex-direction: column;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   min-height: 100svh;
   margin: 0 auto;
   padding-top: 58px;

@@ -266,8 +266,7 @@ const StatusMessage = styled.p`
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   min-height: 100svh;
   margin: 0 auto;
   background: #fafaf8;

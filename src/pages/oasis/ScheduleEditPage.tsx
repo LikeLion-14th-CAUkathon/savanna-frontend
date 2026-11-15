@@ -219,8 +219,7 @@ const Page = styled.main`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
   min-height: 100svh;
   margin: 0 auto;
   background: var(--color-bg);

@@ -24,8 +24,7 @@ const NoticeBox = styled.div`
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
   padding: 12px 16px;
   border-radius: 12px;
   background-color: #eef5e6;

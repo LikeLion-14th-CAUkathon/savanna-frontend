@@ -35,8 +35,7 @@ export default function CollapseToggle({
 }
 
 const Container = styled.div`
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
 `;
 
 const ToggleButton = styled.button`

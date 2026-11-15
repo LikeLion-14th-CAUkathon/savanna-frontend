@@ -207,8 +207,7 @@ const ToastArea = styled.div`
   bottom: calc(75px + 16px);
   left: 50%;
   z-index: 20;
-  width: 354px;
-  max-width: calc(100% - 48px);
+  width: calc(100% - 48px);
   transform: translateX(-50%);
 `;
 

@@ -84,8 +84,7 @@ const Field = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
   font-family: 'Pretendard', sans-serif;
   line-height: normal;
   letter-spacing: 0;

@@ -17,6 +17,10 @@ import longMapImage from '../../assets/images/oasis/oasis-long-map.webp';
 import lionImage from '../../assets/images/oasis/lion.webp';
 import elephantImage from '../../assets/images/oasis/elephant.webp';
 import meerkatImage from '../../assets/images/oasis/meerkat.webp';
+import lionWaveImage from '../../assets/images/oasis/lion-wave.png';
+import elephantWaveImage from '../../assets/images/oasis/elephant-wave.png';
+import meerkatWaveImage from '../../assets/images/oasis/meerkat-wave.png';
+import OasisCharacter from '../../components/oasis/OasisCharacter';
 
 const MESSAGES = {
   empty: '아직 시작한 원정이 없어요.',
@@ -141,9 +145,33 @@ export default function OasisPage() {
         <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor }}>
           <MapImage src={map.image} alt="" style={{ height: map.height }} />
 
-          <Character src={elephantImage} alt="" style={map.home.elephant} />
-          <Character src={meerkatImage} alt="" style={map.home.meerkat} />
-          <Character src={lionImage} alt="" style={map.home.lion} />
+          {/* 흔들기 성격: 코끼리는 느리고 크게, 미어캣은 빠르게 갸웃, 사자는 아주 살짝 */}
+          <OasisCharacter
+            name="코끼리"
+            image={elephantImage}
+            jumpImage={elephantWaveImage}
+            style={map.home.elephant}
+            swayAngle={3}
+            swayDuration={5}
+          />
+          <OasisCharacter
+            name="미어캣"
+            image={meerkatImage}
+            jumpImage={meerkatWaveImage}
+            style={map.home.meerkat}
+            idleDelay={-0.9}
+            swayAngle={3}
+            swayDuration={2.2}
+          />
+          <OasisCharacter
+            name="사자"
+            image={lionImage}
+            jumpImage={lionWaveImage}
+            style={map.home.lion}
+            idleDelay={-1.7}
+            swayAngle={1.2}
+            swayDuration={4.5}
+          />
 
          
           {visibleExpeditions
@@ -259,13 +287,6 @@ const MapContent = styled.div`
 const MapImage = styled.img`
   display: block;
   width: ${MAP_WIDTH}px;
-  pointer-events: none;
-  user-select: none;
-`;
-
-const Character = styled.img`
-  position: absolute;
-  display: block;
   pointer-events: none;
   user-select: none;
 `;

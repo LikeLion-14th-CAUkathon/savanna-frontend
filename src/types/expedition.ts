@@ -55,6 +55,18 @@ export interface ExpeditionDetail {
   stageTargets: StageTarget[];
   notices: ExpeditionNotice[];
   checklist: ChecklistItem[];
+  myResponse: MyResponse | null; // 내 정보를 못 불러오면 null (응답 버튼 숨김)
+}
+
+/**
+ * 이 원정에 대한 내 응답
+ * - SENDER: 제안을 보낸 사람 / NONE: 제안 뒤에 팀에 합류해서 받은 제안 기록이 없음
+ */
+export type MyResponseStatus = 'SENDER' | 'JOINED' | 'RESTING' | 'PENDING' | 'NONE';
+
+export interface MyResponse {
+  status: MyResponseStatus;
+  proposalRecipientId: number | null; // 응답할 때 쓰는 받은 제안 번호 (SENDER · NONE은 null)
 }
 
 export interface ScheduleEditData {

@@ -21,9 +21,12 @@ import {
   fetchExpeditionDetail,
   removeChecklistItem,
   renameChecklistItem,
+  respondToExpedition,
   saveStage,
   toggleChecklistItem,
 } from '../../components/oasis/oasisData';
+import ResponseButtons from '../../components/oasis/detail/ResponseButtons';
+import { getApiErrorMessage } from '../../api/client';
 import infoIcon from '../../assets/icons/notice/info.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import type { ExpeditionStage } from '../../types/oasis';
@@ -40,6 +43,11 @@ const MESSAGES = {
   stageChanged: '진행 단계를 변경했어요.',
   stageFailed: '진행 단계를 변경하지 못했어요. 다시 시도해 주세요.',
   saveFailed: '저장하지 못했어요. 다시 시도해 주세요.',
+  joined: '원정에 합류했어요.',
+  rested: '이번 원정은 쉬어가요.',
+  respondFailed: '응답하지 못했어요. 다시 시도해 주세요.',
+  // 제안 뒤에 팀에 합류해 받은 제안 기록이 아직 없을 때 (백엔드 반영 전)
+  cannotRespond: '아직 이 제안에 응답할 수 없어요. 잠시 후 다시 시도해 주세요.',
 };
 
 // 저장 요청이 성공하면 true, 실패하면 false
@@ -103,11 +111,38 @@ export default function ExpeditionDetailPage() {
   const goToScheduleEdit = () => navigate(OASIS_PATHS.scheduleEdit(expeditionId));
   const [sheet, setSheet] = useState<SheetState>(null);
   const [isSavingStage, setIsSavingStage] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
 
   const closeToast = useCallback(() => setToast(null), []);
   const closeSheet = useCallback(() => setSheet(null), []);
   const showSaveFailed = () => setToast({ variant: 'error', message: MESSAGES.saveFailed });
+
+  // 합류 · 쉬어가기 응답 (성공하면 내 응답 상태와 응답 현황의 내 줄을 바꿈)
+  const respond = async (joined: boolean) => {
+    const recipientId = detail?.myResponse?.proposalRecipientId;
+    if (recipientId == null) {
+      setToast({ variant: 'error', message: MESSAGES.cannotRespond });
+      return;
+    }
+    setIsResponding(true);
+    try {
+      await respondToExpedition(recipientId, joined);
+      const status = joined ? 'JOINED' : 'RESTING';
+      setDetail((prev) =>
+        prev && {
+          ...prev,
+          myResponse: { status, proposalRecipientId: recipientId },
+          responses: prev.responses.map((response) => (response.isMe ? { ...response, status } : response)),
+        },
+      );
+      setToast({ variant: 'success', message: joined ? MESSAGES.joined : MESSAGES.rested });
+    } catch (error) {
+      setToast({ variant: 'error', message: getApiErrorMessage(error, MESSAGES.respondFailed) });
+    } finally {
+      setIsResponding(false);
+    }
+  };
 
   const updateChecklist = (update: (items: ChecklistItem[]) => ChecklistItem[]) =>
     setDetail((prev) => (prev ? { ...prev, checklist: update(prev.checklist) } : prev));
@@ -226,6 +261,11 @@ export default function ExpeditionDetailPage() {
             <Section title="제안과 응답 현황">
               <ResponseStatus responses={detail.responses} />
             </Section>
+            {(detail.myResponse?.status === 'PENDING' ||
+              detail.myResponse?.status === 'NONE' ||
+              detail.myResponse?.status === 'RESTING') && (
+              <ResponseButtons status={detail.myResponse.status} isSaving={isResponding} onRespond={respond} />
+            )}
           </>
         ) : (
           <>

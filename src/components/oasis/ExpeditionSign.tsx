@@ -1,28 +1,44 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import pondSignImage from '../../assets/images/oasis/pond-sign.webp';
+import pondSignGrayImage from '../../assets/images/oasis/pond-sign-gray.webp';
 import progressDot from '../../assets/icons/oasis/progress-dot.svg';
+import progressDotGray from '../../assets/icons/oasis/progress-dot-gray.svg';
 
 interface ExpeditionSignProps {
-  left: number;         
+  left: number;
   top: number;
   title: string;          // 공모전 이름
   dDayLabel: string;      // 'D-5'
   progressLabel: string;  // '초안 작성 · 참여 2명'
+  isResting?: boolean;    // 내가 합류하지 않은 원정이면 회색 표지판 + '쉬어가는 중'
   onClick: () => void;
 }
 
+const RESTING_LABEL = '쉬어가는 중';
 
-export default function ExpeditionSign({ left, top, title, dDayLabel, progressLabel, onClick }: ExpeditionSignProps) {
+export default function ExpeditionSign({
+  left,
+  top,
+  title,
+  dDayLabel,
+  progressLabel,
+  isResting = false,
+  onClick,
+}: ExpeditionSignProps) {
+  const statusLabel = isResting ? RESTING_LABEL : progressLabel;
+
   return (
     <Wrapper style={{ left, top }}>
-      <PondImage src={pondSignImage} alt="" />
-      <Board type="button" onClick={onClick} aria-label={`${title}, ${dDayLabel}, ${progressLabel}`}>
-        <Title>{title}</Title>
+      {isResting ? <GrayPondImage src={pondSignGrayImage} alt="" /> : <PondImage src={pondSignImage} alt="" />}
+      <Board type="button" onClick={onClick} aria-label={`${title}, ${dDayLabel}, ${statusLabel}`}>
+        <Title $resting={isResting}>{title}</Title>
       </Board>
-      <DDayBadge aria-hidden="true">{dDayLabel}</DDayBadge>
-      <ProgressChip aria-hidden="true">
-        <img src={progressDot} alt="" />
-        {progressLabel}
+      <DDayBadge $resting={isResting} aria-hidden="true">
+        {dDayLabel}
+      </DDayBadge>
+      <ProgressChip $resting={isResting} aria-hidden="true">
+        <img src={isResting ? progressDotGray : progressDot} alt="" />
+        {statusLabel}
       </ProgressChip>
     </Wrapper>
   );
@@ -42,6 +58,16 @@ const PondImage = styled.img`
   display: block;
   width: ${SET_SIZE}px;
   height: ${SET_SIZE}px;
+`;
+
+// 회색 표지판 이미지는 크기가 달라서, 판자 위치가 일반 표지판과 겹치도록 맞춤 (Figma D01 · 수정 6)
+const GrayPondImage = styled.img`
+  position: absolute;
+  top: -4.1px;
+  left: -4.1px;
+  display: block;
+  width: 224px;
+  height: 226px;
 `;
 
 const Board = styled.button`
@@ -67,11 +93,11 @@ const Board = styled.button`
   }
 `;
 
-const Title = styled.span`
+const Title = styled.span<{ $resting: boolean }>`
   display: -webkit-box;
   width: 116px;
   overflow: hidden;
-  color: var(--color-sign-text);
+  color: ${({ $resting }) => ($resting ? '#6e6d6a' : 'var(--color-sign-text)')};
   font-family: var(--font-concept);
   font-size: 15px;
   font-weight: 400;
@@ -84,7 +110,7 @@ const Title = styled.span`
   -webkit-line-clamp: 2;
 `;
 
-const DDayBadge = styled.span`
+const DDayBadge = styled.span<{ $resting: boolean }>`
   position: absolute;
   top: 42.7px;
   left: 45.3px;
@@ -100,9 +126,18 @@ const DDayBadge = styled.span`
   line-height: 1;
   letter-spacing: -0.13px;
   white-space: nowrap;
+
+  ${({ $resting }) =>
+    $resting &&
+    css`
+      top: 43.9px;
+      left: 38.9px;
+      background: #e7e5e0;
+      color: var(--color-text-secondary);
+    `}
 `;
 
-const ProgressChip = styled.span`
+const ProgressChip = styled.span<{ $resting: boolean }>`
   position: absolute;
   top: 149.8px;
   left: 46.3px;
@@ -118,4 +153,12 @@ const ProgressChip = styled.span`
   font-weight: 700;
   line-height: normal;
   white-space: nowrap;
+
+  ${({ $resting }) =>
+    $resting &&
+    css`
+      top: 156.9px;
+      left: 61.9px;
+      color: var(--color-text-tertiary);
+    `}
 `;

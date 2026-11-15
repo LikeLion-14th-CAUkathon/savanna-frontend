@@ -25,7 +25,12 @@ import {
   updateExpeditionTask,
 } from '../../api/expeditionTask';
 import type { ExpeditionTaskResponse } from '../../api/expeditionTask';
-import { getProposalNotifications } from '../../api/proposal';
+import {
+  getProposalNotifications,
+  getReceivedProposals,
+  getSentProposals,
+  respondToProposal,
+} from '../../api/proposal';
 import { getMyTeams, getTeamDetail } from '../../api/team';
 import { getMyInfo } from '../../api/user';
 import type { ExpeditionStage, OasisHome } from '../../types/oasis';
@@ -35,6 +40,7 @@ import type {
   ExpeditionDetail,
   ExpeditionNotice,
   MemberResponse,
+  MyResponse,
   ResponseStatus,
   ScheduleEditData,
   StageTarget,
@@ -92,6 +98,10 @@ const RESPONSE_STATUS: Record<ProposalStatus, ResponseStatus> = {
   PENDING: 'PENDING',
 };
 
+/** 실패해도 화면은 보여줄 요청의 결과 꺼내기 (실패하면 value) */
+const fallback = <T>(result: PromiseSettledResult<T>, value: T) =>
+  result.status === 'fulfilled' ? result.value : value;
+
 // ===== D01 오아시스 =====
 
 /** 소속 팀이 없으면 null */
@@ -107,6 +117,17 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
     getProposalNotifications(),
   ]);
 
+  // 내가 합류한 원정 = 내가 제안을 보낸 원정 + 받은 제안에 '합류'로 응답한 원정
+  // 둘 다 못 불러오면 판단할 수 없으니 모든 원정을 일반 표지판으로 보여준다
+  const [sentResult, receivedResult] = await Promise.allSettled([getSentProposals(), getReceivedProposals()]);
+  const canCheckJoined = sentResult.status === 'fulfilled' || receivedResult.status === 'fulfilled';
+  const joinedExpeditionIds = new Set([
+    ...fallback(sentResult, []).map((proposal) => proposal.expeditionId),
+    ...fallback(receivedResult, [])
+      .filter((proposal) => proposal.status === 'JOINED')
+      .map((proposal) => proposal.expeditionId),
+  ]);
+
   return {
     teamId: team.teamId,
     teamName: detail.name,
@@ -119,14 +140,12 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
       stage: STAGE_FROM_API[expedition.stage],
       // 서버의 joinedCount는 제안을 받은 사람 중 합류한 수라 제안자 본인이 빠져 있음 → 제안자 1명을 더함
       participantCount: expedition.joinedCount + 1,
+      isResting: canCheckJoined && !joinedExpeditionIds.has(expedition.expeditionId),
     })),
   };
 }
 
 // ===== D02 원정 상세 =====
-
-const fallback = <T>(result: PromiseSettledResult<T>, value: T) =>
-  result.status === 'fulfilled' ? result.value : value;
 
 export async function fetchExpeditionDetail(expeditionId: number): Promise<ExpeditionDetail> {
   const [expedition, tasks, checklist] = await Promise.all([
@@ -176,6 +195,24 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
       );
     });
 
+  // 내 응답: 제안자 → 받은 제안 기록 → 둘 다 없으면 제안 뒤에 합류한 팀원(NONE)
+  // 나 또는 제안 정보를 못 불러오면 판단할 수 없어 null (응답 버튼 숨김)
+  let myResponse: MyResponse | null = null;
+  if (myUserId !== undefined && proposalsResult.status === 'fulfilled') {
+    const latest = [...proposals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const myRecipient = latest.flatMap((proposal) => proposal.recipients).find((r) => r.userId === myUserId);
+    if (proposals.some((proposal) => proposal.senderId === myUserId)) {
+      myResponse = { status: 'SENDER', proposalRecipientId: null };
+    } else if (myRecipient) {
+      myResponse = {
+        status: RESPONSE_STATUS[myRecipient.status],
+        proposalRecipientId: myRecipient.proposalRecipientId,
+      };
+    } else {
+      myResponse = { status: 'NONE', proposalRecipientId: null };
+    }
+  }
+
   return {
     id: expedition.expeditionId,
     contestTitle: announcement.title,
@@ -189,8 +226,13 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
     stageTargets: toStageTargets(expedition),
     notices: tasks.map(toNotice),
     checklist: checklist.items.map(toChecklistItem),
+    myResponse,
   };
 }
+
+/** 원정 합류 · 쉬어가기 응답 */
+export const respondToExpedition = (proposalRecipientId: number, joined: boolean) =>
+  respondToProposal(proposalRecipientId, { status: joined ? 'JOINED' : 'DECLINED' });
 
 export const saveStage = (expeditionId: number, stage: ExpeditionStage) =>
   changeExpeditionStage(expeditionId, { stage: STAGE_TO_API[stage] });

@@ -6,7 +6,7 @@ export type ContestStatus = 'open' | 'upcoming';
 // 공고 분야 (C02 공고 필터의 '분야' 칩 순서)
 export const CONTEST_CATEGORIES = [
   '학문·과학·IT',
-  '아이디어·건축·창업',
+  '아이디어·창업',
   '미술·디자인·웹툰',
 ] as const;
 

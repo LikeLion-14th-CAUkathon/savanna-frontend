@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import styled from 'styled-components';
 import { acceptInvitation, previewInvitation } from '../../api/invitation';
 import type { InvitationPreviewResponse } from '../../api/invitation';
+import { getMyInfo } from '../../api/user';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
@@ -11,7 +12,49 @@ import InviteInfoField from '../../components/onboarding/InviteInfoField';
 // A03 초대 확인·팀 합류
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
-  return <InvitationContent key={token} token={token} />;
+  return <InvitationGate key={token} token={token} />;
+}
+
+function InvitationGate({ token }: { token: string | undefined }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const authRequest = useRef<ReturnType<typeof getMyInfo> | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    const controller = new AbortController();
+    // 쿠키로 로그인 상태를 복원한 뒤 초대 화면을 표시한다.
+    authRequest.current ??= getMyInfo();
+    authRequest.current.then(() => {
+      if (!controller.signal.aborted) setStatus('ready');
+    }).catch((error: unknown) => {
+      if (controller.signal.aborted) return;
+      const code = isAxiosError(error) ? error.response?.status : undefined;
+      if (code === 401 || code === 403) {
+        sessionStorage.setItem('invitationReturnUrl', location.pathname + location.search + location.hash);
+        navigate('/login', { replace: true });
+      } else {
+        setStatus('error');
+      }
+    });
+    return () => controller.abort();
+  }, [token, location.pathname, location.search, location.hash, navigate]);
+
+  if (!token || status === 'ready') return <InvitationContent token={token} />;
+
+  return (
+    <Page>
+      <Content>
+        {status === 'loading' ? <Message role="status">로그인 상태를 확인하고 있어요.</Message> : (
+          <>
+            <Message role="alert">로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.</Message>
+            <Button onClick={() => window.location.reload()}>다시 시도</Button>
+          </>
+        )}
+      </Content>
+    </Page>
+  );
 }
 
 function InvitationContent({ token }: { token: string | undefined }) {

@@ -35,6 +35,11 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
     // 개발 모드에서도 로그인 확인과 팀 조회가 중복되지 않도록 재사용한다.
     loginRequest.current ??= refreshToken().then(async () => {
       const user = await getMyInfo();
+      // 초대 링크로 로그인했다면 먼저 초대 내용을 확인하고 합류를 선택한다.
+      const invitationReturnUrl = sessionStorage.getItem('invitationReturnUrl');
+      if (invitationReturnUrl?.startsWith('/invite/')) {
+        return { path: invitationReturnUrl };
+      }
       if (!user.onboardingCompleted) return { path: '/profile' };
 
       const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
@@ -49,6 +54,7 @@ export default function LoginPage({ onGoogleLogin, onLoginResult }: LoginPagePro
     loginRequest.current
       .then(({ path, autoJoin }) => {
         if (controller.signal.aborted) return;
+        sessionStorage.removeItem('invitationReturnUrl');
         onLoginResult('success');
         navigate(path, { replace: true, state: { autoJoin } });
       })

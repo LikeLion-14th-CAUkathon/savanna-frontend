@@ -5,25 +5,37 @@ import type { ApiResponse, TeamRole } from './common';
 
 // ===== Types =====
 
-/** 초대 상태 */
+/**
+ * 초대 상태
+ * - EXPIRED는 과거 7일형 링크에서만 생긴다. 지금 영구 링크는 expiresAt: null이고 저절로 만료되지 않는다.
+ */
 export type InvitationStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED';
 
 /** 초대 목록 아이템 */
 export interface InvitationResponse {
   invitationId: number;
   teamId: number;
+  token: string;
+  inviteUrl: string; // 그대로 복사 · 공유하는 초대 주소
   createdAt: string; // date-time
   expiresAt: string | null; // date-time. 영구 링크면 null
   revokedAt: string | null; // date-time
   status: InvitationStatus;
 }
 
-
+/** 초대 링크 생성 결과 */
 export interface InvitationCreateResponse {
   invitationId: number;
   teamId: number;
   token: string;
+  inviteUrl: string; // 그대로 복사 · 공유하는 초대 주소
   expiresAt: string | null; // date-time. 영구 링크면 null
+  status: InvitationStatus;
+}
+
+/** 팀의 현재 초대 링크 */
+export interface InvitationCurrentResponse {
+  inviteUrl: string; // 그대로 복사 · 공유하는 초대 주소
 }
 
 /** 초대 미리보기 */
@@ -47,8 +59,21 @@ export interface InvitationAcceptResponse {
 // ===== API =====
 
 /**
+ * 팀의 현재 초대 링크 조회 — GET /api/v1/teams/{teamId}/invitations/current
+ * - 팀원 누구나 같은 링크를 받는다. data.inviteUrl을 그대로 복사 · 공유한다
+ * - 404: 현재 링크 없음 (팀장이 createInvitation으로 만들어야 함)
+ */
+export const getCurrentInvitation = async (teamId: number) => {
+  const { data } = await apiClient.get<ApiResponse<InvitationCurrentResponse>>(
+    `/api/v1/teams/${teamId}/invitations/current`,
+  );
+  return data.data;
+};
+
+/**
  * 팀 초대 목록 조회 — GET /api/v1/teams/{teamId}/invitations
- * - 403: 팀에 소속되지 않음 / 404: 존재하지 않는 팀
+ * - 팀장 전용
+ * - 403: 팀장 아님 · 팀에 소속되지 않음 / 404: 존재하지 않는 팀
  */
 export const getInvitations = async (teamId: number) => {
   const { data } = await apiClient.get<ApiResponse<InvitationResponse[]>>(

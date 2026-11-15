@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
+import { getApiErrorMessage } from '../../api/client';
 import { acceptInvitation, previewInvitation } from '../../api/invitation';
 import type { InvitationPreviewResponse } from '../../api/invitation';
 import { getMyInfo } from '../../api/user';
@@ -65,6 +66,7 @@ function InvitationContent({ token }: { token: string | undefined }) {
   const [loadError, setLoadError] = useState(token ? '' : '초대 링크를 확인해 주세요.');
   const [message, setMessage] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [alreadyInTeam, setAlreadyInTeam] = useState(false);
   const joinInProgress = useRef(false);
   const autoJoinStarted = useRef(false);
   const autoJoin = (location.state as { autoJoin?: boolean } | null)?.autoJoin === true;
@@ -115,8 +117,10 @@ function InvitationContent({ token }: { token: string | undefined }) {
       } else if (status === 403) {
         navigate('/profile');
       } else if (status === 409) {
+        // 1인 1팀: 이미 이 팀이나 다른 팀에 소속된 경우
         sessionStorage.removeItem('pendingInvitationUrl');
-        navigate(`/team?teamId=${team.teamId}`, { replace: true });
+        setAlreadyInTeam(true);
+        setMessage(getApiErrorMessage(error, '이미 소속된 팀이 있어요.'));
       } else if (status === 404 || status === 410) {
         setTeam(null);
         setLoadError('초대 링크가 유효하지 않아요. 새 초대 링크를 받아 주세요.');
@@ -155,12 +159,16 @@ function InvitationContent({ token }: { token: string | undefined }) {
               value={`현재 ${team.currentMemberCount}명 → 합류 후 ${team.expectedMemberCount}명`} />
           </>
         )}
-        {message && <Message role="status">{message}</Message>}
+        {message && <Message role={alreadyInTeam ? 'alert' : 'status'}>{message}</Message>}
       </Content>
       <Footer>
-        <JoinButton onClick={handleJoin} disabled={isLoading || !team || isJoining}>
-          {isJoining ? '합류하고 있어요.' : '합류하기'}
-        </JoinButton>
+        {alreadyInTeam ? (
+          <JoinButton onClick={() => navigate('/team', { replace: true })}>내 팀으로 가기</JoinButton>
+        ) : (
+          <JoinButton onClick={handleJoin} disabled={isLoading || !team || isJoining}>
+            {isJoining ? '합류하고 있어요.' : '합류하기'}
+          </JoinButton>
+        )}
       </Footer>
     </Page>
   );

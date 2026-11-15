@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router'
 import { useCallback, useState } from 'react'
-import styled from 'styled-components'
-import Toast from './components/toast/Toast'
+import ToastContainer from './components/toast/ToastContainer'
 import { startGoogleLogin } from './api/auth'
 import ContestSearchPage from './pages/contest-search/ContestSearchPage'
 import ContestDetailPage from './pages/contest-search/ContestDetailPage'
@@ -40,29 +39,9 @@ function App() {
       <Route path="/team/edit" element={<TeamEditPage />} />
       <Route path="/team/news" element={<TeamNews />} />
     </Routes>
-    {loginResult && (
-      <LoginToastArea>
-        <Toast key={loginResult} variant={loginResult === 'error' ? 'error' : 'success'} onClose={closeLoginToast}>
-          {loginResult === 'logout'
-            ? '로그아웃되었어요'
-            : loginResult === 'success'
-            ? '로그인에 성공했어요.'
-            : '로그인을 완료하지 못했어요. 다시 시도해 주세요.'}
-        </Toast>
-      </LoginToastArea>
-    )}
+    <ToastContainer result={loginResult} onClose={closeLoginToast} />
     </>
   )
 }
 
 export default App
-
-const LoginToastArea = styled.div`
-  position: fixed;
-  bottom: calc(91px + env(safe-area-inset-bottom));
-  left: 50%;
-  z-index: 200;
-  width: 354px;
-  max-width: calc(100% - 48px);
-  transform: translateX(-50%);
-`;

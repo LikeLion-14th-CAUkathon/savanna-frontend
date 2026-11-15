@@ -203,8 +203,6 @@ function TeamSpaceContent({ search }: { search: string }) {
       </HeaderBand>
 
       <Sheet>
-        <Grabber aria-hidden="true" />
-
         <Section>
           <SectionTitle>우리 팀 프로젝트</SectionTitle>
           <TeamProjectCard team={team} />
@@ -380,19 +378,10 @@ const Sheet = styled.main`
   flex: 1;
   flex-direction: column;
   gap: 24px;
-  padding: 12px 24px 32px;
+  padding: 40px 24px 32px;
   border-radius: 24px 24px 0 0;
   background: #ffffff;
   box-shadow: 0 -5px 22px rgba(59, 42, 22, 0.17);
-`;
-
-const Grabber = styled.div`
-  align-self: center;
-  width: 40px;
-  height: 5px;
-  margin-bottom: 24px;
-  border-radius: 2.5px;
-  background: #e7e5e0;
 `;
 
 const Section = styled.section<{ $gap?: number }>`

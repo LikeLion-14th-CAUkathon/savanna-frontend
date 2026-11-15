@@ -220,9 +220,15 @@ const Page = styled.main`
   flex-direction: column;
   box-sizing: border-box;
   width: 100%;
+  max-width: 402px;
   min-height: 100svh;
   margin: 0 auto;
   background: var(--color-bg);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 const Body = styled.div`
@@ -313,5 +319,11 @@ const ToastArea = styled.div`
   left: 50%;
   z-index: 20;
   width: calc(100% - 48px);
+  max-width: 354px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;

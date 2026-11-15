@@ -32,5 +32,11 @@ const ToastArea = styled.div`
   left: 50%;
   z-index: 200;
   width: calc(100% - 48px);
+  max-width: 354px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;

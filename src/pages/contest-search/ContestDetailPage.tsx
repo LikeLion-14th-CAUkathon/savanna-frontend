@@ -201,6 +201,7 @@ const Page = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 402px;
   min-height: 100svh;
   margin: 0 auto;
   background: #fafaf8;
@@ -208,6 +209,11 @@ const Page = styled.div`
   line-height: normal;
   letter-spacing: 0;
   text-align: left;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 const Content = styled.main`
@@ -269,7 +275,13 @@ const ToastArea = styled.div`
   left: 50%;
   z-index: 102;
   width: calc(100% - 48px);
+  max-width: 354px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 const ProposeButton = styled(Button)`

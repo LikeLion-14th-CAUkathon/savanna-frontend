@@ -89,13 +89,17 @@ function TeamSpaceContent({ search }: { search: string }) {
 
   const data = loadState.type === 'success' ? loadState.data : null;
   const teamId = data?.team.teamId;
+  const isLeader = !!data?.team.members.some(
+    (member) => member.userId === data.myUserId && member.role === 'LEADER',
+  );
 
   // ===== 초대 링크 (팀을 불러온 뒤) =====
+  // url이 null이고 failed가 아니면 아직 링크가 없는 것 (팀장이 만들기 전)
   const [invite, setInvite] = useState<{ teamId: number; url: string | null; failed: boolean } | null>(null);
   useEffect(() => {
     if (teamId === undefined) return;
     let ignore = false;
-    fetchInviteUrl(teamId)
+    fetchInviteUrl(teamId, isLeader)
       .then((url) => {
         if (!ignore) setInvite({ teamId, url, failed: false });
       })
@@ -105,9 +109,14 @@ function TeamSpaceContent({ search }: { search: string }) {
     return () => {
       ignore = true;
     };
-  }, [teamId]);
-  const inviteUrl = invite && invite.teamId === teamId ? invite.url : null;
-  const invitePlaceholder = invite?.failed ? '초대 링크를 만들지 못했어요.' : '초대 링크를 만들고 있어요.';
+  }, [teamId, isLeader]);
+  const currentInvite = invite && invite.teamId === teamId ? invite : null;
+  const inviteUrl = currentInvite?.url ?? null;
+  const invitePlaceholder = !currentInvite
+    ? '초대 링크를 불러오고 있어요.'
+    : currentInvite.failed
+      ? '초대 링크를 불러오지 못했어요.'
+      : '팀 초대 링크가 여기에 보여요.';
 
   // ===== 팀 소식 알림 점 =====
   // 새 제안 또는 내가 보낸 제안의 새 응답 · 응답 변경이 있을 때만 점을 띄운다. (서버가 계산) 못 불러오면 숨긴다.
@@ -266,8 +275,8 @@ const StatusMessage = styled.p`
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 402px;
   min-height: 100svh;
   margin: 0 auto;
   background: #fafaf8;
@@ -276,6 +285,28 @@ const Page = styled.div`
   line-height: normal;
   letter-spacing: 0;
   text-align: left;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 안에서 스크롤한다. */
+  @media (min-width: 481px) {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    /* 내용이 프레임보다 길면 헤더 등이 눌려 줄어들지 않고 스크롤되게 한다. */
+    & > * {
+      flex-shrink: 0;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 `;
 
 // 배경 그림 위에 제목 · 팀 프로필. 아래 시트가 32px 겹쳐 올라온다.
@@ -436,7 +467,12 @@ const ToastArea = styled.div`
   bottom: calc(75px + 16px);
   left: 50%;
   z-index: 102;
-  width: 354px;
-  max-width: calc(100% - 48px);
+  width: calc(100% - 48px);
+  max-width: 354px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;

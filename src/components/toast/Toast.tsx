@@ -38,8 +38,7 @@ const Box = styled.div<{ $isClosing: boolean }>`
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
-  width: 354px;
-  max-width: 100%;
+  width: 100%;
   min-height: 48px;
   padding: 12px 16px;
   border-radius: 12px;

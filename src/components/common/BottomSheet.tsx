@@ -197,8 +197,8 @@ const Sheet = styled.section<{ $dragging: boolean }>`
   flex-direction: column;
   gap: 24px;
   box-sizing: border-box;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 402px;
   max-height: 90svh;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -213,6 +213,11 @@ const Sheet = styled.section<{ $dragging: boolean }>`
   letter-spacing: 0;
   text-align: left;
   outline: none;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 // 손잡이 아래 내용까지: 제목이 있으면 24px, 제목이 없으면 12px

@@ -207,23 +207,50 @@ const ToastArea = styled.div`
   bottom: calc(75px + 16px);
   left: 50%;
   z-index: 20;
-  width: 354px;
-  max-width: calc(100% - 48px);
+  width: calc(100% - 48px);
+  max-width: 354px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 // 모바일 화면 너비와 배경
 const Page = styled.main`
   display: flex;
   flex-direction: column;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 402px;
   min-height: 100svh;
   margin: 0 auto;
   padding-bottom: 75px;
   background: var(--color-bg);
   color: var(--color-ink);
   line-height: normal;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 안에서 스크롤한다. */
+  @media (min-width: 481px) {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    /* 내용이 프레임보다 길면 헤더 등이 눌려 줄어들지 않고 스크롤되게 한다. */
+    & > * {
+      flex-shrink: 0;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 `;
 
 const Header = styled.header`
@@ -296,9 +323,14 @@ const BottomBar = styled.div`
   bottom: 0;
   left: 50%;
   z-index: 10;
-  width: 402px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 402px;
   transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 const CharacterSection = styled.section`

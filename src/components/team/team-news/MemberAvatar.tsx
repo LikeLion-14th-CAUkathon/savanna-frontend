@@ -26,9 +26,8 @@ export default function MemberAvatar({ characterId, size, tone = 'peach' }: Memb
   );
 }
 
-// 캐릭터를 원보다 크게 그려 얼굴이 원을 채우도록 잘라 보여준다 (피그마 Member Avatar 비율)
+// 캐릭터 이미지(정사각형)에 원 배경 · 얼굴이 가운데로 들어 있어 원에 꼭 맞게 넣는다 (피그마 Member Avatar)
 const Circle = styled.span<{ $size: number; $tone: AvatarTone }>`
-  position: relative;
   flex-shrink: 0;
   width: ${({ $size }) => $size}px;
   height: ${({ $size }) => $size}px;
@@ -37,11 +36,9 @@ const Circle = styled.span<{ $size: number; $tone: AvatarTone }>`
   background: ${({ $tone }) => AVATAR_COLORS[$tone]};
 
   img {
-    position: absolute;
-    top: -1.39%;
-    left: -15.97%;
-    width: 131.94%;
-    height: 131.94%;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
   }
 `;

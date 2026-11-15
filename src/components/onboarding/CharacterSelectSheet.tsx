@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import Button from '../common/Button';
-import ProfileSheet from './ProfileSheet';
+import BottomSheet from '../common/BottomSheet';
 import { characters } from './profileOptions';
 
 interface CharacterSelectSheetProps {
@@ -16,7 +16,7 @@ export default function CharacterSelectSheet({ selectedId, onSelect, onClose }: 
   const [draftId, setDraftId] = useState(selectedId);
 
   return (
-    <ProfileSheet title="나의 캐릭터 선택" onClose={onClose}>
+    <BottomSheet title="나의 캐릭터 선택" onClose={onClose}>
       <Grid>
         {characters.map((character) => (
           <CharacterButton
@@ -33,7 +33,7 @@ export default function CharacterSelectSheet({ selectedId, onSelect, onClose }: 
         <CloseButton variant="secondary" onClick={onClose}>닫기</CloseButton>
         <SelectButton disabled={draftId === null} onClick={() => onSelect(draftId)}>선택하기</SelectButton>
       </Actions>
-    </ProfileSheet>
+    </BottomSheet>
   );
 }
 

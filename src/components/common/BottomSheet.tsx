@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
 import styled from 'styled-components';
 import closeIcon from '../../assets/icons/bottom-sheet/close.svg';
 
@@ -14,6 +14,112 @@ interface BottomSheetProps {
 export default function BottomSheet({ title, description, onClose, children }: BottomSheetProps) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
+  const [startY, setStartY] = useState<number | null>(null);
+  const [offsetY, setOffsetY] = useState(0);
+  const suppressClick = useRef(false);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') return;
+    setStartY(event.clientY);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (startY === null) return;
+    setOffsetY(Math.max(0, event.clientY - startY));
+  };
+
+  // 손잡이를 80px 이상 내리면 닫고, 덜 내렸으면 제자리로 돌아간다.
+  const handlePointerUp = () => {
+    if (offsetY >= 80) onClose();
+    setStartY(null);
+    setOffsetY(0);
+  };
+
+  // 내용이 맨 위에서 시작한 아래 방향 터치만 시트 드래그로 처리한다.
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    const gesture: { start: { x: number; y: number } | null; distance: number } = {
+      start: null,
+      distance: 0,
+    };
+
+    const reset = () => {
+      gesture.start = null;
+      gesture.distance = 0;
+      setStartY(null);
+      setOffsetY(0);
+    };
+    const handleTouchStart = (event: TouchEvent) => {
+      reset();
+      suppressClick.current = false;
+      if (event.touches.length !== 1) return;
+      const target = event.target as HTMLElement;
+      const isHandle = target.closest('[data-sheet-handle]');
+      if (!isHandle) {
+        // 내부에 별도 스크롤 영역이 있어도 맨 위인지 함께 확인한다.
+        for (let element: HTMLElement | null = target; element; element = element.parentElement) {
+          if (element.scrollTop > 0) return;
+          if (element === sheet) break;
+        }
+      }
+      gesture.start = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    };
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!gesture.start) return;
+      if (event.touches.length !== 1) {
+        reset();
+        return;
+      }
+      const deltaY = event.touches[0].clientY - gesture.start.y;
+      const deltaX = event.touches[0].clientX - gesture.start.x;
+      if (gesture.distance === 0 && (deltaY < -5 || Math.abs(deltaX) > Math.max(5, deltaY))) {
+        gesture.start = null;
+        return;
+      }
+      if (deltaY <= 5 && gesture.distance === 0) return;
+      if (!event.cancelable) {
+        reset();
+        return;
+      }
+      event.preventDefault();
+      gesture.distance = Math.max(0, deltaY);
+      suppressClick.current = true;
+      setStartY(gesture.start.y);
+      setOffsetY(gesture.distance);
+    };
+    const handleTouchEnd = () => {
+      if (gesture.distance >= 80) onClose();
+      reset();
+    };
+
+    sheet.addEventListener('touchstart', handleTouchStart, { passive: true });
+    sheet.addEventListener('touchmove', handleTouchMove, { passive: false });
+    sheet.addEventListener('touchend', handleTouchEnd);
+    sheet.addEventListener('touchcancel', reset);
+    return () => {
+      sheet.removeEventListener('touchstart', handleTouchStart);
+      sheet.removeEventListener('touchmove', handleTouchMove);
+      sheet.removeEventListener('touchend', handleTouchEnd);
+      sheet.removeEventListener('touchcancel', reset);
+    };
+  }, [onClose]);
+
+  // 바텀시트가 열린 동안 배경을 고정하고, 닫히면 원래 스크롤 위치를 복원한다.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const originalStyle = document.body.style.cssText;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.cssText = originalStyle;
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
+    };
+  }, []);
 
   // 열리면 시트로 포커스를 옮기고, Esc로 닫을 수 있게 한다.
   useEffect(() => {
@@ -28,8 +134,33 @@ export default function BottomSheet({ title, description, onClose, children }: B
   return (
     <>
       <Scrim onClick={onClose} aria-hidden="true" />
-      <Sheet ref={sheetRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <Handle aria-hidden="true" />
+      <Sheet
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        $dragging={startY !== null}
+        style={{ transform: `translate(-50%, ${offsetY}px)` }}
+        onClickCapture={(event) => {
+          if (!suppressClick.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClick.current = false;
+        }}
+      >
+        <DragArea
+          data-sheet-handle
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={() => {
+            setStartY(null);
+            setOffsetY(0);
+          }}
+        >
+          <Handle aria-hidden="true" />
+        </DragArea>
         <Header>
           <TitleRow>
             <Title id={titleId}>{title}</Title>
@@ -52,7 +183,7 @@ const Scrim = styled.div`
   background: rgba(30, 30, 30, 0.45);
 `;
 
-const Sheet = styled.section`
+const Sheet = styled.section<{ $dragging: boolean }>`
   position: fixed;
   bottom: 0;
   left: 50%;
@@ -65,11 +196,13 @@ const Sheet = styled.section`
   max-width: 100%;
   max-height: 90svh;
   overflow-y: auto;
-  padding: 12px 24px 34px;
+  overscroll-behavior-y: contain;
+  padding: 0 24px 34px;
   border-radius: 24px 24px 0 0;
   background: var(--color-bg);
   box-shadow: 0 -5px 22px rgba(59, 42, 22, 0.17);
   transform: translateX(-50%);
+  transition: ${({ $dragging }) => ($dragging ? 'none' : 'transform 0.2s')};
   font-family: 'Pretendard', sans-serif;
   line-height: normal;
   letter-spacing: 0;
@@ -77,11 +210,18 @@ const Sheet = styled.section`
   outline: none;
 `;
 
-const Handle = styled.div`
+const DragArea = styled.div`
   flex-shrink: 0;
-  align-self: center;
+  padding: 12px 0;
+  margin-bottom: -12px;
+  touch-action: none;
+  cursor: grab;
+`;
+
+const Handle = styled.div`
   width: 40px;
   height: 4px;
+  margin: 0 auto;
   border-radius: 2px;
   background: #d7d4cd;
 `;

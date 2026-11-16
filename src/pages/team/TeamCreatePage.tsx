@@ -95,8 +95,9 @@ function TeamCreateForm() {
 
     setIsSending(true);
     let teamId: number;
+    let inviteUrl: string;
     try {
-      ({ teamId } = await createTeam(toTeamRequest(form)));
+      ({ teamId, inviteUrl } = await createTeam(toTeamRequest(form)));
     } catch (error) {
       setIsSending(false);
       showError(getCreateErrorMessage(error));
@@ -104,7 +105,8 @@ function TeamCreateForm() {
     }
 
     // 사진은 팀을 만든 뒤 따로 올린다. 실패해도 팀은 만들어졌으니 B02로 가서 안내한다.
-    const state: TeamSpaceLocationState = {};
+    // 초대 링크는 팀을 만들 때 자동으로 생기므로 생성 응답의 주소를 그대로 넘긴다.
+    const state: TeamSpaceLocationState = { inviteUrl };
     if (photo) {
       await uploadTeamPhoto(teamId, photo).catch((error: unknown) => {
         state.photoError = `팀은 만들었지만 ${getTeamPhotoUploadErrorMessage(error)}`;

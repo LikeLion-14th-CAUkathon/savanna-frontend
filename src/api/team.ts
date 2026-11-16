@@ -29,6 +29,7 @@ export interface TeamCreateResponse {
   name: string;
   role: TeamRole; // 생성자는 LEADER
   photoUrl: string | null; // 생성 직후엔 null. 사진은 생성 후 uploadTeamPhoto로 올린다
+  inviteUrl: string; // 팀을 만들 때 자동으로 생기는 초대 주소. 초대 생성 API를 따로 부를 필요 없음
 }
 
 /** 팀 기본 정보 */

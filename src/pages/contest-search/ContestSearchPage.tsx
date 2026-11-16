@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import Icon from '../../components/contest-search/Icon';
 import SearchBar from '../../components/contest-search/contest-search/SearchBar';
@@ -28,20 +28,29 @@ export default function ContestSearchPage() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [recommended, setRecommended] = useState<RecommendedContest[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('loading');
+  // AI 추천을 불러오는(새로 만드는) 중인지. 이 동안 추천 자리에 점 3개 로딩을 보여 준다.
+  const [isRecommendLoading, setIsRecommendLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<ContestFilters>(EMPTY_CONTEST_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // 공고 목록과 AI 추천을 함께 불러온다. (처음 로딩 상태는 useState 초기값으로 처리)
+  // 공고 목록과 AI 추천을 따로 불러온다. (처음 로딩 상태는 useState 초기값으로 처리)
+  // AI 추천은 새로 만들 때 몇 초 걸릴 수 있어서, 전체 공고를 기다리게 하지 않고 먼저 보여 준다.
   // AI 추천은 실패해도(소속 팀 없음 · AI 미연결 등) 전체 공고는 보여 주고 추천 영역만 숨긴다.
   const loadContests = useCallback(() => {
-    Promise.all([fetchContests(), fetchRecommendedContests().catch((): RecommendedContest[] => [])])
-      .then(([contestList, recommendedList]) => {
+    fetchContests()
+      .then((contestList) => {
         setContests(contestList);
-        setRecommended(recommendedList);
         setLoadState('success');
       })
       .catch(() => setLoadState('error'));
+
+    fetchRecommendedContests()
+      .catch((): RecommendedContest[] => [])
+      .then((recommendedList) => {
+        setRecommended(recommendedList);
+        setIsRecommendLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -69,6 +78,7 @@ export default function ContestSearchPage() {
 
   const retryLoad = () => {
     setLoadState('loading');
+    setIsRecommendLoading(true);
     loadContests();
   };
 
@@ -126,7 +136,7 @@ export default function ContestSearchPage() {
 
         {loadState === 'success' && !isSearching && (
           <>
-            {recommended.length > 0 && (
+            {(isRecommendLoading || recommended.length > 0) && (
               <>
                 <Section>
                   <HeadTexts>
@@ -135,17 +145,28 @@ export default function ContestSearchPage() {
                       <SectionTitle>우리 팀 AI 추천</SectionTitle>
                     </SectionTitleRow>
                     <SectionDescription>
-                      팀 프로젝트·분야와 잘 맞는 공고 {recommended.length}개를 골랐어요.
+                      {isRecommendLoading
+                        ? '우리 팀에 맞는 공고를 고르고 있어요.'
+                        : `팀 프로젝트·분야와 잘 맞는 공고 ${recommended.length}개를 골랐어요.`}
                     </SectionDescription>
                   </HeadTexts>
+                  {isRecommendLoading && (
+                    <LoadingDots role="status" aria-label="AI 추천을 불러오는 중">
+                      <span />
+                      <span />
+                      <span />
+                    </LoadingDots>
+                  )}
                 </Section>
-                <RecommendList>
-                  {recommended.map((contest) => (
-                    <CardLink key={contest.id} to={`/contest/${contest.id}`}>
-                      <RecommendCard contest={contest} />
-                    </CardLink>
-                  ))}
-                </RecommendList>
+                {!isRecommendLoading && (
+                  <RecommendList>
+                    {recommended.map((contest) => (
+                      <CardLink key={contest.id} to={`/contest/${contest.id}`}>
+                        <RecommendCard contest={contest} />
+                      </CardLink>
+                    ))}
+                  </RecommendList>
+                )}
               </>
             )}
 
@@ -377,6 +398,50 @@ const Sort = styled.p`
   color: #5b5b5b;
   font-size: 13px;
   font-weight: 500;
+`;
+
+// AI 추천 로딩: 점 3개가 차례로 통통 튄다.
+const dotBounce = keyframes`
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-6px);
+  }
+`;
+
+const LoadingDots = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+
+  span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-amber);
+    animation: ${dotBounce} 1.2s ease-in-out infinite;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  /* 움직임 줄이기 설정이면 튀지 않고 깜빡이기만 한다. */
+  @media (prefers-reduced-motion: reduce) {
+    span {
+      animation-name: none;
+      opacity: 0.6;
+    }
+  }
 `;
 
 const RecommendList = styled.div`

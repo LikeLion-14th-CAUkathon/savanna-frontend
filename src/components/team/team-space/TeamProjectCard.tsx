@@ -20,7 +20,7 @@ export default function TeamProjectCard({ team }: TeamProjectCardProps) {
   return (
     <Card>
       <Row label="프로젝트">
-        <Value $bold>{team.projectName}</Value>
+        <Value>{team.projectName}</Value>
       </Row>
       <Row label="소개">
         <Value>{team.projectIntro}</Value>
@@ -105,11 +105,11 @@ const RowBox = styled.div`
   }
 `;
 
-const Value = styled.p<{ $bold?: boolean }>`
+const Value = styled.p`
   margin: 0;
   color: #1e1e1e;
   font-size: 15px;
-  font-weight: ${({ $bold }) => ($bold ? 700 : 400)};
+  font-weight: 400;
 `;
 
 const Link = styled.a`

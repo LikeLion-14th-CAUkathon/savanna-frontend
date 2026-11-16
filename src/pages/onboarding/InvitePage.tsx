@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
@@ -58,15 +59,49 @@ function InvitationGate({ token }: { token: string | undefined }) {
 
   return (
     <Page>
+      <InviteHeader onBack={() => navigate(-1)} />
       <Content>
         {status === 'loading' ? <Message role="status">로그인 상태를 확인하고 있어요.</Message> : (
-          <>
-            <Message role="alert">로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.</Message>
-            <Button onClick={() => window.location.reload()}>다시 시도</Button>
-          </>
+          <ErrorCard
+            error={{ title: '로그인 상태를 확인하지 못했어요.', description: '잠시 후 다시 시도해 주세요.' }}
+            onRetry={() => window.location.reload()}
+          />
         )}
       </Content>
     </Page>
+  );
+}
+
+interface LoadError {
+  title: string;
+  description?: string;
+}
+
+// 노을 풍경 배경 위에 앱바와 (있으면) 팀 프로필을 놓는다. 없으면 풍경만 보이도록 자리만 둔다.
+function InviteHeader({ onBack, children }: { onBack: () => void; children?: ReactNode }) {
+  return (
+    <HeaderBand>
+      <HeaderBackground aria-hidden="true">
+        <img src={headerImage} alt="" />
+      </HeaderBackground>
+      <AppBar title="초대 확인" onBack={onBack} />
+      {children ?? <HeaderSpacer />}
+    </HeaderBand>
+  );
+}
+
+// 조회 실패 안내 카드. 다시 시도할 수 있는 오류일 때만 버튼을 보여준다.
+function ErrorCard({ error, onRetry }: { error: LoadError; onRetry?: () => void }) {
+  return (
+    <ErrorBox role="alert">
+      <ErrorTitle>{error.title}</ErrorTitle>
+      {error.description && <ErrorDescription>{error.description}</ErrorDescription>}
+      {onRetry && (
+        <RetryButton variant="secondary" onClick={onRetry}>
+          다시 시도
+        </RetryButton>
+      )}
+    </ErrorBox>
   );
 }
 
@@ -75,7 +110,10 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
   const location = useLocation();
   const [team, setTeam] = useState<InvitationPreviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(token));
-  const [loadError, setLoadError] = useState(token ? '' : '초대 링크를 확인해 주세요.');
+  const [loadError, setLoadError] = useState<LoadError | null>(token ? null : { title: '초대 링크를 확인해 주세요.' });
+  // 서버 오류 등으로 조회에 실패했을 때만 다시 시도할 수 있다. 값이 바뀌면 다시 조회한다.
+  const [canRetry, setCanRetry] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [message, setMessage] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [alreadyInTeam, setAlreadyInTeam] = useState(false);
@@ -100,11 +138,12 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
         if (controller.signal.aborted) return;
         const status = isAxiosError(error) ? error.response?.status : undefined;
         if (status === 404) {
-          setLoadError('존재하지 않는 초대 링크예요.');
+          setLoadError({ title: '존재하지 않는 초대 링크예요.' });
         } else if (status === 410) {
-          setLoadError('만료되었거나 회수된 초대 링크예요.');
+          setLoadError({ title: '만료되었거나 회수된 초대 링크예요.' });
         } else {
-          setLoadError('초대 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+          setLoadError({ title: '초대 정보를 불러오지 못했어요.', description: '잠시 후 다시 시도해 주세요.' });
+          setCanRetry(true);
         }
       })
       .finally(() => {
@@ -112,7 +151,14 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
       });
 
     return () => controller.abort();
-  }, [token]);
+  }, [token, retryCount]);
+
+  const handleRetry = () => {
+    setLoadError(null);
+    setCanRetry(false);
+    setIsLoading(true);
+    setRetryCount((count) => count + 1);
+  };
 
   // 합류 결과의 팀 ID를 팀 공간에 전달한다.
   const handleJoin = useCallback(async () => {
@@ -139,7 +185,7 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
         setMessage(getApiErrorMessage(error, '이미 소속된 팀이 있어요.'));
       } else if (status === 404 || status === 410) {
         setTeam(null);
-        setLoadError('초대 링크가 유효하지 않아요. 새 초대 링크를 받아 주세요.');
+        setLoadError({ title: '초대 링크가 유효하지 않아요.', description: '새 초대 링크를 받아 주세요.' });
         sessionStorage.removeItem('pendingInvitationUrl');
       } else {
         setMessage('팀에 합류하지 못했어요. 다시 시도해 주세요.');
@@ -162,24 +208,17 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
 
   return (
     <Page>
-      <HeaderBand>
-        <HeaderBackground aria-hidden="true">
-          <img src={headerImage} alt="" />
-        </HeaderBackground>
-        <AppBar title="초대 확인" onBack={() => navigate(-1)} />
-        {team ? (
+      <InviteHeader onBack={() => navigate(-1)}>
+        {team && (
           <TeamProfile>
             <TeamAvatar aria-hidden="true">{team.teamName.slice(0, 1)}</TeamAvatar>
             <TeamName>{team.teamName}</TeamName>
           </TeamProfile>
-        ) : (
-          // 팀 정보가 없을 때(불러오는 중·조회 실패)는 풍경만 보이도록 자리만 둔다.
-          <HeaderSpacer />
         )}
-      </HeaderBand>
+      </InviteHeader>
       <Content>
         {isLoading && <Message role="status">초대 정보를 불러오고 있어요.</Message>}
-        {loadError && <Message role="alert">{loadError}</Message>}
+        {loadError && <ErrorCard error={loadError} onRetry={canRetry ? handleRetry : undefined} />}
         {team && (
           <>
             <InviteInfoField
@@ -229,15 +268,18 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
           </Toast>
         </ToastArea>
       )}
-      <Footer>
-        {alreadyInTeam ? (
-          <JoinButton onClick={() => navigate('/team', { replace: true })}>내 팀으로 가기</JoinButton>
-        ) : (
-          <JoinButton onClick={handleJoin} disabled={isLoading || !team || isJoining}>
-            {isJoining ? '합류하고 있어요.' : '합류하기'}
-          </JoinButton>
-        )}
-      </Footer>
+      {/* 조회 실패 화면에는 하단 버튼 없이 안내 카드만 보여준다. */}
+      {!loadError && (
+        <Footer>
+          {alreadyInTeam ? (
+            <JoinButton onClick={() => navigate('/team', { replace: true })}>내 팀으로 가기</JoinButton>
+          ) : (
+            <JoinButton onClick={handleJoin} disabled={isLoading || !team || isJoining}>
+              {isJoining ? '합류하고 있어요.' : '합류하기'}
+            </JoinButton>
+          )}
+        </Footer>
+      )}
     </Page>
   );
 }
@@ -381,6 +423,37 @@ const Footer = styled.footer`
   padding: 12px 24px 34px;
   border-top: 1px solid #e7e5e0;
   background: #fafaf8;
+`;
+
+// 조회 실패 안내 카드 (Figma 카드/조회 실패)
+const ErrorBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px 24px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 20px;
+  background: #ffffff;
+  text-align: center;
+  overflow-wrap: anywhere;
+`;
+
+const ErrorTitle = styled.p`
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 700;
+`;
+
+const ErrorDescription = styled.p`
+  color: var(--color-text-secondary);
+  font-size: 15px;
+`;
+
+// 설명과 버튼 사이는 Figma처럼 28px(카드 간격 8 + 20)
+const RetryButton = styled(Button)`
+  width: 100%;
+  margin-top: 20px;
 `;
 
 // 합류 실패 안내 토스트: 하단 버튼 영역(98px) 위 16px에 띄운다.

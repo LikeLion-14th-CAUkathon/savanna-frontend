@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { EmptyText } from './detailStyles';
 import stageLionIcon from '../../../assets/icons/expedition-detail/stage-lion.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../../types/oasis';
 import type { ExpeditionStage } from '../../../types/oasis';
@@ -16,6 +17,7 @@ interface StageProgressProps {
 export default function StageProgress({ currentStage, targets }: StageProgressProps) {
   const currentIndex = STAGE_ORDER.indexOf(currentStage);
   const targetDateOf = (stage: ExpeditionStage) => targets.find((target) => target.stage === stage)?.targetDate;
+  const hasAnyDate = STAGE_ORDER.some((stage) => targetDateOf(stage));
 
   return (
     <div>
@@ -38,14 +40,16 @@ export default function StageProgress({ currentStage, targets }: StageProgressPr
           const targetDate = targetDateOf(stage);
           const state = index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'todo';
           return (
-            <Label key={stage} $state={state} aria-current={state === 'current' ? 'step' : undefined}>
-              <StageName>{EXPEDITION_STAGE_LABEL[stage]}</StageName>
-              {/* 목표일이 없으면 빈칸 (줄 높이는 유지해서 다른 단계와 맞춤) */}
-              <StageDate>{targetDate ? formatMonthDay(targetDate) : ' '}</StageDate>
+            <Label key={stage} aria-current={state === 'current' ? 'step' : undefined}>
+              <StageName $state={state}>{EXPEDITION_STAGE_LABEL[stage]}</StageName>
+              {/* 목표일이 없으면 빈칸 (줄 높이는 유지해서 다른 단계와 맞춤). 전부 없으면 날짜 줄을 빼고 아래 안내 */}
+              {hasAnyDate && <StageDate $state={state}>{targetDate ? formatMonthDay(targetDate) : ' '}</StageDate>}
             </Label>
           );
         })}
       </Labels>
+
+      {!hasAnyDate && <NoDateText>날짜를 먼저 설정해주세요</NoDateText>}
     </div>
   );
 }
@@ -122,7 +126,9 @@ const Labels = styled.div`
   display: flex;
 `;
 
-const Label = styled.div<{ $state: 'done' | 'current' | 'todo' }>`
+type StepState = 'done' | 'current' | 'todo';
+
+const Label = styled.div`
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -132,21 +138,20 @@ const Label = styled.div<{ $state: 'done' | 'current' | 'todo' }>`
   font-size: 12px;
   line-height: normal;
   white-space: nowrap;
-
-  & > :first-child {
-    color: ${({ $state }) =>
-      $state === 'current' ? 'var(--color-orange)' : $state === 'done' ? 'var(--color-ink)' : 'var(--color-text-secondary)'};
-  }
-
-  & > :last-child {
-    color: ${({ $state }) => ($state === 'current' ? 'var(--color-orange)' : 'var(--color-text-tertiary)')};
-  }
 `;
 
-const StageName = styled.span`
+const StageName = styled.span<{ $state: StepState }>`
+  color: ${({ $state }) =>
+    $state === 'current' ? 'var(--color-orange)' : $state === 'done' ? 'var(--color-ink)' : 'var(--color-text-secondary)'};
   font-weight: 700;
 `;
 
-const StageDate = styled.span`
+const StageDate = styled.span<{ $state: StepState }>`
+  color: ${({ $state }) => ($state === 'current' ? 'var(--color-orange)' : 'var(--color-text-tertiary)')};
   font-weight: 300;
+`;
+
+// 목표일이 하나도 없을 때 안내 (아래 '등록된 공지가 없어요'와 같은 모양 · 정렬)
+const NoDateText = styled(EmptyText)`
+  margin-top: 8px;
 `;

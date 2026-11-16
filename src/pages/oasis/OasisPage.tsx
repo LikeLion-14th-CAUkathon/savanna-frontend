@@ -323,10 +323,11 @@ const StatusArea = styled.div`
 `;
 
 // 402px 화면 기준 위치(left 246px)를 유지하면서 넓은 화면에서는 오른쪽 기준으로 따라간다.
+// 오른쪽 끝에 맞춤 (팀 이름이 짧아도 배지가 오른쪽에 붙음)
 const TeamBadgeArea = styled.div`
   position: absolute;
   top: 133px;
-  left: calc(100% - 156px);
+  right: 16px;
   max-width: 140px;
 `;
 

@@ -69,8 +69,6 @@ const ChangeStageButton = styled.button`
   font-size: 14px;
   font-weight: 700;
   line-height: normal;
-  text-decoration: underline;
-  text-underline-position: from-font;
   cursor: pointer;
 
   &:focus-visible {

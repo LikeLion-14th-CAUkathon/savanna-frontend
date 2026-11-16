@@ -9,6 +9,7 @@ import MemberTile from '../../components/common/MemberTile';
 import Toast from '../../components/toast/Toast';
 import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
+import LeaveTeamSheet from '../../components/team/team-space/LeaveTeamSheet';
 import {
   fetchInviteUrl,
   fetchTeamSpace,
@@ -16,7 +17,8 @@ import {
 } from '../../components/team/team-space/teamSpaceData';
 import { characters } from '../../components/onboarding/profileOptions';
 import { getProposalNotifications } from '../../api/proposal';
-import type { TeamSpaceLocationState } from '../../types/team';
+import { leaveTeam } from '../../api/team';
+import type { OasisLocationState, TeamSpaceLocationState } from '../../types/team';
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
@@ -37,6 +39,15 @@ const toLoadError = (error: unknown): LoadState => {
   if (status === 403) return { type: 'error', message: '이 팀에 소속되어 있지 않아요.', canRetry: false };
   if (status === 404) return { type: 'error', message: '팀을 찾을 수 없어요.', canRetry: false };
   return { type: 'error', message: '팀 정보를 불러오지 못했어요.', canRetry: true };
+};
+
+// 팀 나가기 실패 안내. 409는 마지막 팀원이라 나갈 수 없음
+const getLeaveErrorMessage = (error: unknown) => {
+  const status = isAxiosError(error) ? error.response?.status : undefined;
+  if (status === 409) return '마지막 팀원은 팀을 나갈 수 없어요.';
+  if (status === 403) return '이 팀에 소속되어 있지 않아요.';
+  if (status === 404) return '팀을 찾을 수 없어요.';
+  return '팀을 나가지 못했어요. 잠시 후 다시 시도해 주세요.';
 };
 
 // 캐릭터를 고르지 않았거나(null) 모르는 번호면 깨진 이미지 대신 첫 번째 캐릭터
@@ -138,6 +149,30 @@ function TeamSpaceContent({ search }: { search: string }) {
     };
   }, []);
 
+  // ===== 팀 나가기 =====
+  const [isLeaveSheetOpen, setIsLeaveSheetOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const closeLeaveSheet = useCallback(() => setIsLeaveSheetOpen(false), []);
+
+  // 탈퇴에 성공하면 D01 오아시스로 간다. 소속 팀이 없으니 D01-2(팀 없음)가 보인다.
+  // 뒤로가기로 나간 팀 공간에 다시 오지 않도록 replace.
+  // 팀장이 나가면 서버가 남은 팀원에게 팀장을 넘긴다(newLeaderUserId). 나는 팀을 떠나므로 화면에서 따로 쓰지 않는다.
+  // 실패하면 시트를 닫고 이 화면에 남아 안내한다.
+  const handleLeaveTeam = async () => {
+    if (isLeaving || !data) return;
+    setIsLeaving(true);
+    try {
+      await leaveTeam(data.team.teamId);
+    } catch (error) {
+      setIsLeaving(false);
+      setIsLeaveSheetOpen(false);
+      showToast('error', getLeaveErrorMessage(error));
+      return;
+    }
+    const state: OasisLocationState = { leftTeam: true };
+    navigate('/oasis', { replace: true, state });
+  };
+
   const copyInviteLink = () => {
     if (!inviteUrl) return;
     navigator.clipboard
@@ -152,17 +187,45 @@ function TeamSpaceContent({ search }: { search: string }) {
     </BottomBar>
   );
 
+  // B02-3 · 소속 팀 없음 (처음부터 팀이 없거나 팀을 나간 뒤)
+  // 팀 공간과 같은 틀에 빈 자리만 보여 주고, 팀 만들기로 안내한다.
+  if (loadState.type === 'no-team') {
+    const openCreate = () => navigate('/team/create');
+    return (
+      <Page>
+        <HeaderBand>
+          <Title>팀 공간</Title>
+          <Profile>
+            <EmptyAvatar aria-hidden="true">!</EmptyAvatar>
+            <TeamName>아직 소속된 팀이 없어요</TeamName>
+            <MemberCount>새 팀을 만들거나 초대 링크로 합류할 수 있어요.</MemberCount>
+            <EmptyActions>
+              <Button onClick={openCreate}>팀 만들기</Button>
+            </EmptyActions>
+          </Profile>
+        </HeaderBand>
+
+        <Sheet>
+          <Section>
+            <SectionTitle $disabled>우리 팀 프로젝트</SectionTitle>
+            <EmptySlot $height={120}>팀을 만들면 프로젝트 정보가 여기에 보여요.</EmptySlot>
+          </Section>
+          <Section>
+            <SectionTitle $disabled>함께하는 사자들</SectionTitle>
+            <EmptySlot $height={96}>초대한 팀원이 여기에 모여요.</EmptySlot>
+          </Section>
+        </Sheet>
+
+        {bottomBar}
+      </Page>
+    );
+  }
+
   if (!data) {
     return (
       <Page>
         <StatusBox role={loadState.type === 'loading' ? 'status' : 'alert'}>
           {loadState.type === 'loading' && <StatusMessage>팀 정보를 불러오고 있어요.</StatusMessage>}
-          {loadState.type === 'no-team' && (
-            <>
-              <StatusMessage>아직 소속된 팀이 없어요.</StatusMessage>
-              <Button onClick={() => navigate('/team/create')}>팀 만들기</Button>
-            </>
-          )}
           {loadState.type === 'error' && (
             <>
               <StatusMessage>{loadState.message}</StatusMessage>
@@ -245,9 +308,24 @@ function TeamSpaceContent({ search }: { search: string }) {
           <Description>팀원 누구나 같은 링크로 초대할 수 있어요.</Description>
           <InviteLinkCard inviteUrl={inviteUrl} placeholder={invitePlaceholder} onCopy={copyInviteLink} />
         </Section>
+
+        <LeaveArea>
+          <LeaveButton type="button" onClick={() => setIsLeaveSheetOpen(true)}>
+            팀 나가기
+          </LeaveButton>
+        </LeaveArea>
       </Sheet>
 
       {bottomBar}
+
+      {isLeaveSheetOpen && (
+        <LeaveTeamSheet
+          teamName={team.name}
+          isLeaving={isLeaving}
+          onClose={closeLeaveSheet}
+          onConfirm={handleLeaveTeam}
+        />
+      )}
 
       {toastState && (
         <ToastArea>
@@ -426,11 +504,57 @@ const Section = styled.section<{ $gap?: number }>`
   gap: ${({ $gap = 12 }) => $gap}px;
 `;
 
-const SectionTitle = styled.h2`
+// $disabled: B02-3 팀 없음에서 아직 비어 있는 구역 제목
+const SectionTitle = styled.h2<{ $disabled?: boolean }>`
   margin: 0;
-  color: #1e1e1e;
+  color: ${({ $disabled }) => ($disabled ? '#c4c3c0' : '#1e1e1e')};
   font-size: 17px;
   font-weight: 700;
+`;
+
+// ===== B02-3 · 소속 팀 없음 =====
+
+// 팀 사진 자리. 점선 원 + '!' (장식, 버튼 아님)
+const EmptyAvatar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border: 2px dashed var(--color-orange);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--color-orange);
+  font-family: 'CookieRun', sans-serif;
+  font-size: 28px;
+  line-height: 1.25;
+`;
+
+const EmptyActions = styled.div`
+  display: flex;
+  width: 100%;
+  margin-top: 18px;
+
+  & > * {
+    flex: 1;
+  }
+`;
+
+// 아직 내용이 없는 구역 자리
+const EmptySlot = styled.p<{ $height: number }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: ${({ $height }) => $height}px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1.5px dashed #d7d4cd;
+  border-radius: 16px;
+  background: var(--color-bg);
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: center;
 `;
 
 const Count = styled.span`
@@ -457,6 +581,32 @@ const MemberList = styled.ul`
 
   &::-webkit-scrollbar {
     display: none;
+  }
+`;
+
+// 페이지 맨 아래 '팀 나가기'. 마이페이지 로그아웃과 같은 모양
+const LeaveArea = styled.div`
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-border);
+`;
+
+const LeaveButton = styled.button`
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-orange);
+    outline-offset: 2px;
   }
 `;
 

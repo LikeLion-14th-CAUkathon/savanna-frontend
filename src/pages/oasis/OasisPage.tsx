@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 import TabBar from '../../components/layout/TabBar';
 import ExpeditionStatusCard from '../../components/oasis/ExpeditionStatusCard';
@@ -12,11 +12,16 @@ import { formatDDay, isPastDeadline } from '../../utils/dday';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
 import type { OasisExpedition, OasisState } from '../../types/oasis';
+import type { OasisLocationState } from '../../types/team';
 import shortMapImage from '../../assets/images/oasis/oasis-short-map.webp';
 import longMapImage from '../../assets/images/oasis/oasis-long-map.webp';
 import lionImage from '../../assets/images/oasis/lion.webp';
 import elephantImage from '../../assets/images/oasis/elephant.webp';
 import meerkatImage from '../../assets/images/oasis/meerkat.webp';
+import lionWaveImage from '../../assets/images/oasis/lion-wave.webp';
+import elephantWaveImage from '../../assets/images/oasis/elephant-wave.webp';
+import meerkatWaveImage from '../../assets/images/oasis/meerkat-wave.webp';
+import OasisCharacter from '../../components/oasis/OasisCharacter';
 
 const MESSAGES = {
   empty: '아직 시작한 원정이 없어요.',
@@ -97,14 +102,24 @@ export default function OasisPage() {
   const goToTeamCreate = () => navigate(TEAM_CREATE_PATH);
   const goToTeamSpace = () => navigate(TEAM_SPACE_PATH);
 
-  const [state, setState] = useState<OasisState>({ status: 'loading' });
+  // B02에서 팀을 나오고 왔으면 서버를 기다리지 않고 바로 D01-2(팀 없음)를 보여준다.
+  const location = useLocation();
+  const [leftTeam] = useState(() => !!(location.state as OasisLocationState | null)?.leftTeam);
+
+  const [state, setState] = useState<OasisState>(leftTeam ? { status: 'noTeam' } : { status: 'loading' });
   const [reloadKey, setReloadKey] = useState(0);
   const retry = () => {
     setState({ status: 'loading' });
     setReloadKey((key) => key + 1);
   };
 
+  // 안내용 state는 한 번만 쓴다. 새로고침 · 뒤로가기로 다시 오면 서버 정보대로 보이도록 기록의 state를 비운다.
   useEffect(() => {
+    if (location.state) navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [location, navigate]);
+
+  useEffect(() => {
+    if (leftTeam && reloadKey === 0) return; // 팀을 나온 직후엔 불러오지 않는다
     let ignore = false; // 화면을 떠난 뒤 도착한 응답은 무시
     fetchOasisHome()
       .then((home) => {
@@ -116,7 +131,7 @@ export default function OasisPage() {
     return () => {
       ignore = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, leftTeam]);
 
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -141,9 +156,33 @@ export default function OasisPage() {
         <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor }}>
           <MapImage src={map.image} alt="" style={{ height: map.height }} />
 
-          <Character src={elephantImage} alt="" style={map.home.elephant} />
-          <Character src={meerkatImage} alt="" style={map.home.meerkat} />
-          <Character src={lionImage} alt="" style={map.home.lion} />
+          {/* 흔들기 성격: 코끼리는 느리고 크게, 미어캣은 빠르게 갸웃, 사자는 아주 살짝 */}
+          <OasisCharacter
+            name="코끼리"
+            image={elephantImage}
+            jumpImage={elephantWaveImage}
+            style={map.home.elephant}
+            swayAngle={3}
+            swayDuration={5}
+          />
+          <OasisCharacter
+            name="미어캣"
+            image={meerkatImage}
+            jumpImage={meerkatWaveImage}
+            style={map.home.meerkat}
+            idleDelay={-0.9}
+            swayAngle={3}
+            swayDuration={2.2}
+          />
+          <OasisCharacter
+            name="사자"
+            image={lionImage}
+            jumpImage={lionWaveImage}
+            style={map.home.lion}
+            idleDelay={-1.7}
+            swayAngle={1.2}
+            swayDuration={4.5}
+          />
 
          
           {visibleExpeditions
@@ -259,13 +298,6 @@ const MapContent = styled.div`
 const MapImage = styled.img`
   display: block;
   width: ${MAP_WIDTH}px;
-  pointer-events: none;
-  user-select: none;
-`;
-
-const Character = styled.img`
-  position: absolute;
-  display: block;
   pointer-events: none;
   user-select: none;
 `;

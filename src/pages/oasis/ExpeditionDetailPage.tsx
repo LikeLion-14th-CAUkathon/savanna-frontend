@@ -11,8 +11,7 @@ import type { DetailTabId } from '../../components/oasis/detail/DetailTabs';
 import Section from '../../components/oasis/detail/Section';
 import ConditionCheck from '../../components/oasis/detail/ConditionCheck';
 import ResponseStatus from '../../components/oasis/detail/ResponseStatus';
-import StageProgress from '../../components/oasis/detail/StageProgress';
-import NoticeList from '../../components/oasis/detail/NoticeList';
+import TeamPrepCard from '../../components/oasis/detail/TeamPrepCard';
 import SubmitChecklist from '../../components/oasis/detail/SubmitChecklist';
 import StageSelectSheet from '../../components/oasis/detail/StageSelectSheet';
 import SubmitConfirmSheet from '../../components/oasis/detail/SubmitConfirmSheet';
@@ -261,21 +260,20 @@ export default function ExpeditionDetailPage() {
             <Section title="제안과 응답 현황">
               <ResponseStatus responses={detail.responses} />
             </Section>
-            {(detail.myResponse?.status === 'PENDING' ||
-              detail.myResponse?.status === 'NONE' ||
-              detail.myResponse?.status === 'RESTING') && (
+            {/* 제안자는 응답할 수 없어서 버튼 없음 */}
+            {detail.myResponse && detail.myResponse.status !== 'SENDER' && (
               <ResponseButtons status={detail.myResponse.status} isSaving={isResponding} onRespond={respond} />
             )}
           </>
         ) : (
           <>
             <EditButton onClick={goToScheduleEdit}>일정 & 준비사항 편집</EditButton>
-            <Section title="팀 준비 일정 · 목표일" actionLabel="변경" onAction={() => setSheet({ type: 'stage' })}>
-              <StageProgress currentStage={detail.stage} targets={detail.stageTargets} />
-            </Section>
-            <Section title="공지">
-              <NoticeList notices={detail.notices} />
-            </Section>
+            <TeamPrepCard
+              currentStage={detail.stage}
+              targets={detail.stageTargets}
+              notices={detail.notices}
+              onChangeStage={() => setSheet({ type: 'stage' })}
+            />
             <Section title="제출 체크리스트">
               <SubmitChecklist
                 items={detail.checklist}

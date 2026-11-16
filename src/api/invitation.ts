@@ -38,6 +38,12 @@ export interface InvitationCurrentResponse {
   inviteUrl: string; // 그대로 복사 · 공유하는 초대 주소
 }
 
+/** 초대 미리보기의 현재 팀원 (참여 현황 프로필 표시용) */
+export interface InvitationPreviewMember {
+  name: string;
+  characterId: number | null; // 선택 캐릭터 번호(1~9). 미설정은 null
+}
+
 /** 초대 미리보기 */
 export interface InvitationPreviewResponse {
   teamId: number;
@@ -47,6 +53,7 @@ export interface InvitationPreviewResponse {
   currentMemberCount: number; // 현재 팀원 수
   expectedMemberCount: number; // 합류 후 팀원 수 (current + 1)
   expiresAt: string | null; // date-time. 영구 링크면 null
+  members?: InvitationPreviewMember[]; // 백엔드 추가 예정. 없으면 팀원 프로필 없이 표시
 }
 
 /** 팀 합류 결과 */

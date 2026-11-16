@@ -47,11 +47,39 @@ export default function ExpeditionSign({
 
 const SET_SIZE = 217;
 
+// 표지판 버튼에 반응하면 웅덩이·배지·칩이 한 세트로 함께 움직인다.
 const Wrapper = styled.div`
   position: absolute;
   width: ${SET_SIZE}px;
   height: ${SET_SIZE}px;
   pointer-events: none;
+  transform-origin: 50% 70%; /* 웅덩이 쪽을 기준으로 눌려 보이게 */
+  transition: transform 0.2s ease;
+
+  & > img {
+    transition: filter 0.2s ease;
+  }
+
+  /* 마우스가 있는 기기: 표지판에 올리면 그림 모양대로 그림자가 생긴다. */
+  @media (hover: hover) {
+    &:has(> button:hover) > img {
+      filter: drop-shadow(0 6px 6px rgba(59, 42, 22, 0.28));
+    }
+  }
+
+  /* 움직임 줄이기 설정이 아닐 때만 위치·크기를 바꾼다. */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:has(> button:hover) {
+      transform: translateY(-4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* 누르는 순간 살짝 눌린다. 폰에서는 이 효과만 보인다. */
+    &:has(> button:active) {
+      transform: scale(0.97);
+    }
+  }
 `;
 
 const PondImage = styled.img`
@@ -85,6 +113,7 @@ const Board = styled.button`
   background: transparent;
   cursor: pointer;
   pointer-events: auto;
+  -webkit-tap-highlight-color: transparent; /* 폰 탭 시 파란 사각형 대신 눌림 효과만 보이게 */
 
   &:focus-visible {
     outline: 2px solid var(--color-orange);

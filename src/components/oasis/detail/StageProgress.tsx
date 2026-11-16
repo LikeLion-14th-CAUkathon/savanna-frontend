@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { Card } from './detailStyles';
 import stageLionIcon from '../../../assets/icons/expedition-detail/stage-lion.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../../types/oasis';
 import type { ExpeditionStage } from '../../../types/oasis';
@@ -13,13 +12,13 @@ interface StageProgressProps {
   targets: StageTarget[];
 }
 
-// 일정·제출 준비 탭 · 팀 준비 단계별 목표일과 진행 표시 (현재 단계에 사자)
+// 일정·제출 준비 탭 · 팀 준비 단계별 목표일과 진행 표시 (현재 단계에 사자). 팀 준비 카드 안에 들어감
 export default function StageProgress({ currentStage, targets }: StageProgressProps) {
   const currentIndex = STAGE_ORDER.indexOf(currentStage);
   const targetDateOf = (stage: ExpeditionStage) => targets.find((target) => target.stage === stage)?.targetDate;
 
   return (
-    <Card>
+    <div>
       <Track aria-hidden="true">
         <Rail />
         <Elapsed style={{ width: `${(currentIndex / STAGE_ORDER.length) * 100}%` }} />
@@ -46,14 +45,14 @@ export default function StageProgress({ currentStage, targets }: StageProgressPr
           );
         })}
       </Labels>
-    </Card>
+    </div>
   );
 }
 
 const Track = styled.div`
   position: relative;
   height: 32px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 `;
 
 // 첫 단계 가운데부터 마지막 단계 가운데까지

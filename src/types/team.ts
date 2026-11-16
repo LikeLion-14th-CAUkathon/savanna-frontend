@@ -1,3 +1,9 @@
+// B02 팀 공간에서 팀을 나간 뒤 D01 오아시스로 이동할 때 넘기는 값 (라우터 state)
+// D01은 이 값이 있으면 서버 응답을 기다리지 않고 D01-2(팀 없음 · 팀 만들기)를 보여준다.
+export interface OasisLocationState {
+  leftTeam?: boolean;
+}
+
 // B01 팀 생성 · B02 팀 정보 수정 → B02 팀 공간으로 이동할 때 넘기는 값 (라우터 state)
 // 팀 정보 · 사진은 B02가 teamId로 서버에서 다시 불러온다.
 export interface TeamSpaceLocationState {

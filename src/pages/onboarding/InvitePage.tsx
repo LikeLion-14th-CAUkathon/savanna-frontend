@@ -8,6 +8,7 @@ import type { InvitationPreviewResponse } from '../../api/invitation';
 import { getMyInfo } from '../../api/user';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
+import Toast from '../../components/toast/Toast';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
 import { characters } from '../../components/onboarding/profileOptions';
 import { toCharacterId } from '../../utils/character';
@@ -78,6 +79,8 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
   const [message, setMessage] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [alreadyInTeam, setAlreadyInTeam] = useState(false);
+  // 토스트가 사라지면 안내 문구를 비운다. Toast가 이 함수를 타이머에 쓰므로 고정해 둔다.
+  const closeToast = useCallback(() => setMessage(''), []);
   const joinInProgress = useRef(false);
   const autoJoinStarted = useRef(false);
   const autoJoin = (location.state as { autoJoin?: boolean } | null)?.autoJoin === true;
@@ -218,8 +221,14 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
             />
           </>
         )}
-        {message && <Message role={alreadyInTeam ? 'alert' : 'status'}>{message}</Message>}
       </Content>
+      {message && (
+        <ToastArea>
+          <Toast variant="error" onClose={closeToast}>
+            {message}
+          </Toast>
+        </ToastArea>
+      )}
       <Footer>
         {alreadyInTeam ? (
           <JoinButton onClick={() => navigate('/team', { replace: true })}>내 팀으로 가기</JoinButton>
@@ -372,6 +381,22 @@ const Footer = styled.footer`
   padding: 12px 24px 34px;
   border-top: 1px solid #e7e5e0;
   background: #fafaf8;
+`;
+
+// 합류 실패 안내 토스트: 하단 버튼 영역(98px) 위 16px에 띄운다.
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: 114px;
+  left: 50%;
+  z-index: 200;
+  width: calc(100% - 48px);
+  max-width: 354px;
+  transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
 `;
 
 // 공통 버튼의 너비만 확장

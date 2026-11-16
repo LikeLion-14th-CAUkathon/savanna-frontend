@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import StatusPill from '../detail/StatusPill';
 import type { PillTone } from '../detail/StatusPill';
+import CalendarSheet from './CalendarSheet';
 import { EXPEDITION_STAGE_LABEL } from '../../../types/oasis';
 import type { ExpeditionStage } from '../../../types/oasis';
 import type { StageTarget } from '../../../types/expedition';
@@ -18,65 +19,72 @@ const STATE_PILL: Record<'done' | 'current' | 'todo', { label: string; tone: Pil
 interface TargetDateListProps {
   currentStage: ExpeditionStage;
   targets: StageTarget[];
+  deadline: string; // 접수 마감 (ISO 8601). 목표일은 이 날까지만 고를 수 있음
   onChange: (stage: ExpeditionStage, targetDate: string | null) => void;
 }
 
-// D03 · 팀 준비 단계별 목표일 입력
-export default function TargetDateList({ currentStage, targets, onChange }: TargetDateListProps) {
+// D03 · 팀 준비 단계별 목표일 입력 (날짜 칸을 누르면 달력이 열림)
+export default function TargetDateList({ currentStage, targets, deadline, onChange }: TargetDateListProps) {
   const currentIndex = STAGE_ORDER.indexOf(currentStage);
+  const [openStage, setOpenStage] = useState<ExpeditionStage | null>(null);
 
-  return (
-    <List>
-      {STAGE_ORDER.map((stage, index) => {
-        const state = index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'todo';
-        const targetDate = targets.find((target) => target.stage === stage)?.targetDate ?? null;
-        return (
-          <Row key={stage}>
-            <StageName>{EXPEDITION_STAGE_LABEL[stage]}</StageName>
-            <StatusPill tone={STATE_PILL[state].tone}>{STATE_PILL[state].label}</StatusPill>
-            <DateField
-              label={`${EXPEDITION_STAGE_LABEL[stage]} 목표일`}
-              value={targetDate}
-              highlight={state === 'current'}
-              onChange={(value) => onChange(stage, value)}
-            />
-          </Row>
-        );
-      })}
-    </List>
-  );
-}
+  // 달력은 한국 날짜 'YYYY-MM-DD'로 다룸
+  const dateKeyOf = (stage: ExpeditionStage) => {
+    const iso = targets.find((target) => target.stage === stage)?.targetDate;
+    return iso ? toDateInputValue(iso) : null;
+  };
+  const deadlineKey = toDateInputValue(deadline);
+  const [todayKey] = useState(() => toDateInputValue(new Date().toISOString())); // 화면을 열 때 한 번만 계산
 
-interface DateFieldProps {
-  label: string;
-  value: string | null;
-  highlight: boolean;
-  onChange: (value: string | null) => void;
-}
-
-// 화면에는 '11.01'로 보이고, 누르면 기기의 날짜 선택기가 열림
-function DateField({ label, value, highlight, onChange }: DateFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const openPicker = () => {
-    try {
-      inputRef.current?.showPicker();
-    } catch {
-      inputRef.current?.focus(); // showPicker를 지원하지 않는 브라우저
-    }
+  // 서버가 킥오프 ≤ 초안 ≤ 검토 ≤ 제출 ≤ 접수 마감 순서만 저장하므로, 앞뒤 단계 목표일 사이만 고르게 함
+  const rangeOf = (stage: ExpeditionStage) => {
+    const index = STAGE_ORDER.indexOf(stage);
+    const before = STAGE_ORDER.slice(0, index).map(dateKeyOf).filter((key) => key !== null);
+    const after = STAGE_ORDER.slice(index + 1).map(dateKeyOf).filter((key) => key !== null);
+    return {
+      minDate: before.length > 0 ? before[before.length - 1] : null,
+      maxDate: after.length > 0 && after[0] < deadlineKey ? after[0] : deadlineKey,
+    };
   };
 
   return (
-    <FieldBox $highlight={highlight} onClick={openPicker}>
-      <FieldText $empty={!value}>{value ? formatMonthDay(value) : '날짜 선택'}</FieldText>
-      <HiddenDateInput
-        ref={inputRef}
-        type="date"
-        aria-label={label}
-        value={value ? toDateInputValue(value) : ''}
-        onChange={(event) => onChange(event.target.value ? fromDateInputValue(event.target.value) : null)}
-      />
-    </FieldBox>
+    <>
+      <List>
+        {STAGE_ORDER.map((stage, index) => {
+          const state = index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'todo';
+          const targetDate = targets.find((target) => target.stage === stage)?.targetDate ?? null;
+          return (
+            <Row key={stage}>
+              <StageName>{EXPEDITION_STAGE_LABEL[stage]}</StageName>
+              <StatusPill tone={STATE_PILL[state].tone}>{STATE_PILL[state].label}</StatusPill>
+              <FieldButton
+                type="button"
+                aria-label={`${EXPEDITION_STAGE_LABEL[stage]} 목표일${targetDate ? `, ${formatMonthDay(targetDate)}` : ''}`}
+                $highlight={state === 'current'}
+                onClick={() => setOpenStage(stage)}
+              >
+                <FieldText $empty={!targetDate}>{targetDate ? formatMonthDay(targetDate) : '날짜 선택'}</FieldText>
+              </FieldButton>
+            </Row>
+          );
+        })}
+      </List>
+
+      {openStage && (
+        <CalendarSheet
+          title={`${EXPEDITION_STAGE_LABEL[openStage]} 목표일`}
+          value={dateKeyOf(openStage)}
+          today={todayKey}
+          deadline={deadlineKey}
+          {...rangeOf(openStage)}
+          onSelect={(key) => {
+            onChange(openStage, fromDateInputValue(key));
+            setOpenStage(null);
+          }}
+          onClose={() => setOpenStage(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -110,8 +118,7 @@ const StageName = styled.span`
   font-weight: 700;
 `;
 
-const FieldBox = styled.div<{ $highlight: boolean }>`
-  position: relative;
+const FieldButton = styled.button<{ $highlight: boolean }>`
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -122,9 +129,11 @@ const FieldBox = styled.div<{ $highlight: boolean }>`
   border: 1.5px solid ${({ $highlight }) => ($highlight ? 'var(--color-amber)' : 'var(--color-border)')};
   border-radius: 12px;
   background: #ffffff;
+  font-family: 'Pretendard', sans-serif;
   cursor: pointer;
 
-  &:focus-within {
+  &:focus-visible {
+    outline: none;
     border-color: var(--color-orange);
   }
 `;
@@ -132,14 +141,4 @@ const FieldBox = styled.div<{ $highlight: boolean }>`
 const FieldText = styled.span<{ $empty: boolean }>`
   color: ${({ $empty }) => ($empty ? 'var(--color-text-tertiary)' : 'var(--color-ink)')};
   font-size: 15px;
-`;
-
-// 실제 날짜 입력칸은 투명하게 상자 위에 덮어둠 (키보드·화면 낭독기로도 조작 가능)
-const HiddenDateInput = styled.input`
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
 `;

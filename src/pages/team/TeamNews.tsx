@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
 import TabBar from '../../components/layout/TabBar';
 import Button from '../../components/common/Button';
@@ -24,7 +24,11 @@ type LoadState = 'loading' | 'success' | 'error';
 
 type Answer = Exclude<ProposalStatus, 'PENDING'>;
 
-const RESPOND_FAILED = '응답을 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
+// 받은 제안 카드 전환 시간 (앞 카드 사라짐 · 다음 카드 올라옴)
+const CARD_LEAVE_MS = 260;
+const CARD_ENTER_MS = 380;
+
+const RESPOND_FAILED ='응답을 보내지 못했어요. 잠시 후 다시 시도해 주세요.';
 const RESPOND_SUCCESS: Record<Answer, string> = {
   JOINED: '합류 응답을 보냈어요.',
   DECLINED: '쉬어가기 응답을 보냈어요.',
@@ -45,8 +49,16 @@ export default function TeamNews() {
   // 응답은 제안마다 한 번만 보낼 수 있어 미응답 제안만 한 장씩 보여준다.
   const pendingProposals = receivedProposals.filter((proposal) => proposal.status === 'PENDING');
   const currentProposal = pendingProposals[0];
-  // 응답을 보내는 중인 제안. 저장되기 전 버튼을 다시 눌러 중복 응답하지 않도록 잠근다.
+  // 응답을 보내는 중인 제안. 저장 · 카드 전환이 끝나기 전에 다시 눌러 중복 응답하지 않도록 잠근다.
   const [respondingId, setRespondingId] = useState<number | null>(null);
+
+  // ===== 카드 전환 =====
+  // 응답이 저장되면 앞 카드를 사라지게 한 뒤(leavingId) 다음 카드를 아래에서 올라오게 한다.
+  // 처음 화면을 열 때는 올라오는 효과 없이 바로 보여준다(hasSwitched).
+  const [leavingId, setLeavingId] = useState<number | null>(null);
+  const [hasSwitched, setHasSwitched] = useState(false);
+  const switchTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(switchTimer.current), []);
 
   // id: 같은 문구가 연달아 나도 토스트를 새로 띄운다.
   const [toast, setToast] = useState<{
@@ -107,23 +119,38 @@ export default function TeamNews() {
       .catch(() => markedSentIds.current.delete(selectedSent.proposalId));
   }, [selectedSent]);
 
-  // 서버에 응답을 보내고, 저장되면 그 제안을 응답 완료로 바꿔 다음 미응답 제안이 뜨게 한다.
+  // 서버에 응답을 보내고, 저장되면 앞 카드를 사라지게 한 뒤 그 제안을 응답 완료로 바꿔 다음 미응답 제안이 뜨게 한다.
+  // 전환이 끝날 때까지 respondingId를 유지해 애니메이션 중 클릭은 무시한다.
   const respond = (proposalRecipientId: number, status: Answer) => {
     if (respondingId !== null) return;
     setRespondingId(proposalRecipientId);
     sendResponse(proposalRecipientId, status)
       .then((savedStatus) => {
-        setReceivedProposals((prev) =>
-          prev.map((proposal) =>
-            proposal.proposalRecipientId === proposalRecipientId
-              ? { ...proposal, status: savedStatus }
-              : proposal,
-          ),
-        );
-        if (savedStatus !== 'PENDING') showToast(RESPOND_SUCCESS[savedStatus], 'success');
+        const applySaved = () => {
+          setReceivedProposals((prev) =>
+            prev.map((proposal) =>
+              proposal.proposalRecipientId === proposalRecipientId
+                ? { ...proposal, status: savedStatus }
+                : proposal,
+            ),
+          );
+          setLeavingId(null);
+          setRespondingId(null);
+        };
+        if (savedStatus === 'PENDING') {
+          applySaved();
+          return;
+        }
+        showToast(RESPOND_SUCCESS[savedStatus], 'success');
+        setLeavingId(proposalRecipientId);
+        setHasSwitched(true);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        switchTimer.current = window.setTimeout(applySaved, reduceMotion ? 0 : CARD_LEAVE_MS);
       })
-      .catch((error: unknown) => showToast(getApiErrorMessage(error, RESPOND_FAILED), 'error'))
-      .finally(() => setRespondingId(null));
+      .catch((error: unknown) => {
+        showToast(getApiErrorMessage(error, RESPOND_FAILED), 'error');
+        setRespondingId(null);
+      });
   };
 
   const openAnnouncement = (announcementId: number) => navigate(`/contest/${announcementId}`);
@@ -158,19 +185,29 @@ export default function TeamNews() {
               </RemainingCount>
             )}
           </SectionHeader>
-          {currentProposal ? (
-            <ReceivedProposalCard
-              key={currentProposal.proposalRecipientId}
-              proposal={currentProposal}
-              isResponding={respondingId === currentProposal.proposalRecipientId}
-              onRespond={(status) => respond(currentProposal.proposalRecipientId, status)}
-              onOpenAnnouncement={() => openAnnouncement(currentProposal.announcementId)}
-            />
-          ) : (
-            <EmptyCard>
-              {receivedProposals.length > 0 ? '응답할 제안이 없어요.' : '아직 받은 제안이 없어요.'}
-            </EmptyCard>
-          )}
+          <CardMotion
+            key={currentProposal?.proposalRecipientId ?? 'empty'}
+            $motion={
+              currentProposal && leavingId === currentProposal.proposalRecipientId
+                ? 'leave'
+                : hasSwitched
+                  ? 'enter'
+                  : 'none'
+            }
+          >
+            {currentProposal ? (
+              <ReceivedProposalCard
+                proposal={currentProposal}
+                isResponding={respondingId === currentProposal.proposalRecipientId}
+                onRespond={(status) => respond(currentProposal.proposalRecipientId, status)}
+                onOpenAnnouncement={() => openAnnouncement(currentProposal.announcementId)}
+              />
+            ) : (
+              <EmptyCard>
+                {receivedProposals.length > 0 ? '응답할 제안이 없어요.' : '아직 받은 제안이 없어요.'}
+              </EmptyCard>
+            )}
+          </CardMotion>
         </Section>
 
         <Section>
@@ -211,6 +248,54 @@ export default function TeamNews() {
     </Page>
   );
 }
+
+// ===== 받은 제안 카드 전환 =====
+
+// 앞 카드: 살짝 위로 뜨며 작아지고 흐려진다.
+const cardLeave = keyframes`
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+`;
+
+// 다음 카드: 뒤에 있던 카드가 아래에서 앞으로 올라온다.
+const cardEnter = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
+
+// leave 중에는 클릭을 받지 않는다. 동작 줄이기 설정이면 효과 없이 바로 바꾼다.
+const CardMotion = styled.div<{ $motion: 'enter' | 'leave' | 'none' }>`
+  transform-origin: center top;
+
+  ${({ $motion }) =>
+    $motion === 'leave' &&
+    css`
+      animation: ${cardLeave} ${CARD_LEAVE_MS}ms ease-in forwards;
+      pointer-events: none;
+    `}
+
+  ${({ $motion }) =>
+    $motion === 'enter' &&
+    css`
+      animation: ${cardEnter} ${CARD_ENTER_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    `}
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+`;
 
 // 불러오는 중 · 실패 안내. 탭바를 아래에 두도록 남은 높이를 채운다.
 const StatusBox = styled.div`

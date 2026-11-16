@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { isAxiosError } from 'axios';
 import styled from 'styled-components';
 import AppBar from '../../components/layout/AppBar';
@@ -22,9 +22,21 @@ const getCreateErrorMessage = (error: unknown) =>
     ? ONBOARDING_REQUIRED
     : getApiErrorMessage(error, CREATE_FAILED);
 
+// 만들지 않고 들어온 화면(D01-2 오아시스 · B02-3 팀 공간 등)으로 돌아간다.
+// 이전 기록이 없으면(주소로 바로 들어옴) 팀 공간으로
+const useGoBack = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/team', { replace: true });
+  };
+};
+
 // B01 팀 생성. 한 사람은 한 팀에만 속하므로, 이미 팀이 있으면 폼 대신 B02 팀 공간으로 보낸다.
 export default function TeamCreatePage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -48,7 +60,7 @@ export default function TeamCreatePage() {
   if (isChecking) {
     return (
       <Page>
-        <AppBar title="팀 생성" />
+        <AppBar title="팀 생성" onBack={goBack} />
         <CheckingMessage role="status">잠시만 기다려 주세요.</CheckingMessage>
       </Page>
     );
@@ -59,6 +71,7 @@ export default function TeamCreatePage() {
 
 function TeamCreateForm() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
 
   const [form, setForm] = useState<TeamForm>(EMPTY_TEAM_FORM);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -119,7 +132,7 @@ function TeamCreateForm() {
 
   return (
     <Page>
-      <AppBar title="팀 생성" />
+      <AppBar title="팀 생성" onBack={goBack} />
 
       <Content>
         <TeamPhotoPicker photo={photo} onChange={changePhoto} />

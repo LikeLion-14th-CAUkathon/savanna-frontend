@@ -20,6 +20,9 @@ import {
 } from '../../types/contest';
 import sparkIcon from '../../assets/icons/contest-search/spark.svg';
 import sortIcon from '../../assets/icons/contest-search/sort.svg';
+import lionFrame1 from '../../assets/images/loading/lion-loading1.webp';
+import lionFrame2 from '../../assets/images/loading/lion-loading2.webp';
+import lionFrame3 from '../../assets/images/loading/lion-loading3.webp';
 
 type LoadState = 'loading' | 'success' | 'error';
 
@@ -144,18 +147,21 @@ export default function ContestSearchPage() {
                       <Icon src={sparkIcon} size={20} offsetX={0.09} offsetY={-1.17} />
                       <SectionTitle>우리 팀 AI 추천</SectionTitle>
                     </SectionTitleRow>
-                    <SectionDescription>
-                      {isRecommendLoading
-                        ? '우리 팀에 맞는 공고를 고르고 있어요.'
-                        : `팀 프로젝트·분야와 잘 맞는 공고 ${recommended.length}개를 골랐어요.`}
-                    </SectionDescription>
+                    {!isRecommendLoading && (
+                      <SectionDescription>
+                        팀 프로젝트·분야와 잘 맞는 공고 {recommended.length}개를 골랐어요.
+                      </SectionDescription>
+                    )}
                   </HeadTexts>
                   {isRecommendLoading && (
-                    <LoadingDots role="status" aria-label="AI 추천을 불러오는 중">
-                      <span />
-                      <span />
-                      <span />
-                    </LoadingDots>
+                    <LoadingCard role="status">
+                      <LionFrames aria-hidden="true">
+                        {LION_FRAMES.map((frame) => (
+                          <img key={frame} src={frame} alt="" />
+                        ))}
+                      </LionFrames>
+                      <LoadingText>우리 팀 프로젝트에 맞는 공고를 찾고 있어요.</LoadingText>
+                    </LoadingCard>
                   )}
                 </Section>
                 {!isRecommendLoading && (
@@ -400,48 +406,78 @@ const Sort = styled.p`
   font-weight: 500;
 `;
 
-// AI 추천 로딩: 점 3개가 차례로 통통 튄다.
-const dotBounce = keyframes`
-  0%, 80%, 100% {
-    opacity: 0.3;
+// ===== AI 추천 로딩: 사자 그림 3장을 차례로 바꿔 보여 주며 통통 튄다 =====
+
+// 보여 주는 순서: 1 → 3 → 2
+const LION_FRAMES = [lionFrame1, lionFrame3, lionFrame2];
+const FRAME_SECONDS = 0.8; // 그림 한 장이 보이는 시간
+const CYCLE_SECONDS = FRAME_SECONDS * LION_FRAMES.length;
+
+// 한 바퀴 중 자기 차례(1/3)에만 보인다.
+const frameShow = keyframes`
+  0%, ${100 / LION_FRAMES.length - 0.01}% {
+    opacity: 1;
+  }
+  ${100 / LION_FRAMES.length}%, 100% {
+    opacity: 0;
+  }
+`;
+
+// 2번 그림(lion-loading2)이 보이는 동안, 즉 한 바퀴의 마지막 1/3에만 한 번 통통 튄다.
+const lionBounce = keyframes`
+  0%, 66.66%, 100% {
     transform: translateY(0);
   }
-  40% {
-    opacity: 1;
+  83.33% {
     transform: translateY(-6px);
   }
 `;
 
-const LoadingDots = styled.div`
+// 추천 카드와 비슷한 높이로 잡아, 로딩이 끝나도 아래 목록이 크게 밀리지 않게 한다.
+const LoadingCard = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 24px 0;
+  gap: 12px;
+  min-height: 200px;
+  padding: 24px 16px;
+  border: 2px solid #e7e5e0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 3px 0 #e2e0da;
+`;
 
-  span {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--color-amber);
-    animation: ${dotBounce} 1.2s ease-in-out infinite;
+// 3장을 같은 자리에 겹쳐 두고, 시작 시점을 한 장씩 어긋나게 해 차례로 보이게 한다.
+const LionFrames = styled.div`
+  position: relative;
+  width: 72px;
+  height: 72px;
+  animation: ${lionBounce} ${CYCLE_SECONDS}s ease-in-out infinite;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    animation: ${frameShow} ${CYCLE_SECONDS}s linear infinite;
   }
 
-  span:nth-child(2) {
-    animation-delay: 0.15s;
-  }
+  ${LION_FRAMES.map(
+    (_, index) => `
+      img:nth-child(${index + 1}) {
+        animation-delay: ${index * FRAME_SECONDS - CYCLE_SECONDS}s;
+      }
+    `,
+  ).join('')}
+`;
 
-  span:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-
-  /* 움직임 줄이기 설정이면 튀지 않고 깜빡이기만 한다. */
-  @media (prefers-reduced-motion: reduce) {
-    span {
-      animation-name: none;
-      opacity: 0.6;
-    }
-  }
+const LoadingText = styled.p`
+  color: #5b5b5b;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
 `;
 
 const RecommendList = styled.div`

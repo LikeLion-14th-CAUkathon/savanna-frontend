@@ -42,7 +42,7 @@ const Box = styled.div<{ $isClosing: boolean }>`
   min-height: 48px;
   padding: 12px 16px;
   border-radius: 12px;
-  background-color: #3b2a16;
+  background-color: var(--color-ink); /* #1e1e1e: 모든 토스트 공통 색 */
   color: #ffffff;
   text-align: left;
   opacity: ${({ $isClosing }) => ($isClosing ? 0 : 1)};

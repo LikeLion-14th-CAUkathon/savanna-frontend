@@ -40,7 +40,8 @@ export default function StageProgress({ currentStage, targets }: StageProgressPr
           return (
             <Label key={stage} $state={state} aria-current={state === 'current' ? 'step' : undefined}>
               <StageName>{EXPEDITION_STAGE_LABEL[stage]}</StageName>
-              <StageDate>{targetDate ? formatMonthDay(targetDate) : '-'}</StageDate>
+              {/* 목표일이 없으면 빈칸 (줄 높이는 유지해서 다른 단계와 맞춤) */}
+              <StageDate>{targetDate ? formatMonthDay(targetDate) : ' '}</StageDate>
             </Label>
           );
         })}

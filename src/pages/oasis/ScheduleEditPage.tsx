@@ -16,9 +16,10 @@ import {
   saveStageTargets,
   updateNotice,
 } from '../../components/oasis/oasisData';
+import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import type { ExpeditionStage } from '../../types/oasis';
 import type { ExpeditionNotice, ScheduleEditState, StageTarget } from '../../types/expedition';
-import { formatMonthDay } from '../../utils/date';
+import { formatMonthDay, toDateInputValue } from '../../utils/date';
 import { OASIS_PATHS } from '../../routes/oasisPaths';
 
 const MESSAGES = {
@@ -28,6 +29,30 @@ const MESSAGES = {
   emptyNotice: '공지 내용을 입력해 주세요.',
   saved: '일정과 공지를 저장했어요.',
   saveFailed: '저장하지 못했어요. 다시 시도해 주세요.',
+};
+
+const STAGE_ORDER: ExpeditionStage[] = ['KICKOFF', 'DRAFT', 'FINAL_REVIEW', 'SUBMIT'];
+
+/**
+ * 목표일 검사 (서버 규칙: 킥오프 ≤ 초안 작성 ≤ 최종 검토 ≤ 제출 ≤ 접수 마감, 같은 날은 허용)
+ * 문제가 있으면 안내 문구, 없으면 null. 날짜는 한국 날짜 'YYYY-MM-DD'로 비교한다.
+ */
+const findTargetError = (targets: StageTarget[], deadline: string): string | null => {
+  const deadlineKey = toDateInputValue(deadline);
+  let previous: { stage: ExpeditionStage; iso: string; key: string } | null = null;
+
+  for (const stage of STAGE_ORDER) {
+    const iso = targets.find((target) => target.stage === stage)?.targetDate;
+    if (!iso) continue;
+    const key = toDateInputValue(iso);
+
+    if (key > deadlineKey) return `목표일은 접수 마감(${formatMonthDay(deadline)}) 이전이어야 해요.`;
+    if (previous && key < previous.key) {
+      return `${EXPEDITION_STAGE_LABEL[stage]} 목표일은 ${EXPEDITION_STAGE_LABEL[previous.stage]}(${formatMonthDay(previous.iso)}) 이후여야 해요.`;
+    }
+    previous = { stage, iso, key };
+  }
+  return null;
 };
 
 const toEditable = (notices: ExpeditionNotice[]): EditableNotice[] =>
@@ -105,6 +130,13 @@ export default function ScheduleEditPage() {
 
   const handleSave = async () => {
     if (!initial || isSaving) return;
+
+    // 서버가 거절할 목표일(순서 어긋남 · 마감 이후)은 보내지 않고 어디가 문제인지 안내
+    const targetError = findTargetError(targets, initial.deadline);
+    if (targetError) {
+      setToast({ variant: 'error', message: targetError });
+      return;
+    }
 
     // 비어 있는 공지는 저장하지 않고 해당 칸에 안내
     const checked = notices.map((notice) => ({ ...notice, error: notice.content.trim() ? '' : MESSAGES.emptyNotice }));
@@ -189,7 +221,12 @@ export default function ScheduleEditPage() {
         </Section>
 
         <Section title="팀 준비 목표일">
-          <TargetDateList currentStage={initial.stage} targets={targets} onChange={changeTarget} />
+          <TargetDateList
+            currentStage={initial.stage}
+            targets={targets}
+            deadline={initial.deadline}
+            onChange={changeTarget}
+          />
         </Section>
 
         <Section title="공지" actionLabel="+ 공지 추가" onAction={addNotice}>

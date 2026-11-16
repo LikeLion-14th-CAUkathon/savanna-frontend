@@ -2,7 +2,12 @@
 // 서버 응답(src/api/announcement)과 화면 타입(src/types/contest)이 달라서 여기서 맞춘다.
 
 import { isAxiosError } from 'axios';
-import { getAnnouncement, getAnnouncements, getRecommendations } from '../../api/announcement';
+import {
+  getAnnouncement,
+  getAnnouncements,
+  getRecommendations,
+  refreshRecommendations,
+} from '../../api/announcement';
 import type { AnnouncementDetailResponse, AnnouncementResponse } from '../../api/announcement';
 import type { AnnouncementField, AnnouncementStatus, ApplicationMethod } from '../../api/common';
 import { getMyTeams } from '../../api/team';
@@ -86,8 +91,14 @@ export async function fetchRecommendedContests(): Promise<RecommendedContest[]> 
   const team = teams[0];
   if (!team) return [];
 
+  // GET은 저장된 추천만 돌려준다. 아직 만든 적이 없거나(빈 목록)
+  // 팀 정보가 바뀌어 오래된 추천(stale)이면 POST로 AI 추천을 새로 만든다. (화면에 들어올 때 한 번만)
+  let recommendations = await getRecommendations(team.teamId);
+  if (recommendations.length === 0 || recommendations.some((item) => item.stale)) {
+    recommendations = await refreshRecommendations(team.teamId);
+  }
+
   const now = new Date();
-  const recommendations = await getRecommendations(team.teamId);
   return recommendations.flatMap((item) => {
     const status = STATUS_FROM_API[item.status];
     return status ? [{ ...toContest(item, status, now), reason: item.reason }] : [];

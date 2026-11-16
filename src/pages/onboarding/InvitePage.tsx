@@ -246,7 +246,7 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
               value={
                 <Participation>
                   <Avatars>
-                    {team.members?.map((member, index) => {
+                    {team.members?.slice(0, MAX_MEMBER_AVATARS).map((member, index) => {
                       const memberImage = characterImage(member.characterId);
                       return (
                         <MemberAvatar
@@ -512,12 +512,13 @@ const Participation = styled.div`
   min-height: 65px;
 `;
 
+// 인원 안내 글자는 줄어들거나 줄바꿈되지 않고, 남는 너비는 프로필 줄이 쓴다.
 const ParticipationText = styled.div`
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
+  white-space: nowrap;
 `;
 
 const ParticipationTitle = styled.p`
@@ -532,7 +533,11 @@ const ParticipationCount = styled.span`
   color: var(--color-orange);
 `;
 
-// 프로필 동그라미를 조금씩 겹쳐 한 줄로 놓는다.
+// 팀원 프로필은 앞에서부터 4명까지만 보여 준다. (나까지 최대 5개) 전체 인원은 옆 글자로 안내한다.
+const MAX_MEMBER_AVATARS = 4;
+
+// 프로필 동그라미를 겹쳐 한 줄로 놓는다.
+// 3개까지는 Figma대로 10px, 4~5개는 좁은 폰(360px)에서도 글자 자리가 남도록 더 겹친다.
 const Avatars = styled.div`
   display: flex;
   flex-shrink: 0;
@@ -540,6 +545,14 @@ const Avatars = styled.div`
 
   & > * + * {
     margin-left: -10px;
+  }
+
+  &:has(> :nth-child(4)) > * + * {
+    margin-left: -20px;
+  }
+
+  &:has(> :nth-child(5)) > * + * {
+    margin-left: -27px;
   }
 `;
 

@@ -135,6 +135,22 @@ export default function OasisPage() {
 
   const mapRef = useRef<HTMLDivElement>(null);
 
+  // 폰에서는 지도·캐릭터·웅덩이 위치를 화면 너비 비율(화면 너비 ÷ 402)로 함께 키우거나 줄인다.
+  // CSS(tan(atan2(100vw, 402px)))로 계산하면 일부 iOS Safari에서 값이 틀어져 지도가 작게 보여서 JS로 숫자를 구한다.
+  const [mapZoom, setMapZoom] = useState(1);
+  useLayoutEffect(() => {
+    const scroller = mapRef.current;
+    if (!scroller) return;
+    const update = () => {
+      const isPhone = window.matchMedia('(max-width: 480px)').matches;
+      setMapZoom(isPhone && scroller.clientWidth > 0 ? scroller.clientWidth / MAP_WIDTH : 1);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, []);
+
   const data = state.status === 'success' ? state.data : null;
   const expeditions = data ? sortByDeadline(data.expeditions) : [];
   const hasExpedition = expeditions.length > 0;
@@ -148,12 +164,12 @@ export default function OasisPage() {
   useLayoutEffect(() => {
     const scroller = mapRef.current;
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
-  }, [state.status, map]);
+  }, [state.status, map, mapZoom]);
 
   return (
     <Stage aria-busy={state.status === 'loading'} style={{ background: map.skyColor }}>
       <MapScroller ref={mapRef}>
-        <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor }}>
+        <MapContent style={{ paddingBottom: map.bottomSpace, background: map.groundColor, zoom: mapZoom }}>
           <MapImage src={map.image} alt="" style={{ height: map.height }} />
 
           {/* 흔들기 성격: 코끼리는 느리고 크게, 미어캣은 빠르게 갸웃, 사자는 아주 살짝 */}
@@ -288,11 +304,7 @@ const MapContent = styled.div`
   flex-shrink: 0;
   width: ${MAP_WIDTH}px;
   margin: auto auto 0;
-
-  /* 폰에서는 지도·캐릭터·웅덩이 위치를 화면 너비 비율(화면 너비 ÷ 402)로 함께 키우거나 줄인다. */
-  @media (max-width: 480px) {
-    zoom: tan(atan2(100vw, ${MAP_WIDTH}px));
-  }
+  /* 폰 화면 너비에 맞춘 확대 비율(zoom)은 컴포넌트에서 style로 넣는다. */
 `;
 
 const MapImage = styled.img`

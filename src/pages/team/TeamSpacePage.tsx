@@ -22,6 +22,7 @@ import type { OasisLocationState, TeamSpaceLocationState } from '../../types/tea
 import headerImage from '../../assets/images/team/team-space-header.webp';
 import mailIcon from '../../assets/icons/team/team-space/mail.svg';
 import newDotIcon from '../../assets/icons/team/team-space/new-dot.svg';
+import pawIcon from '../../assets/icons/team/team-space/paw.svg';
 
 const TILE_TONES = ['peach', 'mint', 'coral'] as const;
 
@@ -196,7 +197,9 @@ function TeamSpaceContent({ search }: { search: string }) {
         <HeaderBand>
           <Title>팀 공간</Title>
           <Profile>
-            <EmptyAvatar aria-hidden="true">!</EmptyAvatar>
+            <EmptyAvatar aria-hidden="true">
+              <img src={pawIcon} alt="" />
+            </EmptyAvatar>
             <TeamName>아직 소속된 팀이 없어요</TeamName>
             <MemberCount>새 팀을 만들거나 초대 링크로 합류할 수 있어요.</MemberCount>
             <EmptyActions>
@@ -515,7 +518,7 @@ const SectionTitle = styled.h2<{ $disabled?: boolean }>`
 
 // ===== B02-3 · 소속 팀 없음 =====
 
-// 팀 사진 자리. 점선 원 + '!' (장식, 버튼 아님)
+// 팀 사진 자리. 점선 원 + 발자국 아이콘(28) (장식, 버튼 아님)
 const EmptyAvatar = styled.div`
   display: flex;
   align-items: center;
@@ -525,10 +528,6 @@ const EmptyAvatar = styled.div`
   border: 2px dashed var(--color-orange);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
-  color: var(--color-orange);
-  font-family: 'CookieRun', sans-serif;
-  font-size: 28px;
-  line-height: 1.25;
 `;
 
 const EmptyActions = styled.div`

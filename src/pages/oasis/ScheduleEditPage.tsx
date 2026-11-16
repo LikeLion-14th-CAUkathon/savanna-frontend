@@ -25,7 +25,6 @@ import { OASIS_PATHS } from '../../routes/oasisPaths';
 const MESSAGES = {
   loading: '일정 정보를 불러오는 중이에요.',
   error: '일정 정보를 불러오지 못했어요. 다시 시도해 주세요.',
-  guide: "목표일·공지 변경을 '변경 저장'으로 한 번에 저장해요.",
   emptyNotice: '공지 내용을 입력해 주세요.',
   saved: '일정과 공지를 저장했어요.',
   saveFailed: '저장하지 못했어요. 다시 시도해 주세요.',
@@ -94,7 +93,7 @@ export default function ScheduleEditPage() {
       ignore = true;
     };
   }, [id, reloadKey]);
-  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const [noticeDraft, setNoticeDraft] = useState(''); // 맨 아래 '추가' 줄에 입력 중인 공지
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [toast, setToast] = useState<{ variant: 'success' | 'error'; message: string } | null>(null);
@@ -117,10 +116,14 @@ export default function ScheduleEditPage() {
       return prev.map((target) => (target.stage === stage ? { ...target, targetDate } : target));
     });
 
+  const toNewNotice = (content: string): EditableNotice => ({ key: `new-${Date.now()}`, id: null, content, error: '' });
+
+  // 입력한 내용을 목록에 추가 (서버 저장은 '변경 저장'에서 한 번에)
   const addNotice = () => {
-    const key = `new-${Date.now()}`;
-    setNotices((prev) => [...prev, { key, id: null, content: '', error: '' }]);
-    setFocusKey(key);
+    const content = noticeDraft.trim();
+    if (!content) return;
+    setNotices((prev) => [...prev, toNewNotice(content)]);
+    setNoticeDraft('');
   };
 
   const changeNotice = (key: string, content: string) =>
@@ -138,8 +141,13 @@ export default function ScheduleEditPage() {
       return;
     }
 
+    // '추가'를 누르지 않고 저장해도 입력 중인 공지가 사라지지 않게 함께 저장
+    const draft = noticeDraft.trim();
+    const withDraft = draft ? [...notices, toNewNotice(draft)] : notices;
+    setNoticeDraft('');
+
     // 비어 있는 공지는 저장하지 않고 해당 칸에 안내
-    const checked = notices.map((notice) => ({ ...notice, error: notice.content.trim() ? '' : MESSAGES.emptyNotice }));
+    const checked = withDraft.map((notice) => ({ ...notice, error: notice.content.trim() ? '' : MESSAGES.emptyNotice }));
     setNotices(checked);
     if (checked.some((notice) => notice.error)) return;
 
@@ -229,9 +237,15 @@ export default function ScheduleEditPage() {
           />
         </Section>
 
-        <Section title="공지" actionLabel="+ 공지 추가" onAction={addNotice}>
-          <NoticeEditor notices={notices} focusKey={focusKey} onChange={changeNotice} onDelete={deleteNotice} />
-          <GuideText>{MESSAGES.guide}</GuideText>
+        <Section title="공지">
+          <NoticeEditor
+            notices={notices}
+            draft={noticeDraft}
+            onDraftChange={setNoticeDraft}
+            onAdd={addNotice}
+            onChange={changeNotice}
+            onDelete={deleteNotice}
+          />
         </Section>
       </Body>
 
@@ -332,11 +346,6 @@ const OfficialValue = styled.dd`
   font-weight: 700;
 `;
 
-const GuideText = styled.p`
-  color: var(--color-text-tertiary);
-  font-size: 12px;
-  font-weight: 300;
-`;
 
 // 화면 아래에 붙어 있는 저장 버튼 영역
 const BottomBar = styled.div`

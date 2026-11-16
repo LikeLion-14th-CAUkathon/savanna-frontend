@@ -105,10 +105,15 @@ function TeamSpaceContent({ search }: { search: string }) {
   );
 
   // ===== 초대 링크 (팀을 불러온 뒤) =====
+  // B01 팀 생성 직후면 생성 응답의 초대 주소를 그대로 쓰고 따로 불러오지 않는다.
+  // (화면은 주소의 teamId마다 새로 그려지므로 이 주소는 지금 팀의 것이다)
+  const [createdInviteUrl] = useState(
+    () => (location.state as TeamSpaceLocationState | null)?.inviteUrl ?? null,
+  );
   // url이 null이고 failed가 아니면 아직 링크가 없는 것 (팀장이 만들기 전)
   const [invite, setInvite] = useState<{ teamId: number; url: string | null; failed: boolean } | null>(null);
   useEffect(() => {
-    if (teamId === undefined) return;
+    if (teamId === undefined || createdInviteUrl) return;
     let ignore = false;
     fetchInviteUrl(teamId, isLeader)
       .then((url) => {
@@ -120,9 +125,9 @@ function TeamSpaceContent({ search }: { search: string }) {
     return () => {
       ignore = true;
     };
-  }, [teamId, isLeader]);
+  }, [teamId, isLeader, createdInviteUrl]);
   const currentInvite = invite && invite.teamId === teamId ? invite : null;
-  const inviteUrl = currentInvite?.url ?? null;
+  const inviteUrl = createdInviteUrl ?? currentInvite?.url ?? null;
   const invitePlaceholder = !currentInvite
     ? '초대 링크를 불러오고 있어요.'
     : currentInvite.failed

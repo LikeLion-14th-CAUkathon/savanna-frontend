@@ -33,7 +33,8 @@ export async function fetchTeamSpace(search: string): Promise<TeamSpaceData | nu
 
 /**
  * 팀의 현재 초대 링크. 서버가 준 inviteUrl을 그대로 쓴다.
- * 링크가 없으면(404) 팀장은 새로 만들고, 팀원은 null (팀장이 만들 때까지 기다린다)
+ * 지금은 팀을 만들 때 링크가 자동으로 생겨서 보통 바로 받는다. (팀 생성 직후엔 생성 응답의 주소를 써서 이 함수를 부르지 않는다)
+ * 자동 생성 전에 만든 팀이라 링크가 없으면(404) 팀장은 새로 만들고, 팀원은 null
  */
 export async function fetchInviteUrl(teamId: number, isLeader: boolean): Promise<string | null> {
   try {

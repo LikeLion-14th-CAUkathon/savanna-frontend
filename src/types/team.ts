@@ -9,4 +9,6 @@ export interface OasisLocationState {
 export interface TeamSpaceLocationState {
   // 팀 생성 · 정보 저장은 됐지만 사진 업로드만 실패했을 때 B02에서 띄울 안내
   photoError?: string;
+  // 팀 생성 직후 생성 응답의 초대 주소. 있으면 B02가 초대 링크를 따로 불러오지 않는다
+  inviteUrl?: string;
 }

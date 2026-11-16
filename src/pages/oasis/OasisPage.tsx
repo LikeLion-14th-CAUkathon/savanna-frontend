@@ -18,9 +18,9 @@ import longMapImage from '../../assets/images/oasis/oasis-long-map.webp';
 import lionImage from '../../assets/images/oasis/lion.webp';
 import elephantImage from '../../assets/images/oasis/elephant.webp';
 import meerkatImage from '../../assets/images/oasis/meerkat.webp';
-import lionWaveImage from '../../assets/images/oasis/lion-wave.png';
-import elephantWaveImage from '../../assets/images/oasis/elephant-wave.png';
-import meerkatWaveImage from '../../assets/images/oasis/meerkat-wave.png';
+import lionWaveImage from '../../assets/images/oasis/lion-wave.webp';
+import elephantWaveImage from '../../assets/images/oasis/elephant-wave.webp';
+import meerkatWaveImage from '../../assets/images/oasis/meerkat-wave.webp';
 import OasisCharacter from '../../components/oasis/OasisCharacter';
 
 const MESSAGES = {

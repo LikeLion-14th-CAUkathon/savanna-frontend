@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import { getApiErrorMessage } from '../../api/client';
 import { acceptInvitation, previewInvitation } from '../../api/invitation';
 import type { InvitationPreviewResponse } from '../../api/invitation';
+import { getMyTeams } from '../../api/team';
 import { getMyInfo } from '../../api/user';
 import AppBar from '../../components/layout/AppBar';
 import Button from '../../components/common/Button';
@@ -131,8 +132,18 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
     const controller = new AbortController();
 
     previewInvitation(token)
-      .then((invitation) => {
-        if (!controller.signal.aborted) setTeam(invitation);
+      .then(async (invitation) => {
+        // 이미 이 팀의 팀원이면 초대 확인 없이 오아시스로 보낸다.
+        // 내 팀 조회에 실패하면 초대 화면을 그대로 보여 준다. (합류하기에서 409로 다시 안내됨)
+        const myTeams = await getMyTeams().catch(() => []);
+        if (controller.signal.aborted) return;
+        if (myTeams.some((myTeam) => myTeam.teamId === invitation.teamId)) {
+          sessionStorage.removeItem('pendingInvitationUrl');
+          // 뒤로 가기로 초대 화면에 다시 오지 않도록 기록을 바꿔치기한다.
+          navigate('/oasis', { replace: true });
+          return;
+        }
+        setTeam(invitation);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -151,7 +162,7 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
       });
 
     return () => controller.abort();
-  }, [token, retryCount]);
+  }, [token, retryCount, navigate]);
 
   const handleRetry = () => {
     setLoadError(null);

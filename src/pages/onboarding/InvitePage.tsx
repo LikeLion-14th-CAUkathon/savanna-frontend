@@ -11,6 +11,7 @@ import Button from '../../components/common/Button';
 import InviteInfoField from '../../components/onboarding/InviteInfoField';
 import { characters } from '../../components/onboarding/profileOptions';
 import { toCharacterId } from '../../utils/character';
+import headerImage from '../../assets/images/background/invite-header.webp';
 
 // 서버 캐릭터 번호(1~9)에 맞는 동물 이미지. 미설정이면 undefined
 const characterImage = (apiId: number | null) =>
@@ -158,7 +159,21 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
 
   return (
     <Page>
-      <AppBar title="초대 확인 & 팀 합류" onBack={() => navigate(-1)} />
+      <HeaderBand>
+        <HeaderBackground aria-hidden="true">
+          <img src={headerImage} alt="" />
+        </HeaderBackground>
+        <AppBar title="초대 확인" onBack={() => navigate(-1)} />
+        {team ? (
+          <TeamProfile>
+            <TeamAvatar aria-hidden="true">{team.teamName.slice(0, 1)}</TeamAvatar>
+            <TeamName>{team.teamName}</TeamName>
+          </TeamProfile>
+        ) : (
+          // 팀 정보가 없을 때(불러오는 중·조회 실패)는 풍경만 보이도록 자리만 둔다.
+          <HeaderSpacer />
+        )}
+      </HeaderBand>
       <Content>
         {isLoading && <Message role="status">초대 정보를 불러오고 있어요.</Message>}
         {loadError && <Message role="alert">{loadError}</Message>}
@@ -213,8 +228,7 @@ const Page = styled.main`
   max-width: 402px;
   min-height: 100svh;
   margin: 0 auto;
-  padding-top: 58px;
-  background: #fafaf8;
+  background: #ffffff;
   color: #1e1e1e;
   line-height: normal;
 
@@ -241,13 +255,95 @@ const Page = styled.main`
   }
 `;
 
-// 초대 팀 정보 영역
+// 상단 풍경 배경 + 앱바 + 팀 프로필 (Figma A03 header band)
+const HeaderBand = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 58px 0 56px; /* 위: 상태바 자리, 아래: 내용 카드가 32px 겹쳐 올라오는 자리 */
+
+  /* 풍경 위에 앱바가 보이도록 배경을 투명하게 하고, 스크롤 시 고정하지 않는다. */
+  & > header {
+    position: relative;
+    background: transparent;
+  }
+`;
+
+// 노을 풍경 일러스트. 헤더 높이가 달라도 위쪽 기준으로 꽉 채운다.
+const HeaderBackground = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0 0 28px 28px;
+  background: #fff3dc;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+`;
+
+const TeamProfile = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 4px 24px 0;
+`;
+
+// 팀 이름 첫 글자를 보여주는 팀 프로필
+const TeamAvatar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border: 4px solid #ffffff;
+  border-radius: 50%;
+  background: var(--color-amber);
+  box-shadow: 0 4px 0 var(--color-amber-shadow);
+  color: var(--color-ink);
+  font-family: var(--font-concept);
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -0.28px;
+`;
+
+const TeamName = styled.p`
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-ink);
+  font-family: var(--font-concept);
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -0.28px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const HeaderSpacer = styled.div`
+  height: 100px;
+`;
+
+// 초대 팀 정보 영역: 풍경 아래로 32px 겹쳐 올라오는 흰 카드
 const Content = styled.div`
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
-  padding: 8px 24px 26px;
+  gap: 28px;
+  margin-top: -32px;
+  padding: 40px 24px 32px;
+  border-radius: 24px 24px 0 0;
+  background: #ffffff;
+  box-shadow: 0 -5px 11px rgba(59, 42, 22, 0.17);
 `;
 
 // 조회 상태와 합류 안내

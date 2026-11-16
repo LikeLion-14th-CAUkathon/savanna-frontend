@@ -106,7 +106,10 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
   const startAt = new Date(detail.startAt);
   const deadlineAt = new Date(detail.deadlineAt);
   const phase = getContestPhase(startAt, deadlineAt, today);
-  const isClosed = phase === 'closed';
+  // 접수 중일 때만 제안할 수 있다. 접수 예정 · 마감은 버튼을 회색(비활성)으로 두고 빨간 안내로 이유를 알린다.
+  const canPropose = phase === 'open';
+  const blockedNotice =
+    phase === 'closed' ? '접수가 마감된 공고예요.' : phase === 'upcoming' ? '접수 시작 후에 제안할 수 있어요.' : null;
 
   const [isProposalOpen, setIsProposalOpen] = useState(false);
   // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
@@ -125,7 +128,7 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
   };
 
   // 실패하면 시트는 열어 둔 채로 버튼 위에 알린다.
-  // 접수 예정 공고는 서버가 제안을 받지 않으므로 그 이유를 안내한다.
+  // 접수 예정 공고는 버튼이 막혀 있지만, 시트를 연 채 접수 상태가 바뀌는 등 서버가 거절하면 그 이유를 안내한다.
   const handleProposalError = (reason: SendProposalError) => {
     if (reason === 'duplicate') showToast('duplicate');
     else if (reason === 'limit') showToast('limit');
@@ -166,15 +169,14 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
 
         <ApplicationCard application={detail.application} />
 
-        <Notice $danger={isClosed}>
-          {isClosed
-            ? '접수가 마감된 공고예요.'
-            : '참여 제안은 팀원에게 보내는 제안이에요. 실제 지원은 주최 측 사이트에서 진행해 주세요.'}
+        <Notice $danger={!!blockedNotice}>
+          {blockedNotice ??
+            '참여 제안은 팀원에게 보내는 제안이에요. 실제 지원은 주최 측 사이트에서 진행해 주세요.'}
         </Notice>
       </Content>
 
       <BottomBar>
-        <ProposeButton disabled={isClosed} onClick={() => setIsProposalOpen(true)}>
+        <ProposeButton disabled={!canPropose} onClick={() => setIsProposalOpen(true)}>
           참여 제안하기
         </ProposeButton>
       </BottomBar>

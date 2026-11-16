@@ -75,7 +75,8 @@ export interface TeamPhotoResponse {
 export interface TeamLeaveResponse {
   teamId: number;
   userId: number; // 탈퇴한 사람(나)
-  newLeaderUserId: number | null; // 팀장이 탈퇴해 승계됐을 때만 새 팀장 id
+  newLeaderUserId: number | null; // 팀장이 탈퇴해 승계됐을 때만 새 팀장 id. 팀이 삭제되면 null
+  teamDeleted: boolean; // 마지막 팀원이 나가 팀과 팀 관련 정보가 모두 지워졌으면 true
 }
 
 // ===== API =====
@@ -142,10 +143,10 @@ export const uploadTeamPhoto = async (teamId: number, file: File) => {
 
 /**
  * 내 팀 탈퇴 — DELETE /api/v1/teams/{teamId}/members/me
- * - 내 소속만 지우고 팀 · 원정 · 제안 · 응답 기록은 남는다. 탈퇴 후 다른 팀 생성 · 초대 가입 가능
+ * - 팀원이 남으면 내 소속만 지우고 팀 · 원정 · 제안 · 응답 기록은 남는다. 탈퇴 후 다른 팀 생성 · 초대 가입 가능
  * - 팀장이 나가면 가장 먼저 가입한 남은 팀원에게 승계 (newLeaderUserId)
+ * - 마지막 팀원도 나갈 수 있다. 이때 팀 관련 정보를 모두 지우고 200 + teamDeleted: true
  * - 400: 잘못된 팀 ID / 403: 팀 소속 아님 / 404: 팀 없음
- * - 409: 마지막 팀원은 탈퇴 불가 (TEAM_LAST_MEMBER_CANNOT_LEAVE)
  */
 export const leaveTeam = async (teamId: number) => {
   const { data } = await apiClient.delete<ApiResponse<TeamLeaveResponse>>(

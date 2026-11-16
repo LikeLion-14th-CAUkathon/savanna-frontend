@@ -20,26 +20,27 @@ export default function InviteInfoField({ label, value }: InviteInfoFieldProps) 
 const Field = styled.dl`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
 `;
 
-// 정보 항목 제목
+// 정보 항목 제목 (Figma 기능/제목 · 구역 17)
 const Label = styled.dt`
-  font-size: 14px;
+  color: var(--color-ink);
+  font-size: 17px;
   font-weight: 700;
-  line-height: 17px;
+  line-height: normal;
 `;
 
 // 긴 내용은 줄바꿈하고 상자 높이를 늘림
 const Value = styled.dd`
   margin: 0;
-  padding: 16px;
-  border: 1.5px solid #e7e5e0;
-  border-radius: 12px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 16px;
   background: #ffffff;
   font-size: 15px;
   font-weight: 400;
-  line-height: 18px;
+  line-height: normal;
   overflow-wrap: anywhere;
 `;

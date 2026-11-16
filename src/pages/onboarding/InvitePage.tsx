@@ -179,28 +179,40 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
         {loadError && <Message role="alert">{loadError}</Message>}
         {team && (
           <>
-            <InviteInfoField label="팀명" value={team.teamName} />
-            <InviteInfoField label="프로젝트 이름" value={team.projectName} />
-            <InviteInfoField label="프로젝트 소개" value={team.projectIntro} />
             <InviteInfoField
-              label="참여 현황"
+              label="함께할 프로젝트"
+              value={
+                <Project>
+                  <ProjectName>{team.projectName}</ProjectName>
+                  <ProjectIntro>{team.projectIntro}</ProjectIntro>
+                </Project>
+              }
+            />
+            <InviteInfoField
+              label="함께하는 사자들"
               value={
                 <Participation>
-                  <ParticipationTitle>
-                    현재 <ParticipationCount>{team.currentMemberCount}명</ParticipationCount>이 참여했어요
-                  </ParticipationTitle>
                   <Avatars>
                     {team.members?.map((member, index) => {
                       const memberImage = characterImage(member.characterId);
                       return (
-                        <MemberAvatar key={`${member.name}-${index}`} title={member.name}>
+                        <MemberAvatar
+                          key={`${member.name}-${index}`}
+                          title={member.name}
+                          $tone={AVATAR_TONES[index % AVATAR_TONES.length]}
+                        >
                           {memberImage ? <img src={memberImage} alt={member.name} /> : member.name.slice(0, 1)}
                         </MemberAvatar>
                       );
                     })}
                     <MyAvatar>{myImage ? <img src={myImage} alt="" /> : '나'}</MyAvatar>
                   </Avatars>
-                  <ParticipationCaption>수락하면 {team.expectedMemberCount}명이 돼요</ParticipationCaption>
+                  <ParticipationText>
+                    <ParticipationTitle>
+                      현재 <ParticipationCount>{team.currentMemberCount}명</ParticipationCount>이 참여했어요
+                    </ParticipationTitle>
+                    <ParticipationCaption>수락하면 {team.expectedMemberCount}명이 돼요</ParticipationCaption>
+                  </ParticipationText>
                 </Participation>
               }
             />
@@ -367,17 +379,43 @@ const JoinButton = styled(Button)`
   width: 100%;
 `;
 
-// 참여 현황 상자 안: 현재 인원, 프로필 줄, 합류 후 인원
-const Participation = styled.div`
+// 함께할 프로젝트 상자 안: 프로젝트 이름과 소개
+const Project = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
+`;
+
+const ProjectName = styled.p`
+  color: var(--color-ink);
+  font-weight: 700;
+`;
+
+const ProjectIntro = styled.p`
+  color: var(--color-text-secondary);
+`;
+
+// 함께하는 사자들 상자 안: 왼쪽 프로필 줄, 오른쪽 인원 안내 (Figma 카드 높이 100)
+const Participation = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 65px;
+`;
+
+const ParticipationText = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 `;
 
 const ParticipationTitle = styled.p`
-  font-size: 16px;
+  color: var(--color-ink);
+  font-size: 15px;
   font-weight: 700;
-  line-height: 20px;
+  letter-spacing: -0.16px;
 `;
 
 // 현재 인원 강조
@@ -388,28 +426,32 @@ const ParticipationCount = styled.span`
 // 프로필 동그라미를 조금씩 겹쳐 한 줄로 놓는다.
 const Avatars = styled.div`
   display: flex;
+  flex-shrink: 0;
   align-items: center;
 
   & > * + * {
-    margin-left: -6px;
+    margin-left: -10px;
   }
 `;
 
+// 팀원 프로필 배경색을 차례로 돌려 쓴다 (Figma Member Avatar)
+const AVATAR_TONES = ['#fff0cc', '#e9f4fb', '#fbefe5'];
+
 // 현재 팀원 프로필: 각자 고른 동물 캐릭터. 캐릭터가 없으면 이름 첫 글자를 보여준다.
 // 흰 테두리로 겹친 동그라미끼리 구분한다.
-const MemberAvatar = styled.span`
+const MemberAvatar = styled.span<{ $tone?: string }>`
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
-  border: 1.5px solid #ffffff;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  background: var(--color-cream);
+  background: ${({ $tone }) => $tone ?? AVATAR_TONES[0]};
   color: var(--color-brown);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 
   img {
@@ -422,13 +464,12 @@ const MemberAvatar = styled.span`
 
 // 합류할 나: 점선 테두리로 구분하고 내 동물 캐릭터를 보여준다.
 const MyAvatar = styled(MemberAvatar)`
-  border: 1.5px dashed var(--color-amber);
+  border: 1.5px dashed var(--color-orange);
   background: var(--color-amber-bg);
   color: var(--color-orange);
 `;
 
 const ParticipationCaption = styled.p`
   color: var(--color-text-secondary);
-  font-size: 14px;
-  line-height: 17px;
+  font-size: 13px;
 `;

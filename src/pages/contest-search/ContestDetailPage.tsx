@@ -17,6 +17,7 @@ import {
 import { fetchContestDetail } from '../../components/contest-search/contestData';
 import type { SendProposalError } from '../../components/contest-search/proposalData';
 import type { ContestDetail } from '../../types/contest';
+import { PROPOSAL_LIMIT_PER_TEAM } from '../../types/proposal';
 
 type LoadState = 'loading' | 'success' | 'not-found' | 'error';
 
@@ -26,6 +27,7 @@ const PROPOSAL_TOAST = {
   duplicate: { variant: 'error', message: '이미 이 공고로 팀원에게 제안을 보냈어요.' },
   // 다시 시도해도 같으므로 '다시 시도' 안내 대신 이유를 알린다.
   upcoming: { variant: 'error', message: '접수 예정 공고는 참여 제안을 보낼 수 없어요.' },
+  limit: { variant: 'error', message: `공고 참여 제안은 팀당 ${PROPOSAL_LIMIT_PER_TEAM}개까지만 보낼 수 있어요.` },
 } as const;
 
 type ProposalToast = keyof typeof PROPOSAL_TOAST;
@@ -126,6 +128,7 @@ function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }
   // 접수 예정 공고는 서버가 제안을 받지 않으므로 그 이유를 안내한다.
   const handleProposalError = (reason: SendProposalError) => {
     if (reason === 'duplicate') showToast('duplicate');
+    else if (reason === 'limit') showToast('limit');
     else if (phase === 'upcoming') showToast('upcoming');
     else showToast('send-error');
   };

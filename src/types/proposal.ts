@@ -14,3 +14,6 @@ export interface ProposalTeam {
 }
 
 export const PROPOSAL_MESSAGE_MAX = 200;
+
+// 팀 전체가 보낼 수 있는 공고 참여 제안 수. 제안 하나가 원정 하나가 되고, D01 오아시스(긴 지도)에 원정이 6개까지만 들어간다.
+export const PROPOSAL_LIMIT_PER_TEAM = 6;

@@ -4,20 +4,30 @@ import Button from '../../common/Button';
 
 interface LeaveTeamSheetProps {
   teamName: string;
+  isLastMember: boolean; // 나 혼자 남은 팀이면 나가는 순간 팀이 삭제된다는 안내로 바꾼다
   isLeaving: boolean;    // 요청 중에는 '팀 나가기'를 막아 중복 요청을 막는다
   onClose: () => void;   // 취소 · 바깥 영역 · Esc · 아래로 끌기
   onConfirm: () => void; // 팀 나가기
 }
 
 // B02-2 팀 나가기 확인 시트. 제목 · 안내는 가운데 정렬, 닫기(X) 없이 취소 버튼으로 닫는다.
-export default function LeaveTeamSheet({ teamName, isLeaving, onClose, onConfirm }: LeaveTeamSheetProps) {
+export default function LeaveTeamSheet({
+  teamName,
+  isLastMember,
+  isLeaving,
+  onClose,
+  onConfirm,
+}: LeaveTeamSheetProps) {
   const title = `${teamName}에서 나갈까요?`;
+  const description = isLastMember
+    ? '마지막 팀원이 나가면 팀 정보가 모두 사라져요.'
+    : '팀에서 나가면 이 팀의 공간과 원정을 볼 수 없어요.';
 
   return (
     <BottomSheet ariaLabel={title} onClose={onClose}>
       <Body>
         <Title>{title}</Title>
-        <Description>팀에서 나가면 이 팀의 공간과 원정을 볼 수 없어요.</Description>
+        <Description>{description}</Description>
         <Actions>
           <ActionButton variant="secondary" onClick={onClose}>
             취소

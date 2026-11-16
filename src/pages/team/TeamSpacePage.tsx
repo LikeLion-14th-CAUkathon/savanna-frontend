@@ -41,10 +41,9 @@ const toLoadError = (error: unknown): LoadState => {
   return { type: 'error', message: '팀 정보를 불러오지 못했어요.', canRetry: true };
 };
 
-// 팀 나가기 실패 안내. 409는 마지막 팀원이라 나갈 수 없음
+// 팀 나가기 실패 안내 (마지막 팀원도 나갈 수 있어서 409는 없다)
 const getLeaveErrorMessage = (error: unknown) => {
   const status = isAxiosError(error) ? error.response?.status : undefined;
-  if (status === 409) return '마지막 팀원은 팀을 나갈 수 없어요.';
   if (status === 403) return '이 팀에 소속되어 있지 않아요.';
   if (status === 404) return '팀을 찾을 수 없어요.';
   return '팀을 나가지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -156,7 +155,8 @@ function TeamSpaceContent({ search }: { search: string }) {
 
   // 탈퇴에 성공하면 D01 오아시스로 간다. 소속 팀이 없으니 D01-2(팀 없음)가 보인다.
   // 뒤로가기로 나간 팀 공간에 다시 오지 않도록 replace.
-  // 팀장이 나가면 서버가 남은 팀원에게 팀장을 넘긴다(newLeaderUserId). 나는 팀을 떠나므로 화면에서 따로 쓰지 않는다.
+  // 팀장이 나가면 서버가 남은 팀원에게 팀장을 넘긴다(newLeaderUserId). 마지막 팀원이면 팀이 삭제된다(teamDeleted).
+  // 어느 쪽이든 나는 팀을 떠나 같은 화면으로 가므로 응답 값은 따로 쓰지 않는다.
   // 실패하면 시트를 닫고 이 화면에 남아 안내한다.
   const handleLeaveTeam = async () => {
     if (isLeaving || !data) return;
@@ -321,6 +321,7 @@ function TeamSpaceContent({ search }: { search: string }) {
       {isLeaveSheetOpen && (
         <LeaveTeamSheet
           teamName={team.name}
+          isLastMember={team.members.length <= 1}
           isLeaving={isLeaving}
           onClose={closeLeaveSheet}
           onConfirm={handleLeaveTeam}

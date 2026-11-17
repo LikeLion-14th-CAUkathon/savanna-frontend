@@ -210,7 +210,7 @@ export default function OasisPage() {
                 title={expedition.contestTitle}
                 dDayLabel={formatDDay(expedition.deadline)}
                 progressLabel={formatProgress(expedition)}
-                isResting={expedition.isResting}
+                myStatus={expedition.myStatus}
                 onClick={() => goToExpeditionDetail(expedition.id)}
               />
             ))

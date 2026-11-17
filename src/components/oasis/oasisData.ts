@@ -33,7 +33,7 @@ import {
 } from '../../api/proposal';
 import { getMyTeams, getTeamDetail } from '../../api/team';
 import { getMyInfo } from '../../api/user';
-import type { ExpeditionStage, OasisHome } from '../../types/oasis';
+import type { ExpeditionStage, OasisHome, OasisMyStatus } from '../../types/oasis';
 import type {
   ChecklistItem,
   ConditionIssue,
@@ -117,7 +117,7 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
     getProposalNotifications(),
   ]);
 
-  // 내가 합류한 원정 = 내가 제안을 보낸 원정 + 받은 제안에 '합류'로 응답한 원정
+  // 내 응답은 내가 보낸 제안 + 받은 제안으로 판단한다.
   // 둘 다 못 불러오면 판단할 수 없으니 모든 원정을 일반 표지판으로 보여준다
   // 원정마다 제안자를 확인하려고 제안 정보도 함께 불러온다 (원정은 팀당 최대 6개)
   const [sentResult, receivedResult, ...proposalResults] = await Promise.allSettled([
@@ -135,12 +135,15 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
     if (result.status !== 'fulfilled') return true;
     return result.value.some((proposal) => memberIds.has(proposal.senderId));
   };
-  const joinedExpeditionIds = new Set([
-    ...fallback(sentResult, []).map((proposal) => proposal.expeditionId),
-    ...fallback(receivedResult, [])
-      .filter((proposal) => proposal.status === 'JOINED')
-      .map((proposal) => proposal.expeditionId),
-  ]);
+  // 원정별 내 응답: 내가 보낸 제안 → 합류 / 받은 제안 → 그 응답 / 둘 다 없음(제안 뒤 늦게 합류) → 미응답
+  const sentExpeditionIds = new Set(fallback(sentResult, []).map((proposal) => proposal.expeditionId));
+  const receivedStatusOf = new Map(
+    fallback(receivedResult, []).map((proposal) => [proposal.expeditionId, RESPONSE_STATUS[proposal.status]]),
+  );
+  const myStatusOf = (expeditionId: number): OasisMyStatus => {
+    if (!canCheckJoined || sentExpeditionIds.has(expeditionId)) return 'JOINED';
+    return receivedStatusOf.get(expeditionId) ?? 'PENDING';
+  };
 
   return {
     teamId: team.teamId,
@@ -153,7 +156,7 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
       deadline: deadlineToIso(expedition.deadline),
       stage: STAGE_FROM_API[expedition.stage],
       participantCount: expedition.joinedCount + (senderStillInTeam(index) ? 1 : 0),
-      isResting: canCheckJoined && !joinedExpeditionIds.has(expedition.expeditionId),
+      myStatus: myStatusOf(expedition.expeditionId),
     })),
   };
 }

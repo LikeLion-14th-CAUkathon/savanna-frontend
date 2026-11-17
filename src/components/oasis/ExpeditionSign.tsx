@@ -3,6 +3,7 @@ import pondSignImage from '../../assets/images/oasis/pond-sign.webp';
 import pondSignGrayImage from '../../assets/images/oasis/pond-sign-gray.webp';
 import progressDot from '../../assets/icons/oasis/progress-dot.svg';
 import progressDotGray from '../../assets/icons/oasis/progress-dot-gray.svg';
+import type { OasisMyStatus } from '../../types/oasis';
 
 interface ExpeditionSignProps {
   left: number;
@@ -10,11 +11,14 @@ interface ExpeditionSignProps {
   title: string;          // 공모전 이름
   dDayLabel: string;      // 'D-5'
   progressLabel: string;  // '초안 작성 · 참여 2명'
-  isResting?: boolean;    // 내가 합류하지 않은 원정이면 회색 표지판 + '쉬어가는 중'
+  myStatus?: OasisMyStatus; // 합류가 아니면 회색 표지판 + '쉬어가는 중' / '미응답'
   onClick: () => void;
 }
 
-const RESTING_LABEL = '쉬어가는 중';
+const STATUS_LABEL: Partial<Record<OasisMyStatus, string>> = {
+  RESTING: '쉬어가는 중',
+  PENDING: '미응답',
+};
 
 export default function ExpeditionSign({
   left,
@@ -22,10 +26,11 @@ export default function ExpeditionSign({
   title,
   dDayLabel,
   progressLabel,
-  isResting = false,
+  myStatus = 'JOINED',
   onClick,
 }: ExpeditionSignProps) {
-  const statusLabel = isResting ? RESTING_LABEL : progressLabel;
+  const isResting = myStatus !== 'JOINED'; // 회색 표지판
+  const statusLabel = STATUS_LABEL[myStatus] ?? progressLabel;
 
   return (
     <Wrapper style={{ left, top }}>

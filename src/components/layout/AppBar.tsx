@@ -1,13 +1,20 @@
 import styled from 'styled-components';
 import backIcon from '../../assets/icons/app-bar/appbar-back.svg';
 
+interface AppBarAction {
+  icon: string;         // 24px 아이콘
+  label: string;        // 화면 읽기 프로그램용 버튼 이름 (예: '원정 삭제')
+  onClick: () => void;
+}
+
 interface AppBarProps {
   title: string;        // 가운데에 보여줄 화면 제목
   onBack?: () => void;  // 뒤로 가기 버튼을 눌렀을 때 실행할 함수. 없으면 버튼을 숨긴다
   icon?: string;        // 제목 앞에 붙일 아이콘 (선택). 20px 영역 가운데에 그린다
+  action?: AppBarAction; // 오른쪽 44px 자리의 아이콘 버튼 (선택)
 }
 
-export default function AppBar({ title, onBack, icon }: AppBarProps) {
+export default function AppBar({ title, onBack, icon, action }: AppBarProps) {
   return (
     <Bar>
       {onBack ? (
@@ -26,6 +33,11 @@ export default function AppBar({ title, onBack, icon }: AppBarProps) {
         )}
         <TitleText>{title}</TitleText>
       </Title>
+      {action && (
+        <IconButton type="button" aria-label={action.label} onClick={action.onClick}>
+          <img src={action.icon} alt="" />
+        </IconButton>
+      )}
     </Bar>
   );
 }

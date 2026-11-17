@@ -15,6 +15,7 @@ import TeamPrepCard from '../../components/oasis/detail/TeamPrepCard';
 import SubmitChecklist from '../../components/oasis/detail/SubmitChecklist';
 import StageSelectSheet from '../../components/oasis/detail/StageSelectSheet';
 import SubmitConfirmSheet from '../../components/oasis/detail/SubmitConfirmSheet';
+import DeleteExpeditionDialog from '../../components/oasis/detail/DeleteExpeditionDialog';
 import {
   addChecklistItem,
   fetchExpeditionDetail,
@@ -27,6 +28,7 @@ import {
 import ResponseButtons from '../../components/oasis/detail/ResponseButtons';
 import { getApiErrorMessage } from '../../api/client';
 import infoIcon from '../../assets/icons/notice/info.svg';
+import trashIcon from '../../assets/icons/app-bar/appbar-trash.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import type { ExpeditionStage } from '../../types/oasis';
 import type { ChecklistItem, ExpeditionDetail, ExpeditionDetailState } from '../../types/expedition';
@@ -56,7 +58,7 @@ const succeeded = (request: Promise<unknown>) =>
     () => false,
   );
 
-type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | null;
+type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | { type: 'delete' } | null;
 type ToastState = { variant: 'success' | 'error'; message: string } | null;
 
 export default function ExpeditionDetailPage() {
@@ -227,7 +229,11 @@ export default function ExpeditionDetailPage() {
 
   return (
     <Page>
-      <AppBar title="원정 상세" onBack={goBack} />
+      <AppBar
+        title="원정 상세"
+        onBack={goBack}
+        action={{ icon: trashIcon, label: '원정 삭제', onClick: () => setSheet({ type: 'delete' }) }}
+      />
 
       <Body>
         <Header>
@@ -302,6 +308,11 @@ export default function ExpeditionDetailPage() {
           onCancel={() => setSheet({ type: 'stage', initialStage: 'SUBMIT' })}
           onConfirm={() => changeStage('SUBMIT')}
         />
+      )}
+
+      {sheet?.type === 'delete' && (
+        // 원정 삭제 API는 다음 단계에서 연결한다. 지금은 확인창만 열고 닫는다.
+        <DeleteExpeditionDialog isDeleting={false} onClose={closeSheet} onConfirm={closeSheet} />
       )}
 
       {toast && (

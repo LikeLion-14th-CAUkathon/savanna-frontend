@@ -274,15 +274,13 @@ export default function ExpeditionDetailPage() {
               notices={detail.notices}
               onChangeStage={() => setSheet({ type: 'stage' })}
             />
-            <Section title="제출 체크리스트">
-              <SubmitChecklist
-                items={detail.checklist}
-                onAdd={addItem}
-                onUpdate={updateItem}
-                onToggle={toggleItem}
-                onDelete={deleteItem}
-              />
-            </Section>
+            <SubmitChecklist
+              items={detail.checklist}
+              onAdd={addItem}
+              onUpdate={updateItem}
+              onToggle={toggleItem}
+              onDelete={deleteItem}
+            />
           </>
         )}
       </Body>

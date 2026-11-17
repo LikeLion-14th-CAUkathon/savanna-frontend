@@ -15,10 +15,11 @@ export async function fetchProposalTeam(): Promise<ProposalTeam | null> {
   const team = teams[0];
   if (!team) return null;
 
-  const detail = await getTeamDetail(team.teamId);
+  const [detail, expeditions] = await Promise.all([getTeamDetail(team.teamId), getTeamExpeditions(team.teamId)]);
   return {
     teamId: team.teamId,
     projectName: detail.projectName,
+    expeditionCount: expeditions.length,
     // 받는 사람은 나를 뺀 팀원. 캐릭터를 고르지 않은 팀원은 화면에서 기본 캐릭터로 보여준다.
     members: detail.members
       .filter((member) => member.userId !== me.userId)
@@ -45,5 +46,7 @@ export async function sendProposal(announcementId: number, teamId: number, messa
 // 전송 실패 이유. 같은 팀이 같은 공고에 이미 제안했으면 409(Conflict)로 온다(명세).
 export function getSendProposalError(error: unknown): SendProposalError {
   if (error instanceof ProposalLimitError) return 'limit';
+  // 같은 409라도 팀 제안 6개 초과(동시에 보낸 경우 등)는 code로 구분한다
+  if (isAxiosError<{ code?: string }>(error) && error.response?.data?.code === 'PROPOSAL_LIMIT_EXCEEDED') return 'limit';
   return isAxiosError(error) && error.response?.status === 409 ? 'duplicate' : 'unknown';
 }

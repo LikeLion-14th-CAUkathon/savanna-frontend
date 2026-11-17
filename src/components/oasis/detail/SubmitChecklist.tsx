@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import styled from 'styled-components';
-import { Card } from './detailStyles';
 import checkedIcon from '../../../assets/icons/expedition-detail/checkbox-checked.svg';
 import type { ChecklistItem } from '../../../types/expedition';
 
@@ -90,7 +89,8 @@ export default function SubmitChecklist({ items, onAdd, onUpdate, onToggle, onDe
   };
 
   return (
-    <ChecklistCard>
+    <ChecklistCard aria-label="제출 체크리스트">
+      <CardTitle>제출 체크리스트</CardTitle>
       <List>
         {items.map((item) => (
           <Row key={item.id}>
@@ -158,8 +158,25 @@ export default function SubmitChecklist({ items, onAdd, onUpdate, onToggle, onDe
   );
 }
 
-const ChecklistCard = styled(Card)`
-  padding: 4px 16px;
+// 제목이 카드 안에 있는 모양 (위 '팀 준비' 카드와 같은 모서리 · 좌우 여백)
+const ChecklistCard = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 18px 18px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 16px;
+  background: #ffffff;
+`;
+
+const CardTitle = styled.h2`
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
 `;
 
 const List = styled.ul`

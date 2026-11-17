@@ -11,6 +11,7 @@ export interface ProposalTeam {
   teamId: number;
   projectName: string;
   members: ProposalMember[]; // 제안을 받을 팀원 (나 제외)
+  expeditionCount: number; // 지금까지 만든 원정 수 (마감 · 제출 완료 포함). PROPOSAL_LIMIT_PER_TEAM이면 더 보낼 수 없음
 }
 
 export const PROPOSAL_MESSAGE_MAX = 200;

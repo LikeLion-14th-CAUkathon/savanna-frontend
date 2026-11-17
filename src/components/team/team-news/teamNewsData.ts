@@ -33,7 +33,7 @@ export async function fetchTeamNews(): Promise<{ received: ReceivedProposal[]; s
   // 못 불러오면 기본 캐릭터로 보여준다.
   const myTeam = myTeams[0];
   const members = myTeam ? ((await getTeamDetail(myTeam.teamId).catch(() => null))?.members ?? []) : [];
-  const characterOf = (userId: number | undefined) =>
+  const characterOf = (userId: number | null | undefined) =>
     toCharacterId(members.find((member) => member.userId === userId)?.characterId);
 
   const [received, sent] = await Promise.all([

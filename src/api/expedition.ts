@@ -53,8 +53,8 @@ export interface ExpeditionStageHistoryResponse {
 /** 원정의 제안과 응답 현황 */
 export interface ExpeditionProposalResponse {
   proposalId: number;
-  senderId: number;
-  senderName: string;
+  senderId: number | null; // 탈퇴한 팀원이면 null
+  senderName: string; // 탈퇴한 팀원이면 '탈퇴한팀원'
   message: string;
   createdAt: string; // date-time
   totalCount: number;

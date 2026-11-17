@@ -153,7 +153,7 @@ const TopFade = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 265px;
+  height: 300px;
   background: linear-gradient(
     to bottom,
     rgba(255, 247, 234, 0.88) 0%,

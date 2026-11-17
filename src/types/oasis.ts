@@ -37,6 +37,5 @@ export interface OasisHome {
   teamId: number;
   teamName: string;
   memberCount: number;
-  hasNewTeamNews: boolean;        // 하단 '팀 공간' 탭 새 소식 표시 (팀 소식 알림 점 API)
   expeditions: OasisExpedition[]; // 진행 중 원정
 }

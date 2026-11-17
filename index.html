@@ -5,6 +5,9 @@
     <!-- 파비콘을 바꾸면 파일 이름의 버전도 바꾼다. (favicon-v3.png 등)
          Safari는 주소 뒤 ?v= 값만 바꿔서는 예전 파비콘을 계속 보여준다. -->
     <link rel="icon" type="image/png" href="/favicon-v2.png" />
+    <!-- Safari(특히 iOS 탭 목록·즐겨찾기)는 아래 아이콘과 /favicon.ico를 따로 찾는다.
+         파일이 없으면 vercel.json 규칙 때문에 HTML이 응답돼 예전 아이콘이 남으므로 public에 실제 파일을 둔다. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Pretendard 폰트: CSS @import 대신 여기서 불러와 다른 파일과 동시에 받는다. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />

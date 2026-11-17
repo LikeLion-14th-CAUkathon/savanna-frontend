@@ -5,6 +5,7 @@ import { getAnnouncement, checkEligibility } from '../../api/announcement';
 import type { ExpeditionStage as ApiStage, ProposalStatus } from '../../api/common';
 import {
   changeExpeditionStage,
+  deleteExpedition,
   getExpedition,
   getExpeditionProposals,
   getTeamExpeditions,
@@ -257,6 +258,9 @@ export const respondToExpedition = (proposalRecipientId: number, joined: boolean
 
 export const saveStage = (expeditionId: number, stage: ExpeditionStage) =>
   changeExpeditionStage(expeditionId, { stage: STAGE_TO_API[stage] });
+
+/** 원정 삭제 (모든 팀원의 오아시스에서 사라짐) */
+export const removeExpedition = (expeditionId: number) => deleteExpedition(expeditionId);
 
 export const toggleChecklistItem = (checklistId: number, done: boolean) =>
   updateExpeditionChecklist(checklistId, { isChecked: done });

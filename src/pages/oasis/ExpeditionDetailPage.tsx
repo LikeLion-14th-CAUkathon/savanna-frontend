@@ -20,6 +20,7 @@ import {
   addChecklistItem,
   fetchExpeditionDetail,
   removeChecklistItem,
+  removeExpedition,
   renameChecklistItem,
   respondToExpedition,
   saveStage,
@@ -47,6 +48,7 @@ const MESSAGES = {
   joined: '원정에 합류했어요.',
   rested: '이번 원정은 쉬어가요.',
   respondFailed: '응답하지 못했어요. 다시 시도해 주세요.',
+  deleteFailed: '원정을 삭제하지 못했어요. 다시 시도해 주세요.',
   // 제안 뒤에 팀에 합류해 받은 제안 기록이 아직 없을 때 (백엔드 반영 전)
   cannotRespond: '아직 이 제안에 응답할 수 없어요. 잠시 후 다시 시도해 주세요.',
 };
@@ -113,6 +115,7 @@ export default function ExpeditionDetailPage() {
   const [sheet, setSheet] = useState<SheetState>(null);
   const [isSavingStage, setIsSavingStage] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
 
   const closeToast = useCallback(() => setToast(null), []);
@@ -161,6 +164,21 @@ export default function ExpeditionDetailPage() {
     setDetail((prev) => (prev ? { ...prev, stage } : prev));
     setSheet(null);
     setToast({ variant: 'success', message: MESSAGES.stageChanged });
+  };
+
+  // 원정 삭제: 성공하면 D01 오아시스로(뒤로가기로 지워진 원정에 다시 오지 않게 기록을 바꿈),
+  // 실패하면 이 화면에 머물고 토스트로 알린다.
+  const deleteCurrentExpedition = async () => {
+    setIsDeleting(true);
+    const ok = await succeeded(removeExpedition(id));
+    setIsDeleting(false);
+
+    if (!ok) {
+      setSheet(null);
+      setToast({ variant: 'error', message: MESSAGES.deleteFailed });
+      return;
+    }
+    navigate(OASIS_PATHS.home, { replace: true });
   };
 
   const handleStageConfirm = (stage: ExpeditionStage) => {
@@ -311,8 +329,7 @@ export default function ExpeditionDetailPage() {
       )}
 
       {sheet?.type === 'delete' && (
-        // 원정 삭제 API는 다음 단계에서 연결한다. 지금은 확인창만 열고 닫는다.
-        <DeleteExpeditionDialog isDeleting={false} onClose={closeSheet} onConfirm={closeSheet} />
+        <DeleteExpeditionDialog isDeleting={isDeleting} onClose={closeSheet} onConfirm={deleteCurrentExpedition} />
       )}
 
       {toast && (

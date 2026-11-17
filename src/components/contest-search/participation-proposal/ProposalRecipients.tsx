@@ -1,0 +1,66 @@
+import styled from 'styled-components';
+import { characters } from '../../onboarding/profileOptions';
+import type { ProposalMember } from '../../../types/proposal';
+
+const MAX_AVATARS = 3;
+
+// 프로필 캐릭터 뒤 원 배경 (시안의 mint · coral · peach 순서로 돌려 쓴다)
+const AVATAR_BACKGROUNDS = ['#d6f0ef', '#ffe2d2', '#fff0cc'];
+
+// 받는 사람: 겹친 프로필 캐릭터 + '팀원 전체 N명'
+export default function ProposalRecipients({ members }: { members: ProposalMember[] }) {
+  return (
+    <Row>
+      <Avatars aria-hidden="true">
+        {members.slice(0, MAX_AVATARS).map((member, index) => {
+          // 팀원은 항상 동물 캐릭터로 보여준다. 정보가 없으면 기본(첫 번째) 캐릭터
+          const character = characters.find((item) => item.id === member.characterId) ?? characters[0];
+          return (
+            <Avatar key={member.id} $background={AVATAR_BACKGROUNDS[index % AVATAR_BACKGROUNDS.length]}>
+              <img src={character.image} alt="" />
+            </Avatar>
+          );
+        })}
+      </Avatars>
+      <Label>팀원 전체 {members.length}명</Label>
+    </Row>
+  );
+}
+
+const Row = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const Avatars = styled.div`
+  display: flex;
+`;
+
+const Avatar = styled.span<{ $background: string }>`
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: ${({ $background }) => $background};
+
+  & + & {
+    margin-left: -6px;
+  }
+
+  /* 캐릭터 이미지(정사각형)에 원 배경 · 얼굴이 가운데로 들어 있어 원에 꼭 맞게 넣는다 */
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const Label = styled.p`
+  color: #1e1e1e;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+`;

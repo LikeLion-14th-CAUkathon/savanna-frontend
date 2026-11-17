@@ -1,64 +1,67 @@
+/* Pretendard 폰트는 화면 표시가 늦어지지 않도록 index.html의 <link>로 불러온다. */
+
+@font-face {
+  font-family: 'CookieRun';
+  src: url('./assets/fonts/CookieRun Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CookieRun';
+  src: url('./assets/fonts/CookieRun Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CookieRun';
+  src: url('./assets/fonts/CookieRun Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* 사바나 공통 색상 */
+  --color-ink: #1e1e1e;
+  --color-brown: #3b2a16;
+  --color-cream: #fff9ec;
+  --color-amber: #ffb72b;
+  --color-amber-shadow: #d9890a;
+  --color-orange: #d97700;
+  --color-brand: #e8722a;
+  --color-text-muted: #726657;
+  --color-sand: #e2c595;
+  --color-sign-text: #5a2e14;
+  --color-sign-label: #fff1d6;
+  --color-amber-bg: #fff6dd;
+  --color-bg: #fafaf8;
+  --color-border: #e7e5e0;
+  --color-gray-bg: #f1f0ec;
+  --color-text-secondary: #5b5b5b;
+  --color-text-tertiary: #999896;
+  --color-green-bg: #eef3de;
+  --color-green-text: #4c7a1e;
+  --color-error: #b3261e;
+  --color-error-bg: #fce9e6;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* 지도 위에 떠 있는 카드 그림자 */
+  --shadow-float: 0 8px 20px rgba(59, 42, 22, 0.14);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  --font-concept: 'CookieRun', sans-serif;
+
+  font-family: 'Pretendard', sans-serif;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -66,46 +69,43 @@ body {
   margin: 0;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+#root {
+  min-height: 100svh;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+/* 태블릿·노트북에서는 로그인 화면처럼 Figma 폰 화면(402×874)을 정가운데에 띄운다.
+   화면이 874px보다 짧으면 높이만 맞추고, 각 페이지는 이 프레임 안에서 스크롤한다.
+   transform이 있으면 하단 버튼·토스트·바텀시트(position: fixed)가 창이 아닌 프레임 기준으로 붙는다. */
+@media (min-width: 481px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+  }
+
+  #root {
+    width: 402px;
+    height: min(874px, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+    transform: translateZ(0);
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }

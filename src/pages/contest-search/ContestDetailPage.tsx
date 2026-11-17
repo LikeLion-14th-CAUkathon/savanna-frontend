@@ -1,0 +1,312 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
+import styled from 'styled-components';
+import Button from '../../components/common/Button';
+import StatusMessage from '../../components/contest-search/StatusMessage';
+import AppBar from '../../components/layout/AppBar';
+import ScheduleCard from '../../components/contest-search/contest-detail/ScheduleCard';
+import InfoCard from '../../components/contest-search/contest-detail/InfoCard';
+import ApplicationCard from '../../components/contest-search/contest-detail/ApplicationCard';
+import ProposalSheet from '../../components/contest-search/participation-proposal/ProposalSheet';
+import Toast from '../../components/toast/Toast';
+import {
+  CONTEST_PHASE_LABEL,
+  getContestPhase,
+  type ContestPhase,
+} from '../../components/contest-search/contest-detail/contestPhase';
+import { fetchContestDetail } from '../../components/contest-search/contestData';
+import type { SendProposalError } from '../../components/contest-search/proposalData';
+import type { ContestDetail } from '../../types/contest';
+import { PROPOSAL_LIMIT_PER_TEAM } from '../../types/proposal';
+
+type LoadState = 'loading' | 'success' | 'not-found' | 'error';
+
+const PROPOSAL_TOAST = {
+  sent: { variant: 'success', message: '팀원에게 참여 제안을 보냈어요.' },
+  'send-error': { variant: 'error', message: '제안을 보내지 못했어요. 다시 시도해 주세요.' },
+  duplicate: { variant: 'error', message: '이미 이 공고로 팀원에게 제안을 보냈어요.' },
+  limit: { variant: 'error', message: `공고 참여 제안은 팀당 ${PROPOSAL_LIMIT_PER_TEAM}개까지만 보낼 수 있어요.` },
+} as const;
+
+type ProposalToast = keyof typeof PROPOSAL_TOAST;
+
+// C03 공고 상세
+export default function ContestDetailPage() {
+  const { contestId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [detail, setDetail] = useState<ContestDetail | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>('loading');
+
+  // D-day · 접수 단계 계산 기준 시각. 화면을 연 시점으로 한 번만 정한다.
+  const [today] = useState(() => new Date());
+
+  // 주소의 공고 id가 숫자가 아니면 요청하지 않고 '찾을 수 없어요'를 보여준다.
+  const id = Number(contestId);
+  const isValidId = Number.isInteger(id) && id > 0;
+
+  const loadDetail = useCallback(() => {
+    if (!isValidId) return;
+    fetchContestDetail(id)
+      .then((result) => {
+        setDetail(result);
+        setLoadState(result ? 'success' : 'not-found');
+      })
+      .catch(() => setLoadState('error'));
+  }, [id, isValidId]);
+
+  useEffect(() => {
+    loadDetail();
+  }, [loadDetail]);
+
+  const retryLoad = () => {
+    setLoadState('loading');
+    loadDetail();
+  };
+
+  // 바로 이 주소로 들어온 경우(이전 기록 없음)엔 공고 찾기로 보낸다.
+  const goBack = () => {
+    if (location.key === 'default') navigate('/contest');
+    else navigate(-1);
+  };
+
+  const viewState: LoadState = isValidId ? loadState : 'not-found';
+
+  return (
+    <Page>
+      <AppBar title="공고 상세" onBack={goBack} />
+
+      {viewState === 'loading' && <StatusMessage title="공고를 불러오는 중이에요." />}
+      {viewState === 'not-found' && (
+        <StatusMessage
+          title="공고를 찾을 수 없어요."
+          description="삭제되었거나 주소가 잘못되었어요."
+          actionLabel="공고 찾기로 가기"
+          onAction={() => navigate('/contest')}
+        />
+      )}
+      {viewState === 'error' && (
+        <StatusMessage
+          title="공고를 불러오지 못했어요."
+          description="잠시 후 다시 시도해 주세요."
+          actionLabel="다시 시도"
+          onAction={retryLoad}
+        />
+      )}
+
+      {viewState === 'success' && detail && <DetailContent detail={detail} today={today} />}
+    </Page>
+  );
+}
+
+function DetailContent({ detail, today }: { detail: ContestDetail; today: Date }) {
+  const startAt = new Date(detail.startAt);
+  const deadlineAt = new Date(detail.deadlineAt);
+  const phase = getContestPhase(startAt, deadlineAt, today);
+  // 접수 예정 · 접수 중이면 제안할 수 있다. 마감된 공고만 버튼을 회색(비활성)으로 두고 빨간 안내로 알린다.
+  const isClosed = phase === 'closed';
+
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
+  // id: 같은 토스트가 연달아 떠도 새로 그려서 타이머를 다시 시작한다.
+  const [toastState, setToastState] = useState<{ type: ProposalToast; id: number } | null>(null);
+  const toast = toastState ? PROPOSAL_TOAST[toastState.type] : null;
+  const showToast = (type: ProposalToast) => setToastState((prev) => ({ type, id: (prev?.id ?? 0) + 1 }));
+
+  const openSource = () => window.open(detail.sourceUrl, '_blank', 'noopener,noreferrer');
+
+  const closeProposal = useCallback(() => setIsProposalOpen(false), []);
+  const closeToast = useCallback(() => setToastState(null), []);
+
+  const handleProposalSent = () => {
+    setIsProposalOpen(false);
+    showToast('sent');
+  };
+
+  // 실패하면 시트는 열어 둔 채로 버튼 위에 알린다.
+  const handleProposalError = (reason: SendProposalError) => {
+    if (reason === 'duplicate') showToast('duplicate');
+    else if (reason === 'limit') showToast('limit');
+    else showToast('send-error');
+  };
+
+  return (
+    <>
+      <Content>
+        <Heading>
+          <PhasePill $phase={phase}>{CONTEST_PHASE_LABEL[phase]}</PhasePill>
+          <Title>{detail.title}</Title>
+          <Meta>{detail.host}</Meta>
+        </Heading>
+
+        <Button variant="secondary" onClick={openSource}>
+          공고 원문 보기 ↗
+        </Button>
+
+        <ScheduleCard
+          phase={phase}
+          startAt={detail.startAt}
+          deadlineAt={detail.deadlineAt}
+          today={today.toISOString()}
+        />
+
+        <InfoCard
+          title="공고 정보"
+          items={[
+            { label: '참가 대상', value: detail.eligibility.target },
+            { label: '인원', value: detail.eligibility.teamSize },
+            { label: '지역', value: detail.eligibility.region },
+            { label: '공모 주제', value: detail.overview.topic },
+            { label: '심사기준', value: detail.overview.criteria },
+          ]}
+        />
+
+        <ApplicationCard application={detail.application} />
+
+        <Notice $danger={isClosed}>
+          {isClosed
+            ? '접수가 마감된 공고예요.'
+            : '참여 제안은 팀원에게 보내는 제안이에요. 실제 지원은 주최 측 사이트에서 진행해 주세요.'}
+        </Notice>
+      </Content>
+
+      <BottomBar>
+        <ProposeButton disabled={isClosed} onClick={() => setIsProposalOpen(true)}>
+          참여 제안하기
+        </ProposeButton>
+      </BottomBar>
+
+      {isProposalOpen && (
+        <ProposalSheet
+          contest={detail}
+          today={today}
+          onClose={closeProposal}
+          onSent={handleProposalSent}
+          onSendError={handleProposalError}
+        />
+      )}
+
+      {toastState && toast && (
+        <ToastArea>
+          <Toast key={toastState.id} variant={toast.variant} onClose={closeToast}>
+            {toast.message}
+          </Toast>
+        </ToastArea>
+      )}
+    </>
+  );
+}
+
+const PHASE_PILL_COLORS: Record<ContestPhase, { background: string; color: string }> = {
+  open: { background: '#eaeadb', color: '#5a6628' },
+  upcoming: { background: '#e9f4fb', color: '#2e74a6' },
+  closed: { background: '#f1f0ec', color: '#5b5b5b' },
+};
+
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 402px;
+  min-height: 100svh;
+  margin: 0 auto;
+  background: #fafaf8;
+  font-family: 'Pretendard', sans-serif;
+  line-height: normal;
+  letter-spacing: 0;
+  text-align: left;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 안에서 스크롤한다. */
+  @media (min-width: 481px) {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    /* 내용이 프레임보다 길면 헤더 등이 눌려 줄어들지 않고 스크롤되게 한다. */
+    & > * {
+      flex-shrink: 0;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+`;
+
+const Content = styled.main`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 24px 20px;
+`;
+
+const Heading = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+`;
+
+const PhasePill = styled.span<{ $phase: ContestPhase }>`
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: ${({ $phase }) => PHASE_PILL_COLORS[$phase].background};
+  color: ${({ $phase }) => PHASE_PILL_COLORS[$phase].color};
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+`;
+
+const Title = styled.h2`
+  color: #1e1e1e;
+  font-size: 22px;
+  font-weight: 700;
+  word-break: keep-all;
+`;
+
+const Meta = styled.p`
+  color: #5b5b5b;
+  font-size: 13px;
+  font-weight: 400;
+`;
+
+const Notice = styled.p<{ $danger: boolean }>`
+  color: ${({ $danger }) => ($danger ? '#b3261e' : '#999896')};
+  font-size: 12px;
+  font-weight: 400;
+`;
+
+const BottomBar = styled.div`
+  position: sticky;
+  bottom: 0;
+  padding: 12px 24px 34px;
+  border-top: 1px solid #e7e5e0;
+  background: #fafaf8;
+`;
+
+// 하단 버튼(시트의 '제안 보내기' 52px + 그림자 4px, 아래 여백 34px) 위 16px. 시트(z-index 101)보다 위
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(34px + 52px + 4px + 16px);
+  left: 50%;
+  z-index: 102;
+  width: calc(100% - 48px);
+  max-width: 354px;
+  transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+`;
+
+const ProposeButton = styled(Button)`
+  width: 100%;
+`;

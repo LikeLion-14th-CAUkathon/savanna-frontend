@@ -1,0 +1,21 @@
+// C04 공고 참여 제안에서 쓰는 정보
+
+export interface ProposalMember {
+  id: number; // userId
+  name: string;
+  characterId?: string; // onboarding/profileOptions의 캐릭터 id. 없으면 기본 캐릭터
+}
+
+// 제안을 보내는 내 팀
+export interface ProposalTeam {
+  teamId: number;
+  projectName: string;
+  members: ProposalMember[]; // 제안을 받을 팀원 (나 제외)
+  expeditionCount: number; // 지금까지 만든 원정 수 (마감 · 제출 완료 포함). PROPOSAL_LIMIT_PER_TEAM이면 더 보낼 수 없음
+  proposedAnnouncementIds: number[]; // 팀에서 이미 제안한 공고 id (원정 하나 = 공고 하나). 같은 공고에는 다시 보낼 수 없음
+}
+
+export const PROPOSAL_MESSAGE_MAX = 200;
+
+// 팀 전체가 보낼 수 있는 공고 참여 제안 수. 제안 하나가 원정 하나가 되고, D01 오아시스(긴 지도)에 원정이 6개까지만 들어간다.
+export const PROPOSAL_LIMIT_PER_TEAM = 6;

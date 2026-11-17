@@ -1,0 +1,341 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import styled from 'styled-components';
+import { getMyInfo, updateMyInfo } from '../../api/user';
+import type { EnrollmentStatus } from '../../api/common';
+import { toRegionCodes, toRegionNames } from '../../utils/region';
+import Toast from '../../components/toast/Toast';
+import AppBar from '../../components/layout/AppBar';
+import Button from '../../components/common/Button';
+import ProfileInfoForm from '../../components/common/ProfileInfoForm';
+import Notice from '../../components/common/Notice';
+import CharacterSelectSheet from '../../components/onboarding/CharacterSelectSheet';
+import RegionSelectSheet from '../../components/onboarding/RegionSelectSheet';
+import { characters } from '../../components/onboarding/profileOptions';
+import infoIcon from '../../assets/icons/notice/info.svg';
+import pawIcon from '../../assets/icons/onboarding/paw.svg';
+import plusIcon from '../../assets/icons/onboarding/plus.svg';
+
+const schoolOptions = [
+  { value: 'ENROLLED', label: '재학' },
+  { value: 'ON_LEAVE', label: '휴학' },
+  { value: 'GRADUATED', label: '졸업' },
+] as const;
+
+export default function ProfilePage() {
+  const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false); // 시작하기를 눌렀는지
+  const [schoolStatus, setSchoolStatus] = useState<EnrollmentStatus>('ENROLLED');
+  const [characterId, setCharacterId] = useState<string | null>(null);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [openSheet, setOpenSheet] = useState<'character' | 'region' | null>(null);
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState<'success' | 'error' | null>(null);
+  const closeSaveToast = useCallback(() => {
+    // 초대에서 시작했다면 정보 저장 후 합류를 이어간다.
+    if (saveResult === 'success') {
+      const invitationUrl = sessionStorage.getItem('pendingInvitationUrl');
+      if (invitationUrl?.startsWith('/invite/')) {
+        navigate(invitationUrl, { replace: true, state: { autoJoin: true } });
+      } else {
+        navigate('/team/create', { replace: true });
+      }
+      return;
+    }
+    setSaveResult(null);
+  }, [saveResult, navigate]);
+
+  // 기존 정보를 불러온 뒤 입력을 시작해 조회 결과가 작성 중인 값을 덮어쓰지 않게 한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    getMyInfo()
+      .then((user) => {
+        if (controller.signal.aborted) return;
+        setName(user.name ?? '');
+        setSchoolStatus(user.enrollmentStatus ?? 'ENROLLED');
+        setCharacterId(characters.find((item) => item.apiId === user.characterId)?.id ?? null);
+        setSelectedRegions(toRegionNames(user.regions));
+        setLoadStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadStatus('error');
+      });
+    return () => controller.abort();
+  }, [loadAttempt]);
+
+  // 선택한 캐릭터와 이름 에러 문구
+  const character = characters.find((item) => item.id === characterId);
+  const nameError = isSubmitted && !name.trim() ? '이름을 입력해 주세요.' : undefined;
+
+  // 캐릭터 창에서 선택하기를 눌렀을 때
+  const handleSelectCharacter = (id: string | null) => {
+    setCharacterId(id);
+    setOpenSheet(null);
+  };
+
+  // 지역 창에서 선택 완료를 눌렀을 때
+  const handleSelectRegions = (values: string[]) => {
+    setSelectedRegions(values);
+    setOpenSheet(null);
+  };
+
+  // 시작하기: 이름 확인 후, 캐릭터를 안 골랐으면 자동으로 선택
+  const handleStart = async () => {
+    if (isSaving || saveResult === 'success') return;
+    setIsSubmitted(true);
+    if (!name.trim()) return; // 이름이 비어 있으면 여기서 멈춤
+
+    // 자동 선택한 캐릭터도 화면과 요청에 같은 값을 사용한다.
+    const selectedCharacter = character ?? characters[Math.floor(Math.random() * characters.length)];
+    setCharacterId(selectedCharacter.id);
+    setIsSaving(true);
+    setSaveResult(null);
+    try {
+      // 학적 상태는 API 코드를 그대로 보내고, 지역명만 코드로 변환한다.
+      const user = await updateMyInfo({
+        name: name.trim(),
+        enrollmentStatus: schoolStatus,
+        regions: toRegionCodes(selectedRegions),
+        characterId: selectedCharacter.apiId,
+      });
+      setSaveResult(user.onboardingCompleted ? 'success' : 'error');
+    } catch {
+      setSaveResult('error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  if (loadStatus !== 'ready') {
+    return (
+      <Page>
+        <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
+        <Content>
+          {loadStatus === 'loading' ? (
+            <p role="status">내 정보를 불러오고 있어요.</p>
+          ) : (
+            <>
+              <p role="alert">내 정보를 불러오지 못했어요. 다시 시도해 주세요.</p>
+              <Button onClick={() => {
+                setLoadStatus('loading');
+                setLoadAttempt((attempt) => attempt + 1);
+              }}>다시 시도</Button>
+            </>
+          )}
+        </Content>
+      </Page>
+    );
+  }
+
+  return (
+    <Page>
+      <AppBar title="내 정보 입력" onBack={() => navigate('/login')} />
+      <Content as="fieldset" disabled={isSaving || saveResult === 'success'} style={{ border: 0, margin: 0, minWidth: 0 }}>
+        <CharacterSection>
+          <AvatarButton aria-label="나의 캐릭터 선택" onClick={() => setOpenSheet('character')}>
+            {character ? <AvatarImage src={character.image} alt={character.name} /> : <img src={pawIcon} alt="" />}
+            <AddBadge><img src={plusIcon} alt="" /></AddBadge>
+          </AvatarButton>
+          <CharacterCaption>
+            <CharacterLabel>나의 캐릭터 <OptionalBadge>선택</OptionalBadge></CharacterLabel>
+            <CharacterHelp>고르지 않으면 자동으로 동물 캐릭터가 선택돼요.</CharacterHelp>
+          </CharacterCaption>
+        </CharacterSection>
+
+        <ProfileInfoForm
+          name={name}
+          nameError={nameError}
+          schoolStatus={schoolStatus}
+          schoolOptions={schoolOptions}
+          selectedRegions={selectedRegions}
+          onNameChange={setName}
+          onSchoolStatusChange={(value) => setSchoolStatus(value as EnrollmentStatus)}
+          onRemoveRegion={(region) => setSelectedRegions((prev) => prev.filter((item) => item !== region))}
+          onOpenRegionSelect={() => setOpenSheet('region')}
+        />
+
+        <Notice icon={infoIcon}>입력하지 않은 자격 정보는 공고 조건 확인 시 ‘확인 필요’로 표시돼요.</Notice>
+      </Content>
+
+      <Footer>
+        <StartButton onClick={handleStart} disabled={isSaving || saveResult === 'success'}>
+          {isSaving ? '저장하고 있어요.' : '시작하기'}
+        </StartButton>
+      </Footer>
+
+      {saveResult && (
+        <ToastArea>
+          <Toast variant={saveResult} onClose={closeSaveToast}>
+            {saveResult === 'success'
+              ? '내 정보를 저장했어요.'
+              : '내 정보를 저장하지 못했어요. 다시 시도해 주세요.'}
+          </Toast>
+        </ToastArea>
+      )}
+
+      {openSheet === 'character' && (
+        <CharacterSelectSheet selectedId={characterId} onClose={() => setOpenSheet(null)}
+          onSelect={handleSelectCharacter} />
+      )}
+      {openSheet === 'region' && (
+        <RegionSelectSheet selectedRegions={selectedRegions} onClose={() => setOpenSheet(null)}
+          onSelect={handleSelectRegions} />
+      )}
+    </Page>
+  );
+}
+
+// 모바일 화면 너비와 배경
+const ToastArea = styled.div`
+  position: fixed;
+  bottom: calc(91px + env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 200;
+  width: calc(100% - 48px);
+  max-width: 354px;
+  transform: translateX(-50%);
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+`;
+
+const Page = styled.main`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 402px;
+  min-height: 100svh;
+  margin: 0 auto;
+  background: #fafaf8;
+  color: #1e1e1e;
+  line-height: normal;
+
+  /* 폰에서는 화면 너비를 꽉 채우고, 태블릿·노트북에서는 원래 모바일 크기를 유지한다. */
+  @media (max-width: 480px) {
+    max-width: none;
+  }
+
+  /* 태블릿·노트북에서는 가운데 폰 화면 프레임 안에서 스크롤한다. */
+  @media (min-width: 481px) {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    /* 내용이 프레임보다 길면 헤더 등이 눌려 줄어들지 않고 스크롤되게 한다. */
+    & > * {
+      flex-shrink: 0;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+`;
+
+// 입력 항목 배치
+const Content = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 24px 26px;
+`;
+
+// 캐릭터 선택과 안내
+const CharacterSection = styled.section`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+`;
+
+// 프로필 이미지 선택 버튼
+const AvatarButton = styled.button`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 2px dashed #e7e5e0;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+`;
+
+// 선택한 프로필 이미지
+const AvatarImage = styled.img`
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+`;
+
+// 프로필 우측 하단 + 표시
+const AddBadge = styled.span`
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #fafaf8;
+  border-radius: 50%;
+  background: #ffb72b;
+`;
+
+// 캐릭터 안내 문구 묶음
+const CharacterCaption = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+`;
+
+// 캐릭터 라벨
+const CharacterLabel = styled.p`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+`;
+
+// 선택 입력 배지
+const OptionalBadge = styled.span`
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff6dd;
+  color: #d97700;
+  font-size: 12px;
+  font-weight: 700;
+`;
+
+// 캐릭터 자동 선택 도움말
+const CharacterHelp = styled.p`
+  color: #5b5b5b;
+  font-size: 12px;
+  font-weight: 300;
+  text-align: center;
+`;
+
+// 하단 시작하기 영역
+const Footer = styled.footer`
+  position: sticky;
+  bottom: 0;
+  padding: 12px 24px 34px;
+  border-top: 1px solid #e7e5e0;
+  background: #fafaf8;
+`;
+
+// 시작하기 버튼
+const StartButton = styled(Button)`
+  width: 100%;
+`;

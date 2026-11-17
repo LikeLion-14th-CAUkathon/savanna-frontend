@@ -13,7 +13,7 @@ import type {
 export interface ReceivedProposal extends ReceivedProposalResponse {
   projectName: string | null; // 제안한 팀의 프로젝트 이름
   deadline: string | null; // 공고 마감 일시 (D-day 표시)
-  senderCharacterId?: string; // 보낸 사람 캐릭터 id (API에 없어 기본 캐릭터)
+  senderCharacterId?: string; // 보낸 사람(팀원) 캐릭터 id. 받은 제안 API에 없어 원정의 제안 목록 · 팀 상세에서 찾는다. 못 찾으면 기본 캐릭터
 }
 
 /** 보낸 제안의 팀원별 응답 + 캐릭터 */

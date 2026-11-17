@@ -1,8 +1,8 @@
 // B03 팀 소식 API 호출 + 화면용 데이터 변환
-// 제안 API 응답에 없는 값(프로젝트 이름 · 공고 마감일)은 내 팀 목록과 원정 정보에서 채운다.
+// 제안 API 응답에 없는 값(프로젝트 이름 · 공고 마감일 · 팀원 캐릭터)은 내 팀 목록 · 팀 상세 · 원정 정보에서 채운다.
 
 import type { ProposalStatus } from '../../../api/common';
-import { getExpedition } from '../../../api/expedition';
+import { getExpedition, getExpeditionProposals } from '../../../api/expedition';
 import {
   getProposalRecipients,
   getReceivedProposals,
@@ -28,22 +28,28 @@ export async function fetchTeamNews(): Promise<{ received: ReceivedProposal[]; s
   const projectNameOf = (teamId: number) =>
     myTeams.find((team) => team.teamId === teamId)?.projectName ?? null;
 
-  // 제안 API에는 캐릭터가 없다. 보낸 제안의 받는 사람은 모두 내 팀원이라(한 사람 한 팀) 팀 상세에서 찾는다.
+  // 제안 API에는 캐릭터가 없다. 보낸 사람 · 받는 사람은 모두 내 팀원이라(한 사람 한 팀) 팀 상세의 지금 캐릭터로 찾는다.
+  // 팀 상세는 매번 새로 불러오므로 팀원이 캐릭터를 바꿔 저장하면 모든 팀원 화면에 같은 캐릭터가 보인다.
   // 못 불러오면 기본 캐릭터로 보여준다.
   const myTeam = myTeams[0];
   const members = myTeam ? ((await getTeamDetail(myTeam.teamId).catch(() => null))?.members ?? []) : [];
-  const characterOf = (userId: number) =>
+  const characterOf = (userId: number | undefined) =>
     toCharacterId(members.find((member) => member.userId === userId)?.characterId);
 
   const [received, sent] = await Promise.all([
-    // 받은 제안에는 팀 · 마감일이 없어 원정 정보로 채운다. 못 불러오면 그 값만 비워 둔다.
+    // 받은 제안에는 팀 · 마감일 · 보낸 사람 id가 없어 원정 정보와 원정의 제안 목록으로 채운다. 못 불러오면 그 값만 비워 둔다.
     Promise.all(
       receivedItems.map(async (item): Promise<ReceivedProposal> => {
-        const expedition = await getExpedition(item.expeditionId).catch(() => null);
+        const [expedition, expeditionProposals] = await Promise.all([
+          getExpedition(item.expeditionId).catch(() => null),
+          getExpeditionProposals(item.expeditionId).catch(() => null),
+        ]);
+        const senderId = expeditionProposals?.find((proposal) => proposal.proposalId === item.proposalId)?.senderId;
         return {
           ...item,
           projectName: expedition ? projectNameOf(expedition.teamId) : null,
           deadline: expedition ? toDeadlineAt(expedition.announcement.deadline) : null,
+          senderCharacterId: characterOf(senderId),
         };
       }),
     ),

@@ -119,8 +119,22 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
 
   // 내가 합류한 원정 = 내가 제안을 보낸 원정 + 받은 제안에 '합류'로 응답한 원정
   // 둘 다 못 불러오면 판단할 수 없으니 모든 원정을 일반 표지판으로 보여준다
-  const [sentResult, receivedResult] = await Promise.allSettled([getSentProposals(), getReceivedProposals()]);
+  // 원정마다 제안자를 확인하려고 제안 정보도 함께 불러온다 (원정은 팀당 최대 6개)
+  const [sentResult, receivedResult, ...proposalResults] = await Promise.allSettled([
+    getSentProposals(),
+    getReceivedProposals(),
+    ...expeditions.map((expedition) => getExpeditionProposals(expedition.expeditionId)),
+  ]);
   const canCheckJoined = sentResult.status === 'fulfilled' || receivedResult.status === 'fulfilled';
+
+  // 서버의 joinedCount는 제안자를 빼고 센다. 제안자가 지금도 팀원이면 1명을 더한다
+  // (제안 정보를 못 불러오면 확인할 수 없으니 팀원으로 보고 더함)
+  const memberIds = new Set(detail.members.map((member) => member.userId));
+  const senderStillInTeam = (index: number) => {
+    const result = proposalResults[index];
+    if (result.status !== 'fulfilled') return true;
+    return result.value.some((proposal) => memberIds.has(proposal.senderId));
+  };
   const joinedExpeditionIds = new Set([
     ...fallback(sentResult, []).map((proposal) => proposal.expeditionId),
     ...fallback(receivedResult, [])
@@ -133,13 +147,12 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
     teamName: detail.name,
     memberCount: detail.members.length,
     hasNewTeamNews: notification.hasUnread,
-    expeditions: expeditions.map((expedition) => ({
+    expeditions: expeditions.map((expedition, index) => ({
       id: expedition.expeditionId,
       contestTitle: expedition.title,
       deadline: deadlineToIso(expedition.deadline),
       stage: STAGE_FROM_API[expedition.stage],
-      // 서버의 joinedCount는 제안을 받은 사람 중 합류한 수라 제안자 본인이 빠져 있음 → 제안자 1명을 더함
-      participantCount: expedition.joinedCount + 1,
+      participantCount: expedition.joinedCount + (senderStillInTeam(index) ? 1 : 0),
       isResting: canCheckJoined && !joinedExpeditionIds.has(expedition.expeditionId),
     })),
   };
@@ -156,16 +169,19 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
   const { announcement } = expedition;
 
   // 아래는 실패해도 화면은 보여준다 (빈 값으로 대체)
-  const [announcementResult, eligibilityResult, proposalsResult, meResult] = await Promise.allSettled([
+  const [announcementResult, eligibilityResult, proposalsResult, meResult, teamResult] = await Promise.allSettled([
     getAnnouncement(announcement.announcementId),
     checkEligibility(announcement.announcementId, expedition.teamId),
     getExpeditionProposals(expeditionId),
     getMyInfo(),
+    getTeamDetail(expedition.teamId),
   ]);
   const announcementDetail = fallback(announcementResult, null);
   const eligibility = fallback(eligibilityResult, null);
   const proposals = fallback(proposalsResult, []);
   const myUserId = fallback(meResult, null)?.userId;
+  // 지금 팀원 (못 불러오면 null → 제안자를 팀원으로 보고 표시)
+  const memberIds = teamResult.status === 'fulfilled' ? new Set(teamResult.value.members.map((m) => m.userId)) : null;
 
   // 충족하지 않은 조건만 표시 (불일치 / 팀 정보 확인 필요)
   const conditionIssues: ConditionIssue[] = (eligibility?.conditions ?? [])
@@ -178,7 +194,7 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
     }));
 
   // 제안이 여러 번이면 최신 제안의 응답을 우선 (같은 사람은 한 번만)
-  // 제안자는 받는 사람 목록에 없어서 직접 맨 앞에 '합류'로 넣는다
+  // 제안자는 받는 사람 목록에 없어서 직접 맨 앞에 '합류'로 넣는다 (팀을 탈퇴한 제안자는 빼고)
   const responses: MemberResponse[] = [];
   const seen = new Set<number>();
   const addResponse = (userId: number, name: string, status: ResponseStatus) => {
@@ -189,7 +205,9 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
   [...proposals]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .forEach((proposal) => {
-      addResponse(proposal.senderId, proposal.senderName, 'JOINED');
+      if (!memberIds || memberIds.has(proposal.senderId)) {
+        addResponse(proposal.senderId, proposal.senderName, 'JOINED');
+      }
       proposal.recipients.forEach((recipient) =>
         addResponse(recipient.userId, recipient.name, RESPONSE_STATUS[recipient.status]),
       );

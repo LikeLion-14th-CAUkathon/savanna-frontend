@@ -204,7 +204,7 @@ function TeamSpaceContent({ search }: { search: string }) {
 
   const bottomBar = (
     <BottomBar>
-      <TabBar activeTab="team" hasNew={hasNewTeamNews} />
+      <TabBar activeTab="team" />
     </BottomBar>
   );
 

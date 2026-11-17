@@ -255,7 +255,7 @@ export default function OasisPage() {
       )}
 
       <TabBarArea>
-        <TabBar activeTab="oasis" hasNew={data?.hasNewTeamNews ?? false} rounded />
+        <TabBar activeTab="oasis" rounded />
       </TabBarArea>
     </Stage>
   );

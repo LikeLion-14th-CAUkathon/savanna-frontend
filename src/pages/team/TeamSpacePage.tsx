@@ -10,6 +10,7 @@ import Toast from '../../components/toast/Toast';
 import TeamProjectCard from '../../components/team/team-space/TeamProjectCard';
 import InviteLinkCard from '../../components/team/team-space/InviteLinkCard';
 import LeaveTeamSheet from '../../components/team/team-space/LeaveTeamSheet';
+import InviteLinkJoinForm from '../../components/team/team-space/InviteLinkJoinForm';
 import {
   fetchInviteUrl,
   fetchTeamSpace,
@@ -43,7 +44,14 @@ const toLoadError = (error: unknown): LoadState => {
 };
 
 // 팀 나가기 실패 안내 (마지막 팀원도 나갈 수 있어서 409는 없다)
-const getLeaveErrorMessage = (error: unknown) => {
+// 붙여 넣은 초대 링크에서 토큰을 꺼낸다. 주소(…/invite/{token})든 토큰만이든 받는다. 알 수 없는 모양이면 null
+const getInviteToken = (link: string) => {
+  const fromUrl = link.match(/\/invite\/([^/?#\s]+)/);
+  if (fromUrl) return decodeURIComponent(fromUrl[1]);
+  return /^[^/?#\s]+$/.test(link) ? link : null;
+};
+
+const getLeaveErrorMessage =(error: unknown) => {
   const status = isAxiosError(error) ? error.response?.status : undefined;
   if (status === 403) return '이 팀에 소속되어 있지 않아요.';
   if (status === 404) return '팀을 찾을 수 없어요.';
@@ -174,6 +182,18 @@ function TeamSpaceContent({ search }: { search: string }) {
     navigate('/oasis', { replace: true, state });
   };
 
+  // ===== 초대 링크로 합류 (B02-3) =====
+  // 붙여 넣은 링크에서 토큰을 꺼내 A03 초대 확인으로 간다. 거기서 팀 정보를 보고 '합류하기'를 누르면 B02 팀 공간으로 간다.
+  // 없는 · 만료된 링크, 이미 팀이 있음 등의 안내는 초대 확인 화면이 맡는다.
+  const handleJoinByLink = (link: string) => {
+    const token = getInviteToken(link);
+    if (!token) {
+      showToast('error', '초대 링크를 확인해 주세요.');
+      return;
+    }
+    navigate(`/invite/${encodeURIComponent(token)}`);
+  };
+
   const copyInviteLink = () => {
     if (!inviteUrl) return;
     navigator.clipboard
@@ -188,8 +208,16 @@ function TeamSpaceContent({ search }: { search: string }) {
     </BottomBar>
   );
 
+  const toastArea = toastState && (
+    <ToastArea>
+      <Toast key={toastState.id} variant={toastState.variant} onClose={closeToast}>
+        {toastState.message}
+      </Toast>
+    </ToastArea>
+  );
+
   // B02-3 · 소속 팀 없음 (처음부터 팀이 없거나 팀을 나간 뒤)
-  // 팀 공간과 같은 틀에 빈 자리만 보여 주고, 팀 만들기로 안내한다.
+  // 팀 공간과 같은 틀에 빈 자리만 보여 주고, 팀 만들기 또는 초대 링크로 합류하도록 안내한다.
   if (loadState.type === 'no-team') {
     const openCreate = () => navigate('/team/create');
     return (
@@ -204,6 +232,7 @@ function TeamSpaceContent({ search }: { search: string }) {
             <MemberCount>새 팀을 만들거나 초대 링크로 합류할 수 있어요.</MemberCount>
             <EmptyActions>
               <Button onClick={openCreate}>팀 만들기</Button>
+              <InviteLinkJoinForm onJoin={handleJoinByLink} />
             </EmptyActions>
           </Profile>
         </HeaderBand>
@@ -220,6 +249,7 @@ function TeamSpaceContent({ search }: { search: string }) {
         </Sheet>
 
         {bottomBar}
+        {toastArea}
       </Page>
     );
   }
@@ -331,13 +361,7 @@ function TeamSpaceContent({ search }: { search: string }) {
         />
       )}
 
-      {toastState && (
-        <ToastArea>
-          <Toast key={toastState.id} variant={toastState.variant} onClose={closeToast}>
-            {toastState.message}
-          </Toast>
-        </ToastArea>
-      )}
+      {toastArea}
     </Page>
   );
 }
@@ -530,14 +554,13 @@ const EmptyAvatar = styled.div`
   background: rgba(255, 255, 255, 0.55);
 `;
 
+// '팀 만들기' 버튼 아래 15px에 초대 링크 입력
 const EmptyActions = styled.div`
   display: flex;
+  flex-direction: column;
+  gap: 15px;
   width: 100%;
   margin-top: 18px;
-
-  & > * {
-    flex: 1;
-  }
 `;
 
 // 아직 내용이 없는 구역 자리

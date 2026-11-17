@@ -15,7 +15,7 @@ import TeamPrepCard from '../../components/oasis/detail/TeamPrepCard';
 import SubmitChecklist from '../../components/oasis/detail/SubmitChecklist';
 import StageSelectSheet from '../../components/oasis/detail/StageSelectSheet';
 import SubmitConfirmSheet from '../../components/oasis/detail/SubmitConfirmSheet';
-import DeleteExpeditionDialog from '../../components/oasis/detail/DeleteExpeditionDialog';
+import DeleteExpeditionSheet from '../../components/oasis/detail/DeleteExpeditionSheet';
 import {
   addChecklistItem,
   fetchExpeditionDetail,
@@ -329,7 +329,7 @@ export default function ExpeditionDetailPage() {
       )}
 
       {sheet?.type === 'delete' && (
-        <DeleteExpeditionDialog isDeleting={isDeleting} onClose={closeSheet} onConfirm={deleteCurrentExpedition} />
+        <DeleteExpeditionSheet isDeleting={isDeleting} onClose={closeSheet} onConfirm={deleteCurrentExpedition} />
       )}
 
       {toast && (

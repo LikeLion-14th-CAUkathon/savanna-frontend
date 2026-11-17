@@ -120,3 +120,12 @@ export const getExpeditionProposals = async (expeditionId: number) => {
   );
   return data;
 };
+
+/**
+ * 오아시스 원정 삭제 — DELETE /api/v1/expeditions/{expeditionId}
+ * - 팀원 누구나 삭제 가능. 성공 시 204 (응답 본문 없음)
+ * - 연결된 제안 · 응답 · 일정 · 체크리스트 · 단계 이력이 함께 삭제되고, 팀의 원정 슬롯(최대 6개)이 바로 복구된다
+ */
+export const deleteExpedition = async (expeditionId: number) => {
+  await apiClient.delete(`/api/v1/expeditions/${expeditionId}`);
+};

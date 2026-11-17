@@ -15,10 +15,12 @@ import TeamPrepCard from '../../components/oasis/detail/TeamPrepCard';
 import SubmitChecklist from '../../components/oasis/detail/SubmitChecklist';
 import StageSelectSheet from '../../components/oasis/detail/StageSelectSheet';
 import SubmitConfirmSheet from '../../components/oasis/detail/SubmitConfirmSheet';
+import DeleteExpeditionSheet from '../../components/oasis/detail/DeleteExpeditionSheet';
 import {
   addChecklistItem,
   fetchExpeditionDetail,
   removeChecklistItem,
+  removeExpedition,
   renameChecklistItem,
   respondToExpedition,
   saveStage,
@@ -27,6 +29,7 @@ import {
 import ResponseButtons from '../../components/oasis/detail/ResponseButtons';
 import { getApiErrorMessage } from '../../api/client';
 import infoIcon from '../../assets/icons/notice/info.svg';
+import trashIcon from '../../assets/icons/app-bar/appbar-trash.svg';
 import { EXPEDITION_STAGE_LABEL } from '../../types/oasis';
 import type { ExpeditionStage } from '../../types/oasis';
 import type { ChecklistItem, ExpeditionDetail, ExpeditionDetailState } from '../../types/expedition';
@@ -45,6 +48,7 @@ const MESSAGES = {
   joined: '원정에 합류했어요.',
   rested: '이번 원정은 쉬어가요.',
   respondFailed: '응답하지 못했어요. 다시 시도해 주세요.',
+  deleteFailed: '원정을 삭제하지 못했어요. 다시 시도해 주세요.',
   // 제안 뒤에 팀에 합류해 받은 제안 기록이 아직 없을 때 (백엔드 반영 전)
   cannotRespond: '아직 이 제안에 응답할 수 없어요. 잠시 후 다시 시도해 주세요.',
 };
@@ -56,7 +60,7 @@ const succeeded = (request: Promise<unknown>) =>
     () => false,
   );
 
-type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | null;
+type SheetState = { type: 'stage'; initialStage?: ExpeditionStage } | { type: 'submit' } | { type: 'delete' } | null;
 type ToastState = { variant: 'success' | 'error'; message: string } | null;
 
 export default function ExpeditionDetailPage() {
@@ -111,6 +115,7 @@ export default function ExpeditionDetailPage() {
   const [sheet, setSheet] = useState<SheetState>(null);
   const [isSavingStage, setIsSavingStage] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
 
   const closeToast = useCallback(() => setToast(null), []);
@@ -159,6 +164,21 @@ export default function ExpeditionDetailPage() {
     setDetail((prev) => (prev ? { ...prev, stage } : prev));
     setSheet(null);
     setToast({ variant: 'success', message: MESSAGES.stageChanged });
+  };
+
+  // 원정 삭제: 성공하면 D01 오아시스로(뒤로가기로 지워진 원정에 다시 오지 않게 기록을 바꿈),
+  // 실패하면 이 화면에 머물고 토스트로 알린다.
+  const deleteCurrentExpedition = async () => {
+    setIsDeleting(true);
+    const ok = await succeeded(removeExpedition(id));
+    setIsDeleting(false);
+
+    if (!ok) {
+      setSheet(null);
+      setToast({ variant: 'error', message: MESSAGES.deleteFailed });
+      return;
+    }
+    navigate(OASIS_PATHS.home, { replace: true });
   };
 
   const handleStageConfirm = (stage: ExpeditionStage) => {
@@ -227,7 +247,11 @@ export default function ExpeditionDetailPage() {
 
   return (
     <Page>
-      <AppBar title="원정 상세" onBack={goBack} />
+      <AppBar
+        title="원정 상세"
+        onBack={goBack}
+        action={{ icon: trashIcon, label: '원정 삭제', onClick: () => setSheet({ type: 'delete' }) }}
+      />
 
       <Body>
         <Header>
@@ -302,6 +326,10 @@ export default function ExpeditionDetailPage() {
           onCancel={() => setSheet({ type: 'stage', initialStage: 'SUBMIT' })}
           onConfirm={() => changeStage('SUBMIT')}
         />
+      )}
+
+      {sheet?.type === 'delete' && (
+        <DeleteExpeditionSheet isDeleting={isDeleting} onClose={closeSheet} onConfirm={deleteCurrentExpedition} />
       )}
 
       {toast && (

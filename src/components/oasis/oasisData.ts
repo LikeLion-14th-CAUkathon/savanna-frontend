@@ -27,7 +27,6 @@ import {
 } from '../../api/expeditionTask';
 import type { ExpeditionTaskResponse } from '../../api/expeditionTask';
 import {
-  getProposalNotifications,
   getReceivedProposals,
   getSentProposals,
   respondToProposal,
@@ -112,10 +111,9 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
   const team = teams[0];
   if (!team) return null;
 
-  const [detail, expeditions, notification] = await Promise.all([
+  const [detail, expeditions] = await Promise.all([
     getTeamDetail(team.teamId),
     getTeamExpeditions(team.teamId),
-    getProposalNotifications(),
   ]);
 
   // 내 응답은 내가 보낸 제안 + 받은 제안으로 판단한다.
@@ -150,7 +148,6 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
     teamId: team.teamId,
     teamName: detail.name,
     memberCount: detail.members.length,
-    hasNewTeamNews: notification.hasUnread,
     expeditions: expeditions.map((expedition, index) => ({
       id: expedition.expeditionId,
       contestTitle: expedition.title,

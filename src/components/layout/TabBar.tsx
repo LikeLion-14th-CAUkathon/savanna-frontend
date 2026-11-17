@@ -21,8 +21,7 @@ interface Tab {
 
 interface TabBarProps {
   activeTab: TabId;                    // 지금 선택된 탭 (부모가 알려줌)
-  hasNew?: boolean;                    // 팀 공간 탭에 새 소식 점 표시
-  rounded?: boolean;                   // 위쪽 모서리를 둥글게 (오아시스 홈 화면)
+  rounded?: boolean;                  // 위쪽 모서리를 둥글게 (오아시스 홈 화면)
 }
 
 const TAB_LIST: Tab[] = [
@@ -33,7 +32,7 @@ const TAB_LIST: Tab[] = [
 ];
 
 // 탭을 누르면 해당 화면으로 이동한다. 이미 그 화면이면 이동하지 않는다.
-export default function TabBar({ activeTab, hasNew = false, rounded = false }: TabBarProps) {
+export default function TabBar({ activeTab, rounded = false }: TabBarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -45,7 +44,6 @@ export default function TabBar({ activeTab, hasNew = false, rounded = false }: T
     <Bar $rounded={rounded}>
       {TAB_LIST.map((tab) => {
         const isActive = activeTab === tab.id; // 지금 선택된 탭이냐?
-        const showNewDot = tab.id === 'team' && hasNew;
 
         return (
           <TabButton
@@ -53,12 +51,10 @@ export default function TabBar({ activeTab, hasNew = false, rounded = false }: T
             type="button"
             $active={isActive}
             aria-current={isActive ? 'page' : undefined}
-            aria-label={showNewDot ? `${tab.label}, 새 소식 있음` : tab.label}
             onClick={() => goToTab(tab)}
           >
             <IconWrap>
               <Icon src={isActive ? tab.activeIcon : tab.icon} alt="" />
-              {showNewDot && <NewDot aria-hidden="true" />}
             </IconWrap>
             <span>{tab.label}</span>
           </TabButton>
@@ -107,21 +103,10 @@ const TabButton = styled.button<{ $active: boolean }>`
 `;
 
 const IconWrap = styled.span`
-  position: relative; /* 뱃지를 아이콘 위에 겹쳐 놓기 위한 기준점 */
   width: 24px;
   height: 24px;
 `;
 
 const Icon = styled.img`
   display: block;
-`;
-
-const NewDot = styled.span`
-  position: absolute;
-  top: -1px;
-  left: 20px;
-  width: 9px;
-  height: 9px;
-  border-radius: 4.5px;
-  background: #ffb72b;
 `;

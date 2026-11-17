@@ -20,6 +20,7 @@ export async function fetchProposalTeam(): Promise<ProposalTeam | null> {
     teamId: team.teamId,
     projectName: detail.projectName,
     expeditionCount: expeditions.length,
+    proposedAnnouncementIds: expeditions.map((expedition) => expedition.announcementId),
     // 받는 사람은 나를 뺀 팀원. 캐릭터를 고르지 않은 팀원은 화면에서 기본 캐릭터로 보여준다.
     members: detail.members
       .filter((member) => member.userId !== me.userId)

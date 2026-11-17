@@ -55,8 +55,15 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
 
   const team = teamState.status === 'success' ? teamState.team : null;
   const hasRecipients = !!team && team.members.length > 0;
-  // 원정이 이미 한도만큼 있으면 시트를 열 때 바로 안내하고 보내기를 막는다
+  // 팀에서 이미 이 공고를 제안했거나 원정이 한도만큼 있으면 시트를 열 때 바로 안내하고 보내기를 막는다 (C04-2)
+  // 둘 다 해당하면 이 공고에 대한 이유(이미 제안됨)를 먼저 알린다.
+  const isAlreadyProposed = !!team && team.proposedAnnouncementIds.includes(contest.id);
   const isAtLimit = !!team && team.expeditionCount >= PROPOSAL_LIMIT_PER_TEAM;
+  const blockedNotice = isAlreadyProposed
+    ? '이미 팀에서 제안된 공고에요.'
+    : isAtLimit
+      ? `한 팀에 원정을 최대 ${PROPOSAL_LIMIT_PER_TEAM}개까지 만들 수 있어요.`
+      : null;
   const hasEmptyError = showEmptyError && message.trim() === '';
 
   const handleChange = (value: string) => {
@@ -121,9 +128,7 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
         </InfoRow>
       </InfoList>
 
-      {isAtLimit && (
-        <Notice tone="warning">한 팀에 원정을 최대 {PROPOSAL_LIMIT_PER_TEAM}개까지 만들 수 있어요.</Notice>
-      )}
+      {blockedNotice && <Notice tone="warning">{blockedNotice}</Notice>}
 
       <MessageField>
         <Input
@@ -144,7 +149,7 @@ export default function ProposalSheet({ contest, today, onClose, onSent, onSendE
         </Helper>
       </MessageField>
 
-      <SendButton disabled={!hasRecipients || isAtLimit || isSending} onClick={handleSubmit}>
+      <SendButton disabled={!hasRecipients || !!blockedNotice || isSending} onClick={handleSubmit}>
         제안 보내기
       </SendButton>
     </BottomSheet>

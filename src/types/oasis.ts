@@ -19,8 +19,12 @@ export interface OasisExpedition {
   deadline: string;         // 접수 마감 일시 (ISO 8601). D-day는 화면에서 계산
   stage: ExpeditionStage;   // 현재 진행 단계
   participantCount: number; // 실제로 합류한 인원
-  isResting: boolean;       // 내가 합류하지 않은 원정 (쉬어가기 · 미응답 · 제안 뒤 늦게 합류) → 회색 표지판
+  myStatus: OasisMyStatus;  // 이 원정에 대한 내 응답 (표지판 모양·칩 문구가 달라짐)
 }
+
+// 합류(제안자 포함): 원래 표지판 · 진행 단계 / 쉬어가기: 회색 표지판 · '쉬어가는 중'
+// 미응답(제안 뒤 늦게 합류 포함): 회색 표지판 · '미응답'
+export type OasisMyStatus = 'JOINED' | 'RESTING' | 'PENDING';
 
 // 화면 상태: 불러오는 중 / 실패 / 소속 팀 없음 / 성공
 export type OasisState =

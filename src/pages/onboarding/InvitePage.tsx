@@ -60,7 +60,7 @@ function InvitationGate({ token }: { token: string | undefined }) {
 
   return (
     <Page>
-      <InviteHeader onBack={() => navigate(-1)} />
+      <InviteHeader />
       <Content>
         {status === 'loading' ? <Message role="status">로그인 상태를 확인하고 있어요.</Message> : (
           <ErrorCard
@@ -79,13 +79,14 @@ interface LoadError {
 }
 
 // 노을 풍경 배경 위에 앱바와 (있으면) 팀 프로필을 놓는다. 없으면 풍경만 보이도록 자리만 둔다.
-function InviteHeader({ onBack, children }: { onBack: () => void; children?: ReactNode }) {
+// 초대 링크로 바로 들어오면 앱 안에 돌아갈 화면이 없어서 뒤로가기 버튼은 두지 않는다.
+function InviteHeader({ children }: { children?: ReactNode }) {
   return (
     <HeaderBand>
       <HeaderBackground aria-hidden="true">
         <img src={headerImage} alt="" />
       </HeaderBackground>
-      <AppBar title="초대 확인" onBack={onBack} />
+      <AppBar title="초대 확인" />
       {children ?? <HeaderSpacer />}
     </HeaderBand>
   );
@@ -219,7 +220,7 @@ function InvitationContent({ token, myCharacterId }: { token: string | undefined
 
   return (
     <Page>
-      <InviteHeader onBack={() => navigate(-1)}>
+      <InviteHeader>
         {team && (
           <TeamProfile>
             <TeamAvatar aria-hidden="true">{team.teamName.slice(0, 1)}</TeamAvatar>

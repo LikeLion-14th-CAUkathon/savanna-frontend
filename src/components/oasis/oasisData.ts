@@ -1,5 +1,5 @@
 // D 영역(오아시스·원정 상세·일정 편집) API 호출 + 화면용 데이터 변환
-// 서버 응답(src/api)과 화면 타입(src/types/oasis, expedition)이 달라서 여기서 맞춘다.
+
 
 import { getAnnouncement, checkEligibility } from '../../api/announcement';
 import type { ExpeditionStage as ApiStage, ProposalStatus } from '../../api/common';
@@ -133,7 +133,7 @@ export async function fetchOasisHome(): Promise<OasisHome | null> {
   const senderStillInTeam = (index: number) => {
     const result = proposalResults[index];
     if (result.status !== 'fulfilled') return true;
-    return result.value.some((proposal) => memberIds.has(proposal.senderId));
+    return result.value.some((proposal) => proposal.senderId !== null && memberIds.has(proposal.senderId));
   };
   // 원정별 내 응답: 내가 보낸 제안 → 합류 / 받은 제안 → 그 응답 / 둘 다 없음(제안 뒤 늦게 합류) → 미응답
   const sentExpeditionIds = new Set(fallback(sentResult, []).map((proposal) => proposal.expeditionId));
@@ -208,7 +208,7 @@ export async function fetchExpeditionDetail(expeditionId: number): Promise<Exped
   [...proposals]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .forEach((proposal) => {
-      if (!memberIds || memberIds.has(proposal.senderId)) {
+      if (proposal.senderId !== null && (!memberIds || memberIds.has(proposal.senderId))) {
         addResponse(proposal.senderId, proposal.senderName, 'JOINED');
       }
       proposal.recipients.forEach((recipient) =>
